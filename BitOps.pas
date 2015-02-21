@@ -7,13 +7,9 @@
   Version 1.0 (alpha)
 
 --------------------------------------------------------------------------------
-
-  Switches: (+ set by default; - not set by default)
-
- (-)PurePascal    When set, all functions are compiled from pascal code, no ASM
-                  is used.
                   
-                  add shld shrd
+  todo:
+        Add bitcount/popcount
 
 ===============================================================================}
 unit BitOps;
@@ -21,6 +17,9 @@ unit BitOps;
 interface
 
 {.$DEFINE PurePascal}
+
+type
+  QuadWord = Int64;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -31,8 +30,9 @@ interface
 Function NumberToBits(Number: Byte): String; overload;
 Function NumberToBits(Number: Word): String; overload;
 Function NumberToBits(Number: LongWord): String; overload;
+Function NumberToBits(Number: QuadWord): String; overload;
 
-Function BitsToNumber(BitString: String): LongWord;
+Function BitsToNumber(const BitString: String): QuadWord;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -43,10 +43,12 @@ Function BitsToNumber(BitString: String): LongWord;
 Function ROL(Value: Byte; Shift: Integer): Byte; overload;
 Function ROL(Value: Word; Shift: Integer): Word; overload;
 Function ROL(Value: LongWord; Shift: Integer): LongWord; overload;
+Function ROL(Value: QuadWord; Shift: Integer): QuadWord; overload;
 
 procedure ROLValue(var Value: Byte; Shift: Integer); overload;
 procedure ROLValue(var Value: Word; Shift: Integer); overload;
 procedure ROLValue(var Value: LongWord; Shift: Integer); overload;
+procedure ROLValue(var Value: QuadWord; Shift: Integer); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -57,10 +59,12 @@ procedure ROLValue(var Value: LongWord; Shift: Integer); overload;
 Function ROR(Value: Byte; Shift: Integer): Byte; overload;
 Function ROR(Value: Word; Shift: Integer): Word; overload;
 Function ROR(Value: LongWord; Shift: Integer): LongWord; overload;
+Function ROR(Value: QuadWord; Shift: Integer): QuadWord; overload;
 
 procedure RORValue(var Value: Byte; Shift: Integer); overload;
 procedure RORValue(var Value: Word; Shift: Integer); overload;
 procedure RORValue(var Value: LongWord; Shift: Integer); overload;
+procedure RORValue(var Value: QuadWord; Shift: Integer); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -71,18 +75,22 @@ procedure RORValue(var Value: LongWord; Shift: Integer); overload;
 Function RCLCarry(Value: Byte; Shift: Integer; var CF: Boolean): Byte; overload;
 Function RCLCarry(Value: Word; Shift: Integer; var CF: Boolean): Word; overload;
 Function RCLCarry(Value: LongWord; Shift: Integer; var CF: Boolean): LongWord; overload;
+Function RCLCarry(Value: QuadWord; Shift: Integer; var CF: Boolean): QuadWord; overload;
 
 Function RCL(Value: Byte; Shift: Integer; CF: Boolean = False): Byte; overload;
 Function RCL(Value: Word; Shift: Integer; CF: Boolean = False): Word; overload;
 Function RCL(Value: LongWord; Shift: Integer; CF: Boolean = False): LongWord; overload;
+Function RCL(Value: QuadWord; Shift: Integer; CF: Boolean = False): QuadWord; overload;
 
 procedure RCLValueCarry(var Value: Byte; Shift: Integer; var CF: Boolean); overload;
 procedure RCLValueCarry(var Value: Word; Shift: Integer; var CF: Boolean); overload;
 procedure RCLValueCarry(var Value: LongWord; Shift: Integer; var CF: Boolean); overload;
+procedure RCLValueCarry(var Value: QuadWord; Shift: Integer; var CF: Boolean); overload;
 
 procedure RCLValue(var Value: Byte; Shift: Integer; CF: Boolean = False); overload;
 procedure RCLValue(var Value: Word; Shift: Integer; CF: Boolean = False); overload;
 procedure RCLValue(var Value: LongWord; Shift: Integer; CF: Boolean = False); overload;
+procedure RCLValue(var Value: QuadWord; Shift: Integer; CF: Boolean = False); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -93,19 +101,22 @@ procedure RCLValue(var Value: LongWord; Shift: Integer; CF: Boolean = False); ov
 Function RCRCarry(Value: Byte; Shift: Integer; var CF: Boolean): Byte; overload;
 Function RCRCarry(Value: Word; Shift: Integer; var CF: Boolean): Word; overload;
 Function RCRCarry(Value: LongWord; Shift: Integer; var CF: Boolean): LongWord; overload;
+Function RCRCarry(Value: QuadWord; Shift: Integer; var CF: Boolean): QuadWord; overload;
 
 Function RCR(Value: Byte; Shift: Integer; CF: Boolean = False): Byte; overload;
 Function RCR(Value: Word; Shift: Integer; CF: Boolean = False): Word; overload;
 Function RCR(Value: LongWord; Shift: Integer; CF: Boolean = False): LongWord; overload;
+Function RCR(Value: QuadWord; Shift: Integer; CF: Boolean = False): QuadWord; overload;
 
 procedure RCRValueCarry(var Value: Byte; Shift: Integer; var CF: Boolean); overload;
 procedure RCRValueCarry(var Value: Word; Shift: Integer; var CF: Boolean); overload;
 procedure RCRValueCarry(var Value: LongWord; Shift: Integer; var CF: Boolean); overload;
+procedure RCRValueCarry(var Value: QuadWord; Shift: Integer; var CF: Boolean); overload;
 
 procedure RCRValue(var Value: Byte; Shift: Integer; CF: Boolean = False); overload;
 procedure RCRValue(var Value: Word; Shift: Integer; CF: Boolean = False); overload;
 procedure RCRValue(var Value: LongWord; Shift: Integer; CF: Boolean = False); overload;
-
+procedure RCRValue(var Value: QuadWord; Shift: Integer; CF: Boolean = False); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -116,10 +127,12 @@ procedure RCRValue(var Value: LongWord; Shift: Integer; CF: Boolean = False); ov
 Function SAL(Value: Byte; Shift: Integer): Byte; overload;
 Function SAL(Value: Word; Shift: Integer): Word; overload;
 Function SAL(Value: LongWord; Shift: Integer): LongWord; overload;
+Function SAL(Value: QuadWord; Shift: Integer): QuadWord; overload;
 
 procedure SALValue(var Value: Byte; Shift: Integer); overload;
 procedure SALValue(var Value: Word; Shift: Integer); overload;
 procedure SALValue(var Value: LongWord; Shift: Integer); overload;
+procedure SALValue(var Value: QuadWord; Shift: Integer); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -130,10 +143,12 @@ procedure SALValue(var Value: LongWord; Shift: Integer); overload;
 Function SAR(Value: Byte; Shift: Integer): Byte; overload;
 Function SAR(Value: Word; Shift: Integer): Word; overload;
 Function SAR(Value: LongWord; Shift: Integer): LongWord; overload;
+Function SAR(Value: QuadWord; Shift: Integer): QuadWord; overload;
 
 procedure SARValue(var Value: Byte; Shift: Integer); overload;
 procedure SARValue(var Value: Word; Shift: Integer); overload;
 procedure SARValue(var Value: LongWord; Shift: Integer); overload;
+procedure SARValue(var Value: QuadWord; Shift: Integer); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -143,11 +158,11 @@ procedure SARValue(var Value: LongWord; Shift: Integer); overload;
 
 Function EndianSwap(Value: Word): Word; overload;
 Function EndianSwap(Value: LongWord): LongWord; overload;
-Function EndianSwap(Value: Int64): Int64; overload;
+Function EndianSwap(Value: QuadWord): QuadWord; overload;
 
 procedure EndianSwapValue(var Value: Word); overload;
 procedure EndianSwapValue(var Value: LongWord); overload;
-procedure EndianSwapValue(var Value: Int64); overload;
+procedure EndianSwapValue(var Value: QuadWord); overload;
 
 procedure EndianSwap(var Buffer; Size: Integer); overload;
 
@@ -160,6 +175,7 @@ procedure EndianSwap(var Buffer; Size: Integer); overload;
 Function BT(Value: Byte; Bit: Integer): Boolean; overload;
 Function BT(Value: Word; Bit: Integer): Boolean; overload;
 Function BT(Value: LongWord; Bit: Integer): Boolean; overload;
+Function BT(Value: QuadWord; Bit: Integer): Boolean; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -170,6 +186,7 @@ Function BT(Value: LongWord; Bit: Integer): Boolean; overload;
 Function BTS(var Value: Byte; Bit: Integer): Boolean; overload;
 Function BTS(var Value: Word; Bit: Integer): Boolean; overload;
 Function BTS(var Value: LongWord; Bit: Integer): Boolean; overload;
+Function BTS(var Value: QuadWord; Bit: Integer): Boolean; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -180,6 +197,7 @@ Function BTS(var Value: LongWord; Bit: Integer): Boolean; overload;
 Function BTR(var Value: Byte; Bit: Integer): Boolean; overload;
 Function BTR(var Value: Word; Bit: Integer): Boolean; overload;
 Function BTR(var Value: LongWord; Bit: Integer): Boolean; overload;
+Function BTR(var Value: QuadWord; Bit: Integer): Boolean; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -190,6 +208,7 @@ Function BTR(var Value: LongWord; Bit: Integer): Boolean; overload;
 Function BTC(var Value: Byte; Bit: Integer): Boolean; overload;
 Function BTC(var Value: Word; Bit: Integer): Boolean; overload;
 Function BTC(var Value: LongWord; Bit: Integer): Boolean; overload;
+Function BTC(var Value: QuadWord; Bit: Integer): Boolean; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -200,6 +219,7 @@ Function BTC(var Value: LongWord; Bit: Integer): Boolean; overload;
 Function BitSetTo(var Value: Byte; Bit: Integer; NewValue: Boolean): Boolean; overload;
 Function BitSetTo(var Value: Word; Bit: Integer; NewValue: Boolean): Boolean; overload;
 Function BitSetTo(var Value: LongWord; Bit: Integer; NewValue: Boolean): Boolean; overload;
+Function BitSetTo(var Value: QuadWord; Bit: Integer; NewValue: Boolean): Boolean; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -210,6 +230,7 @@ Function BitSetTo(var Value: LongWord; Bit: Integer; NewValue: Boolean): Boolean
 Function BSF(Value: Byte): Integer; overload;
 Function BSF(Value: Word): Integer; overload;
 Function BSF(Value: LongWord): Integer; overload;
+Function BSF(Value: QuadWord): Integer; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -220,11 +241,12 @@ Function BSF(Value: LongWord): Integer; overload;
 Function BSR(Value: Byte): Integer; overload;
 Function BSR(Value: Word): Integer; overload;
 Function BSR(Value: LongWord): Integer; overload;
+Function BSR(Value: QuadWord): Integer; overload;
 
 implementation
 
 uses
-  SysUtils;
+  SysUtils, Math;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -232,54 +254,54 @@ uses
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function NumberToBits(Number: Byte): String;
+Function _NumberToBits(Number: QuadWord; Bits: Byte): String;
 var
   i:  Integer;
 begin
-Result := StringOfChar('0',8);
-For i := 8 downto 1 do
+Result := StringOfChar('0',Bits);
+For i := Bits downto 1 do
   begin
     If (Number and 1) <> 0 then Result[i] := '1';
     Number := Number shr 1;
   end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function NumberToBits(Number: Byte): String;
+begin
+Result := _NumberToBits(Number,8);
 end;
 
 //------------------------------------------------------------------------------
 
 Function NumberToBits(Number: Word): String;
-var
-  i:  Integer;
 begin
-Result := StringOfChar('0',16);
-For i := 16 downto 1 do
-  begin
-    If (Number and 1) <> 0 then Result[i] := '1';
-    Number := Number shr 1;
-  end;
+Result := _NumberToBits(Number,16);
 end;
 
 //------------------------------------------------------------------------------
 
 Function NumberToBits(Number: LongWord): String;
-var
-  i:  Integer;
 begin
-Result := StringOfChar('0',32);
-For i := 32 downto 1 do
-  begin
-    If (Number and 1) <> 0 then Result[i] := '1';
-    Number := Number shr 1;
-  end;
+Result := _NumberToBits(Number,32);
+end;
+
+//------------------------------------------------------------------------------
+
+Function NumberToBits(Number: QuadWord): String;
+begin
+Result := _NumberToBits(Number,64);
 end;
 
 //==============================================================================
 
-Function BitsToNumber(BitString: String): LongWord;
+Function BitsToNumber(const BitString: String): QuadWord;
 var
   i:  Integer;
 begin
 Result := 0;
-For i := 1 to Length(BitString) do
+For i := 1 to Min(Length(BitString),64) do
   begin
     Result := Result shl 1;
     If BitString[i] <> '0' then Result := Result or 1;
@@ -332,6 +354,13 @@ asm
 end;
 {$ENDIF}
 
+//------------------------------------------------------------------------------
+
+Function ROL(Value: QuadWord; Shift: Integer): QuadWord;
+begin
+  Result := (Value shl Shift) or (Value shr (64 - Shift));
+end;
+
 //==============================================================================
 
 procedure ROLValue(var Value: Byte; Shift: Integer);
@@ -349,6 +378,13 @@ end;
 //------------------------------------------------------------------------------
 
 procedure ROLValue(var Value: LongWord; Shift: Integer);
+begin
+Value := ROL(Value,Shift);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure ROLValue(var Value: QuadWord; Shift: Integer);
 begin
 Value := ROL(Value,Shift);
 end;
@@ -399,6 +435,13 @@ asm
 end;
 {$ENDIF}
 
+//------------------------------------------------------------------------------
+
+Function ROR(Value: QuadWord; Shift: Integer): QuadWord;
+begin
+  Result := (Value shr Shift) or (Value shl (64 - Shift));
+end;
+
 //==============================================================================
 
 procedure RORValue(var Value: Byte; Shift: Integer);
@@ -416,6 +459,13 @@ end;
 //------------------------------------------------------------------------------
 
 procedure RORValue(var Value: LongWord; Shift: Integer);
+begin
+Value := ROR(Value,Shift);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure RORValue(var Value: QuadWord; Shift: Integer);
 begin
 Value := ROR(Value,Shift);
 end;
@@ -550,6 +600,24 @@ asm
 end;
 {$ENDIF}
 
+//------------------------------------------------------------------------------
+
+Function RCLCarry(Value: QuadWord; Shift: Integer; var CF: Boolean): QuadWord;
+var
+  i:      Integer;
+  Carry:  Boolean;
+begin
+Carry := CF;
+Result := Value;
+For i := 1 to Shift do
+  begin
+    CF := (Result shr 63) <> 0;
+    Result := (Result shl 1) or (Byte(Carry) and 1);
+    Carry := CF;
+  end;
+end;
+
+
 //==============================================================================
 
 Function RCL(Value: Byte; Shift: Integer; CF: Boolean = False): Byte;
@@ -580,6 +648,16 @@ Carry := CF;
 Result := RCLCarry(Value,Shift,Carry);
 end;
 
+//------------------------------------------------------------------------------
+
+Function RCL(Value: QuadWord; Shift: Integer; CF: Boolean = False): QuadWord;
+var
+  Carry:  Boolean;
+begin
+Carry := CF;
+Result := RCLCarry(Value,Shift,Carry);
+end;
+
 //==============================================================================
 
 procedure RCLValueCarry(var Value: Byte; Shift: Integer; var CF: Boolean);
@@ -601,19 +679,37 @@ begin
 Value := RCLCarry(Value,Shift,CF);
 end;
 
+//------------------------------------------------------------------------------
+
+procedure RCLValueCarry(var Value: QuadWord; Shift: Integer; var CF: Boolean);
+begin
+Value := RCLCarry(Value,Shift,CF);
+end;
+
 //==============================================================================
 
 procedure RCLValue(var Value: Byte; Shift: Integer; CF: Boolean = False);
 begin
 Value := RCL(Value,Shift,CF);
 end;
+ 
+//------------------------------------------------------------------------------
 
 procedure RCLValue(var Value: Word; Shift: Integer; CF: Boolean = False);
 begin
 Value := RCL(Value,Shift,CF);
 end;
+ 
+//------------------------------------------------------------------------------
 
 procedure RCLValue(var Value: LongWord; Shift: Integer; CF: Boolean = False);
+begin
+Value := RCL(Value,Shift,CF);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure RCLValue(var Value: QuadWord; Shift: Integer; CF: Boolean = False);
 begin
 Value := RCL(Value,Shift,CF);
 end;
@@ -677,7 +773,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result and 1) <> 0;
-    Result := (Result shr 1) or ((Byte(Carry) and 1) shl 15);
+    Result := (Result shr 1) or ((Word(Carry) and 1) shl 15);
     Carry := CF;
   end;
 end;
@@ -719,7 +815,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result and 1) <> 0;
-    Result := (Result shr 1) or ((Byte(Carry) and 1) shl 31);
+    Result := (Result shr 1) or ((LongWord(Carry) and 1) shl 31);
     Carry := CF;
   end;
 end;
@@ -747,6 +843,23 @@ asm
 @RoutineEnd:
 end;
 {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function RCRCarry(Value: QuadWord; Shift: Integer; var CF: Boolean): QuadWord;
+var
+  i:      Integer;
+  Carry:  Boolean;
+begin
+Carry := CF;
+Result := Value;
+For i := 1 to Shift do
+  begin
+    CF := (Result and 1) <> 0;
+    Result := (Result shr 1) or ((QuadWord(Carry) and 1) shl 63);
+    Carry := CF;
+  end;
+end;
 
 //==============================================================================
 
@@ -778,6 +891,16 @@ Carry := CF;
 Result := RCRCarry(Value,Shift,Carry);
 end;
 
+//------------------------------------------------------------------------------
+
+Function RCR(Value: QuadWord; Shift: Integer; CF: Boolean = False): QuadWord;
+var
+  Carry:  Boolean;
+begin
+Carry := CF;
+Result := RCRCarry(Value,Shift,Carry);
+end;
+
 //==============================================================================
 
 procedure RCRValueCarry(var Value: Byte; Shift: Integer; var CF: Boolean);
@@ -799,6 +922,13 @@ begin
 Value := RCRCarry(Value,Shift,CF);
 end;
 
+//------------------------------------------------------------------------------
+
+procedure RCRValueCarry(var Value: QuadWord; Shift: Integer; var CF: Boolean);
+begin
+Value := RCRCarry(Value,Shift,CF);
+end;
+
 //==============================================================================
 
 procedure RCRValue(var Value: Byte; Shift: Integer; CF: Boolean = False);
@@ -816,6 +946,13 @@ end;
 //------------------------------------------------------------------------------
 
 procedure RCRValue(var Value: LongWord; Shift: Integer; CF: Boolean = False);
+begin
+Value := RCR(Value,Shift,CF);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure RCRValue(var Value: QuadWord; Shift: Integer; CF: Boolean = False);
 begin
 Value := RCR(Value,Shift,CF);
 end;
@@ -851,7 +988,7 @@ asm
   SAL AX, CL
 end;
 {$ENDIF}
- 
+
 //------------------------------------------------------------------------------
 
 Function SAL(Value: LongWord; Shift: Integer): LongWord;
@@ -865,6 +1002,13 @@ asm
   SAL EAX, CL
 end;
 {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function SAL(Value: QuadWord; Shift: Integer): QuadWord;
+begin
+Result := Value shl Shift;
+end;
 
 //==============================================================================
 
@@ -883,6 +1027,13 @@ end;
 //------------------------------------------------------------------------------
 
 procedure SALValue(var Value: LongWord; Shift: Integer);
+begin
+Value := SAL(Value,Shift);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SALValue(var Value: QuadWord; Shift: Integer);
 begin
 Value := SAL(Value,Shift);
 end;
@@ -942,6 +1093,16 @@ asm
 end;
 {$ENDIF}
 
+//------------------------------------------------------------------------------
+
+Function SAR(Value: QuadWord; Shift: Integer): QuadWord;
+begin
+If (Value shr 63) <> 0 then
+  Result := (Value shr Shift) or ($FFFFFFFFFFFFFFFF shl (64 - Shift))
+else
+  Result := Value shr Shift;
+end;
+
 //==============================================================================
 
 procedure SARValue(var Value: Byte; Shift: Integer);
@@ -959,6 +1120,13 @@ end;
 //------------------------------------------------------------------------------
 
 procedure SARValue(var Value: LongWord; Shift: Integer);
+begin
+Value := SAR(Value,Shift);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SARValue(var Value: QuadWord; Shift: Integer);
 begin
 Value := SAR(Value,Shift);
 end;
@@ -996,7 +1164,7 @@ end;
       
 //------------------------------------------------------------------------------
 
-Function EndianSwap(Value: Int64): Int64;
+Function EndianSwap(Value: QuadWord): QuadWord;
 {$IFDEF PurePascal}
 begin
 Int64Rec(Result).Hi := EndianSwap(Int64Rec(Value).Lo);
@@ -1027,7 +1195,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure EndianSwapValue(var Value: Int64);
+procedure EndianSwapValue(var Value: QuadWord);
 begin
 Value := EndianSwap(Value);
 end;
@@ -1044,7 +1212,7 @@ case Size of
   Low(Size)..1: Exit;
              2: EndianSwapValue(Word(Buffer));
              4: EndianSwapValue(LongWord(Buffer));
-             8: EndianSwapValue(Int64(Buffer));
+             8: EndianSwapValue(QuadWord(Buffer));
 else
   For i := 0 to Pred(Size div 2) do
     begin
@@ -1123,6 +1291,13 @@ asm
 end;
 {$ENDIF}
 
+//------------------------------------------------------------------------------
+
+Function BT(Value: QuadWord; Bit: Integer): Boolean;
+begin
+Result := ((Value shr Bit) and 1) <> 0;
+end;
+
 {------------------------------------------------------------------------------}
 {==============================================================================}
 {                            Bit test and set (BTS)                            }
@@ -1186,6 +1361,14 @@ asm
 end;
 {$ENDIF}
 
+//------------------------------------------------------------------------------
+
+Function BTS(var Value: QuadWord; Bit: Integer): Boolean;
+begin
+Result := ((Value shr Bit) and 1) <> 0;
+Value := Value or (QuadWord(1) shl Bit);
+end;
+
 {------------------------------------------------------------------------------}
 {==============================================================================}
 {                           Bit test and reset (BTR)                           }
@@ -1248,6 +1431,14 @@ asm
   MOV   EAX, EDX
 end;
 {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function BTR(var Value: QuadWord; Bit: Integer): Boolean;
+begin
+Result := ((Value shr Bit) and 1) <> 0;
+Value := Value and not(QuadWord(1) shl Bit);
+end;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -1315,6 +1506,15 @@ asm
 end;
 {$ENDIF}
 
+//------------------------------------------------------------------------------
+
+Function BTC(var Value: QuadWord; Bit: Integer): Boolean;
+begin
+Result := ((Value shr Bit) and 1) <> 0;
+If Result then Value := Value and not(QuadWord(1) shl Bit)
+  else Value := Value or (QuadWord(1) shl Bit);
+end;
+
 {------------------------------------------------------------------------------}
 {==============================================================================}
 {                      Bit test and set to a given value                       }
@@ -1338,6 +1538,14 @@ end;
 //------------------------------------------------------------------------------
 
 Function BitSetTo(var Value: LongWord; Bit: Integer; NewValue: Boolean): Boolean;
+begin
+If NewValue then Result := BTS(Value,Bit)
+  else Result := BTR(Value,Bit);
+end;
+
+//------------------------------------------------------------------------------
+
+Function BitSetTo(var Value: QuadWord; Bit: Integer; NewValue: Boolean): Boolean;
 begin
 If NewValue then Result := BTS(Value,Bit)
   else Result := BTR(Value,Bit);
@@ -1401,6 +1609,15 @@ asm
 end;
 {$ENDIF}
 
+//------------------------------------------------------------------------------
+
+Function BSF(Value: QuadWord): Integer;
+begin
+For Result := 0 to 63 do
+  If (Value shr Result) and 1 <> 0 then Exit;
+Result := -1;
+end;
+
 {------------------------------------------------------------------------------}
 {==============================================================================}
 {                            Bit scan reversed (BSR)                           }
@@ -1458,5 +1675,14 @@ asm
 @RoutineEnd:
 end;
 {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function BSR(Value: QuadWord): Integer;
+begin
+For Result := 63 downto 0 do
+  If (Value shr Result) and 1 <> 0 then Exit;
+Result := -1;
+end;
 
 end.
