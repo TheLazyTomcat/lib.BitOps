@@ -14,12 +14,22 @@
 ===============================================================================}
 unit BitOps;
 
+{$IFDEF x64}
+  {$DEFINE PurePascal}
+{$ENDIF}
+
 interface
 
 {.$DEFINE PurePascal}
 
 type
   QuadWord = Int64;
+
+{$IFDEF x64}
+  PtrUInt = UInt64;
+{$ELSE}
+  PtrUInt = LongWord;
+{$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -164,7 +174,7 @@ procedure EndianSwapValue(var Value: Word); overload;
 procedure EndianSwapValue(var Value: LongWord); overload;
 procedure EndianSwapValue(var Value: QuadWord); overload;
 
-procedure EndianSwap(var Buffer; Size: Integer); overload;
+procedure EndianSwap(var Buffer; Size: PtrUInt); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -248,6 +258,8 @@ implementation
 uses
   SysUtils, Math;
 
+{$IFDEF FPC}{$ASMMODE intel}{$ENDIF}
+
 {------------------------------------------------------------------------------}
 {==============================================================================}
 {                  Integer number <-> Bit string conversions                   }
@@ -314,7 +326,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function ROL(Value: Byte; Shift: Integer): Byte;
+Function ROL(Value: Byte; Shift: Integer): Byte;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
   Result := (Value shl Shift) or (Value shr (8 - Shift));
@@ -328,7 +340,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function ROL(Value: Word; Shift: Integer): Word;
+Function ROL(Value: Word; Shift: Integer): Word;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
   Result := (Value shl Shift) or (Value shr (16 - Shift));
@@ -342,7 +354,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function ROL(Value: LongWord; Shift: Integer): LongWord;
+Function ROL(Value: LongWord; Shift: Integer): LongWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
   Result := (Value shl Shift) or (Value shr (32 - Shift));
@@ -395,7 +407,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function ROR(Value: Byte; Shift: Integer): Byte;
+Function ROR(Value: Byte; Shift: Integer): Byte;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
   Result := (Value shr Shift) or (Value shl (32 - Shift));
@@ -409,7 +421,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function ROR(Value: Word; Shift: Integer): Word;
+Function ROR(Value: Word; Shift: Integer): Word;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
   Result := (Value shr Shift) or (Value shl (16 - Shift));
@@ -423,7 +435,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function ROR(Value: LongWord; Shift: Integer): LongWord;
+Function ROR(Value: LongWord; Shift: Integer): LongWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
   Result := (Value shr Shift) or (Value shl (32 - Shift));
@@ -476,7 +488,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function RCLCarry(Value: Byte; Shift: Integer; var CF: Boolean): Byte;
+Function RCLCarry(Value: Byte; Shift: Integer; var CF: Boolean): Byte;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 var
   i:      Integer;
@@ -518,7 +530,7 @@ end;
       
 //------------------------------------------------------------------------------
 
-Function RCLCarry(Value: Word; Shift: Integer; var CF: Boolean): Word;
+Function RCLCarry(Value: Word; Shift: Integer; var CF: Boolean): Word;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 var
   i:      Integer;
@@ -560,7 +572,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function RCLCarry(Value: LongWord; Shift: Integer; var CF: Boolean): LongWord;
+Function RCLCarry(Value: LongWord; Shift: Integer; var CF: Boolean): LongWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 var
   i:      Integer;
@@ -720,7 +732,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function RCRCarry(Value: Byte; Shift: Integer; var CF: Boolean): Byte;
+Function RCRCarry(Value: Byte; Shift: Integer; var CF: Boolean): Byte;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 var
   i:      Integer;
@@ -762,7 +774,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function RCRCarry(Value: Word; Shift: Integer; var CF: Boolean): Word;
+Function RCRCarry(Value: Word; Shift: Integer; var CF: Boolean): Word;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 var
   i:      Integer;
@@ -804,7 +816,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function RCRCarry(Value: LongWord; Shift: Integer; var CF: Boolean): LongWord;
+Function RCRCarry(Value: LongWord; Shift: Integer; var CF: Boolean): LongWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 var
   i:      Integer;
@@ -963,7 +975,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function SAL(Value: Byte; Shift: Integer): Byte;
+Function SAL(Value: Byte; Shift: Integer): Byte;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := Value shl Shift;
@@ -977,7 +989,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function SAL(Value: Word; Shift: Integer): Word;
+Function SAL(Value: Word; Shift: Integer): Word;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := Value shl Shift;
@@ -991,7 +1003,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function SAL(Value: LongWord; Shift: Integer): LongWord;
+Function SAL(Value: LongWord; Shift: Integer): LongWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := Value shl Shift;
@@ -1044,7 +1056,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function SAR(Value: Byte; Shift: Integer): Byte;
+Function SAR(Value: Byte; Shift: Integer): Byte;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 If (Value shr 7) <> 0 then
@@ -1061,7 +1073,7 @@ end;
  
 //------------------------------------------------------------------------------
 
-Function SAR(Value: Word; Shift: Integer): Word;
+Function SAR(Value: Word; Shift: Integer): Word;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 If (Value shr 15) <> 0 then
@@ -1078,7 +1090,7 @@ end;
   
 //------------------------------------------------------------------------------
 
-Function SAR(Value: LongWord; Shift: Integer): LongWord;
+Function SAR(Value: LongWord; Shift: Integer): LongWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 If (Value shr 31) <> 0 then
@@ -1137,7 +1149,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function EndianSwap(Value: Word): Word;
+Function EndianSwap(Value: Word): Word;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := (Value shl 8) or (Value shr 8);
@@ -1150,7 +1162,7 @@ end;
   
 //------------------------------------------------------------------------------
 
-Function EndianSwap(Value: LongWord): LongWord;
+Function EndianSwap(Value: LongWord): LongWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := (Value and $000000FF shl 24) or (Value and $0000FF00 shl 8) or
@@ -1164,7 +1176,7 @@ end;
       
 //------------------------------------------------------------------------------
 
-Function EndianSwap(Value: QuadWord): QuadWord;
+Function EndianSwap(Value: QuadWord): QuadWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Int64Rec(Result).Hi := EndianSwap(Int64Rec(Value).Lo);
@@ -1202,10 +1214,10 @@ end;
 
 //==============================================================================
 
-procedure EndianSwap(var Buffer; Size: Integer);
+procedure EndianSwap(var Buffer; Size: PtrUInt);{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 var
-  i:        Integer;
+  i:        LongWord;
   ByteBuff: Byte;
 begin
 case Size of
@@ -1216,19 +1228,22 @@ case Size of
 else
   For i := 0 to Pred(Size div 2) do
     begin
-      ByteBuff := PByte(NativeInt(@Buffer) + i)^;
-      PByte(NativeInt(@Buffer) + i)^ := PByte(NativeInt(@Buffer) + (Size - i) - 1)^;
-      PByte(NativeInt(@Buffer) + (Size - i) - 1)^ := ByteBuff;
+      {%H-}ByteBuff := PByte(PtrUInt(@Buffer) + i)^;
+      {%H-}PByte(PtrUInt(@Buffer) + i)^ := PByte(PtrUInt(@Buffer) + (Size - i) - 1)^;
+      {%H-}PByte(PtrUInt(@Buffer) + (Size - i) - 1)^ := ByteBuff;
     end;
 end;
 end;
 {$ELSE}
+// ineffective, rewrite
 asm
   PUSH  EBX
   CMP   EDX, 1
   JLE   @RoutineEnd
   MOV   ECX, EDX
   SHR   ECX, 1
+  NOP   // explicit padding
+  NOP
 @LoopStart:
   MOV   BL, byte ptr [EAX + ECX - 1]
   PUSH  EAX
@@ -1248,7 +1263,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BT(Value: Byte; Bit: Integer): Boolean;
+Function BT(Value: Byte; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
@@ -1263,7 +1278,7 @@ end;
            
 //------------------------------------------------------------------------------
 
-Function BT(Value: Word; Bit: Integer): Boolean;
+Function BT(Value: Word; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
@@ -1278,7 +1293,7 @@ end;
            
 //------------------------------------------------------------------------------
 
-Function BT(Value: LongWord; Bit: Integer): Boolean;
+Function BT(Value: LongWord; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
@@ -1304,11 +1319,11 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BTS(var Value: Byte; Bit: Integer): Boolean;
+Function BTS(var Value: Byte; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := Value or (1 shl Bit);
+Value := Value or (Byte(1) shl Bit);
 end;
 {$ELSE}
 asm
@@ -1324,11 +1339,11 @@ end;
            
 //------------------------------------------------------------------------------
 
-Function BTS(var Value: Word; Bit: Integer): Boolean;
+Function BTS(var Value: Word; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := Value or (1 shl Bit);
+Value := Value or (Word(1) shl Bit);
 end;
 {$ELSE}
 asm
@@ -1344,11 +1359,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BTS(var Value: LongWord; Bit: Integer): Boolean;
+Function BTS(var Value: LongWord; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := Value or (1 shl Bit);
+Value := Value or (LongWord(1) shl Bit);
 end;
 {$ELSE}
 asm
@@ -1375,7 +1390,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BTR(var Value: Byte; Bit: Integer): Boolean;
+Function BTR(var Value: Byte; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
@@ -1395,7 +1410,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BTR(var Value: Word; Bit: Integer): Boolean;
+Function BTR(var Value: Word; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
@@ -1415,7 +1430,7 @@ end;
            
 //------------------------------------------------------------------------------
 
-Function BTR(var Value: LongWord; Bit: Integer): Boolean;
+Function BTR(var Value: LongWord; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
@@ -1446,12 +1461,12 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BTC(var Value: Byte; Bit: Integer): Boolean;
+Function BTC(var Value: Byte; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
 If Result then Value := Value and not(1 shl Bit)
-  else Value := Value or (1 shl Bit);
+  else Value := Value or (Byte(1) shl Bit);
 end;
 {$ELSE}
 asm
@@ -1467,12 +1482,12 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BTC(var Value: Word; Bit: Integer): Boolean;
+Function BTC(var Value: Word; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
 If Result then Value := Value and not(1 shl Bit)
-  else Value := Value or (1 shl Bit);
+  else Value := Value or (Word(1) shl Bit);
 end;
 {$ELSE}
 asm
@@ -1488,12 +1503,12 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BTC(var Value: LongWord; Bit: Integer): Boolean;
+Function BTC(var Value: LongWord; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
 If Result then Value := Value and not(1 shl Bit)
-  else Value := Value or (1 shl Bit);
+  else Value := Value or (LongWord(1) shl Bit);
 end;
 {$ELSE}
 asm
@@ -1557,7 +1572,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BSF(Value: Byte): Integer;
+Function BSF(Value: Byte): Integer;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 For Result := 0 to 7 do
@@ -1566,16 +1581,17 @@ Result := -1;
 end;
 {$ELSE}
 asm
-  BSF AX, AX
+  AND EAX,  $000000FF
+  BSF AX,   AX
   JNZ @RoutineEnd
-  MOV EAX, -1
+  MOV EAX,  -1
 @RoutineEnd:
 end;
 {$ENDIF}
               
 //------------------------------------------------------------------------------
 
-Function BSF(Value: Word): Integer;
+Function BSF(Value: Word): Integer;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 For Result := 0 to 15 do
@@ -1584,16 +1600,17 @@ Result := -1;
 end;
 {$ELSE}
 asm
-  BSF AX, AX
+  AND EAX,  $0000FFFF
+  BSF AX,   AX
   JNZ @RoutineEnd
-  MOV EAX, -1
+  MOV EAX,  -1
 @RoutineEnd:
 end;
 {$ENDIF}
              
 //------------------------------------------------------------------------------
 
-Function BSF(Value: LongWord): Integer;
+Function BSF(Value: LongWord): Integer;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 For Result := 0 to 31 do
@@ -1624,7 +1641,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BSR(Value: Byte): Integer;
+Function BSR(Value: Byte): Integer; register;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 For Result := 7 downto 0 do
@@ -1633,16 +1650,17 @@ Result := -1;
 end;
 {$ELSE}
 asm
-  BSR AX, AX
+  AND EAX,  $000000FF
+  BSR AX,   AX
   JNZ @RoutineEnd
-  MOV EAX, -1
+  MOV EAX,  -1
 @RoutineEnd:
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function BSR(Value: Word): Integer;
+Function BSR(Value: Word): Integer;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 For Result := 15 downto 0 do
@@ -1651,16 +1669,17 @@ Result := -1;
 end;
 {$ELSE}
 asm
-  BSR AX, AX
+  AND EAX,  $0000FFFF
+  BSR AX,   AX
   JNZ @RoutineEnd
-  MOV EAX, -1
+  MOV EAX,  -1
 @RoutineEnd:
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function BSR(Value: LongWord): Integer;
+Function BSR(Value: LongWord): Integer;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
 For Result := 31 downto 0 do
