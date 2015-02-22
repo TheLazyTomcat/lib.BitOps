@@ -6,15 +6,8 @@
 
   Version 1.0
 
---------------------------------------------------------------------------------
-                  
-  todo:
-        Add bitcount/popcount
-
 ===============================================================================}
 unit BitOps;
-
-{.$DEFINE PurePascal}
 
 {$If Defined(PurePascal) or not Defined(x64)}
   {$DEFINE no32ASM}
@@ -23,7 +16,11 @@ unit BitOps;
 interface
 
 type
+{$IFDEF FPC}
+  QuadWord = QWord;
+{$ELSE}
   QuadWord = Int64;
+{$ENDIF}
 
 {$IFDEF x64}
   PtrUInt = UInt64;
@@ -252,6 +249,18 @@ Function BSR(Value: Byte): Integer; overload;
 Function BSR(Value: Word): Integer; overload;
 Function BSR(Value: LongWord): Integer; overload;
 Function BSR(Value: QuadWord): Integer; overload;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                               Population count                               }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function PopCount(Value: Byte): Integer; overload;
+Function PopCount(Value: Word): Integer; overload;
+Function PopCount(Value: LongWord): Integer; overload;
+Function PopCount(Value: QuadWord): Integer; overload;
+
 
 implementation
 
@@ -1309,6 +1318,10 @@ asm
   LEA   RAX, [RDX + RCX - 1]
   SHR   RCX, 1
 
+{$IFDEF FPC}
+  db $66 db $66 db $90  // Explicit alignment of loop start
+{$ENDIF}
+
 @LoopStart:
   MOV   R8B, byte ptr [RDX]
   MOV   R9B, byte ptr [RAX]
@@ -1329,6 +1342,10 @@ asm
   MOV   ESI, EAX
   LEA   EDI, [EAX + ECX - 1]
   SHR   ECX, 1
+
+{$IFNDEF FPC}
+  db $66 db $66 db $90  // Explicit alignment of loop start
+{$ENDIF}
 
 @LoopStart:
   MOV   AL,  byte ptr [ESI]
@@ -1916,5 +1933,65 @@ asm
 @RoutineEnd:
 end;
 {$ENDIF}
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                               Population count                               }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function PopCount(Value: Byte): Integer;
+var
+  i:  Integer;
+begin
+Result := 0;
+For i := 1 to 8 do
+  begin
+    If (Value and 1) <> 0 then Inc(Result);
+    Value := Value shr 1;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function PopCount(Value: Word): Integer;
+var
+  i:  Integer;
+begin
+Result := 0;
+For i := 1 to 16 do
+  begin
+    If (Value and 1) <> 0 then Inc(Result);
+    Value := Value shr 1;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function PopCount(Value: LongWord): Integer;
+var
+  i:  Integer;
+begin
+Result := 0;
+For i := 1 to 32 do
+  begin
+    If (Value and 1) <> 0 then Inc(Result);
+    Value := Value shr 1;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function PopCount(Value: QuadWord): Integer;
+var
+  i:  Integer;
+begin
+Result := 0;
+For i := 1 to 64 do
+  begin
+    If (Value and 1) <> 0 then Inc(Result);
+    Value := Value shr 1;
+  end;
+end;
 
 end.
