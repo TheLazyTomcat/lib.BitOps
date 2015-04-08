@@ -9,16 +9,12 @@
 
   BitOps - Binary operations
 
-  ©František Milt 2018-02-22
+  ©František Milt 2015-04-08
 
-  Version 1.0
+  Version 1.1
 
 ===============================================================================}
 unit BitOps;
-
-{$If Defined(PurePascal) or not Defined(x64)}
-  {$DEFINE no32ASM}
-{$IFEND}
 
 interface
 
@@ -345,15 +341,16 @@ end;
 Function ROL(Value: Byte; Shift: Integer): Byte;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
-  Result := (Value shl Shift) or (Value shr (8 - Shift));
+Shift := Shift and $07;
+Result := (Value shl Shift) or (Value shr (8 - Shift));
 end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV AL, CL
+    MOV   AL,   CL
 {$ENDIF}
-  MOV CL, DL
-  ROL AL, CL
+    MOV   CL,   DL
+    ROL   AL,   CL
 end;
 {$ENDIF}
 
@@ -362,15 +359,16 @@ end;
 Function ROL(Value: Word; Shift: Integer): Word;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
-  Result := (Value shl Shift) or (Value shr (16 - Shift));
+Shift := Shift and $0F;
+Result := (Value shl Shift) or (Value shr (16 - Shift));
 end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV AX, CX
+    MOV   AX,   CX
 {$ENDIF}
-  MOV CL, DL
-  ROL AX, CL
+    MOV   CL,   DL
+    ROL   AX,   CL
 end;
 {$ENDIF}
 
@@ -379,30 +377,69 @@ end;
 Function ROL(Value: LongWord; Shift: Integer): LongWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
-  Result := (Value shl Shift) or (Value shr (32 - Shift));
+Shift := Shift and $1F;
+Result := (Value shl Shift) or (Value shr (32 - Shift));
 end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV EAX, ECX
+    MOV   EAX,  ECX
 {$ENDIF}
-  MOV CL,  DL
-  ROL EAX, CL
+    MOV   CL,   DL
+    ROL   EAX,  CL
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function ROL(Value: QuadWord; Shift: Integer): QuadWord;{$IFNDEF no32ASM}assembler;{$ENDIF}
-{$IFDEF no32ASM}
+Function ROL(Value: QuadWord; Shift: Integer): QuadWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
+{$IFDEF PurePascal}
 begin
-  Result := (Value shl Shift) or (Value shr (64 - Shift));
+Shift := Shift and $3F;
+Result := (Value shl Shift) or (Value shr (64 - Shift));
 end;
 {$ELSE}
 asm
-  MOV RAX, RCX
-  MOV CL,  DL
-  ROL RAX, CL
+{$IFDEF x64}
+    MOV   RAX,  RCX
+    MOV   CL,   DL
+    ROL   RAX,  CL
+{$ELSE}
+    MOV   ECX,  EAX
+    AND   ECX,  $3F
+    CMP   ECX,  32
+
+    JAE   @Above31
+
+  @Below32:
+    MOV   EAX,  dword ptr [Value]
+    MOV   EDX,  dword ptr [Value + 4]
+    CMP   ECX,  0
+    JE    @FuncEnd
+
+    MOV   dword ptr [Value],  EDX
+    JMP   @Rotate
+
+  @Above31:
+    MOV   EDX,  dword ptr [Value]
+    MOV   EAX,  dword ptr [Value + 4]
+    JE    @FuncEnd
+
+    AND   ECX,  $1F
+
+  @Rotate:
+    SHLD  EDX,  EAX, CL
+    SHL   EAX,  CL
+    PUSH  EAX
+    MOV   EAX,  dword ptr [Value]
+    XOR   CL,   31
+    INC   CL
+    SHR   EAX,  CL
+    POP   ECX
+    OR    EAX,  ECX
+
+  @FuncEnd:
+{$ENDIF}
 end;
 {$ENDIF}
 
@@ -443,15 +480,16 @@ end;
 Function ROR(Value: Byte; Shift: Integer): Byte;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
-  Result := (Value shr Shift) or (Value shl (32 - Shift));
+Shift := Shift and $07;
+Result := (Value shr Shift) or (Value shl (32 - Shift));
 end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV AL, CL
+    MOV   AL,   CL
 {$ENDIF}
-  MOV CL, DL
-  ROR AL, CL
+    MOV   CL,   DL
+    ROR   AL,   CL
 end;
 {$ENDIF}
 
@@ -460,15 +498,16 @@ end;
 Function ROR(Value: Word; Shift: Integer): Word;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
-  Result := (Value shr Shift) or (Value shl (16 - Shift));
+Shift := Shift and $0F;
+Result := (Value shr Shift) or (Value shl (16 - Shift));
 end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV AX, CX
+    MOV   AX,   CX
 {$ENDIF}
-  MOV CL, DL
-  ROR AX, CL
+    MOV   CL,   DL
+    ROR   AX,   CL
 end;
 {$ENDIF}
 
@@ -477,30 +516,69 @@ end;
 Function ROR(Value: LongWord; Shift: Integer): LongWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
-  Result := (Value shr Shift) or (Value shl (32 - Shift));
+Shift := Shift and $1F;
+Result := (Value shr Shift) or (Value shl (32 - Shift));
 end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV EAX, ECX
+    MOV   EAX,  ECX
 {$ENDIF}
-  MOV CL,  DL
-  ROR EAX, CL
+    MOV   CL,   DL
+    ROR   EAX,  CL
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function ROR(Value: QuadWord; Shift: Integer): QuadWord;{$IFNDEF no32ASM}assembler;{$ENDIF}
-{$IFDEF no32ASM}
+Function ROR(Value: QuadWord; Shift: Integer): QuadWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
+{$IFDEF PurePascal}
 begin
-  Result := (Value shr Shift) or (Value shl (64 - Shift));
+Shift := Shift and $3F;
+Result := (Value shr Shift) or (Value shl (64 - Shift));
 end;
 {$ELSE}
 asm
-  MOV RAX, RCX
-  MOV CL,  DL
-  ROR RAX, CL
+{$IFDEF x64}
+    MOV   RAX,  RCX
+    MOV   CL,   DL
+    ROR   RAX,  CL
+{$ELSE}
+    MOV   ECX,  EAX
+    AND   ECX,  $3F
+    CMP   ECX,  32
+
+    JAE   @Above31
+
+  @Below32:
+    MOV   EAX,  dword ptr [Value]
+    MOV   EDX,  dword ptr [Value + 4]
+    CMP   ECX,  0
+    JE    @FuncEnd
+
+    MOV   dword ptr [Value],  EDX
+    JMP   @Rotate
+
+  @Above31:
+    MOV   EDX,  dword ptr [Value]
+    MOV   EAX,  dword ptr [Value + 4]
+    JE    @FuncEnd
+
+    AND   ECX,  $1F
+
+  @Rotate:
+    SHRD  EDX,  EAX, CL
+    SHR   EAX,  CL
+    PUSH  EAX
+    MOV   EAX,  dword ptr [Value]
+    XOR   CL,   31
+    INC   CL
+    SHL   EAX,  CL
+    POP   ECX
+    OR    EAX,  ECX
+
+  @FuncEnd:
+{$ENDIF}
 end;
 {$ENDIF}
 
@@ -544,6 +622,7 @@ var
   i:      Integer;
   Carry:  Boolean;
 begin
+Shift := Shift and $07;
 Carry := CF;
 Result := Value;
 For i := 1 to Shift do
@@ -556,18 +635,18 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   RAX, RCX
-  MOV   RCX, RDX
-  SHR   byte ptr [R8], 1
-  RCL   AL,  CL
-  SETC  CL
-  MOV   byte ptr [R8], CL
+    MOV   RAX,  RCX
+    MOV   RCX,  RDX
+    SHR   byte ptr [R8],  1
+    RCL   AL,   CL
+    SETC  CL
+    MOV   byte ptr [R8],  CL
 {$ELSE}
-  XCHG  EDX, ECX
-  SHR   byte ptr [EDX], 1
-  RCL   AL,  CL
-  SETC  CL
-  MOV   byte ptr [EDX], CL
+    XCHG  EDX,  ECX
+    SHR   byte ptr [EDX], 1
+    RCL   AL,   CL
+    SETC  CL
+    MOV   byte ptr [EDX], CL
 {$ENDIF}
 end;
 {$ENDIF}
@@ -580,6 +659,7 @@ var
   i:      Integer;
   Carry:  Boolean;
 begin
+Shift := Shift and $0F;
 Carry := CF;
 Result := Value;
 For i := 1 to Shift do
@@ -592,18 +672,18 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   RAX, RCX
-  MOV   RCX, RDX
-  SHR   byte ptr [R8], 1
-  RCL   AX,  CL
-  SETC  CL
-  MOV   byte ptr [R8], CL
+    MOV   RAX,  RCX
+    MOV   RCX,  RDX
+    SHR   byte ptr [R8],  1
+    RCL   AX,   CL
+    SETC  CL
+    MOV   byte ptr [R8],  CL
 {$ELSE}
-  XCHG  EDX, ECX
-  SHR   byte ptr [EDX], 1
-  RCL   AX,  CL
-  SETC  CL
-  MOV   byte ptr [EDX], CL
+    XCHG  EDX,  ECX
+    SHR   byte ptr [EDX], 1
+    RCL   AX,   CL
+    SETC  CL
+    MOV   byte ptr [EDX], CL
 {$ENDIF}
 end;
 {$ENDIF}
@@ -616,6 +696,7 @@ var
   i:      Integer;
   Carry:  Boolean;
 begin
+Shift := Shift and $1F;
 Carry := CF;
 Result := Value;
 For i := 1 to Shift do
@@ -628,30 +709,31 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   RAX, RCX
-  MOV   RCX, RDX
-  SHR   byte ptr [R8], 1
-  RCL   EAX, CL
-  SETC  CL
-  MOV   byte ptr [R8], CL
+    MOV   RAX,  RCX
+    MOV   RCX,  RDX
+    SHR   byte ptr [R8],  1
+    RCL   EAX,  CL
+    SETC  CL
+    MOV   byte ptr [R8],  CL
 {$ELSE}
-  XCHG  EDX, ECX
-  SHR   byte ptr [EDX], 1
-  RCL   EAX, CL
-  SETC  CL
-  MOV   byte ptr [EDX], CL
+    XCHG  EDX,  ECX
+    SHR   byte ptr [EDX], 1
+    RCL   EAX,  CL
+    SETC  CL
+    MOV   byte ptr [EDX], CL
 {$ENDIF}
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function RCLCarry(Value: QuadWord; Shift: Integer; var CF: Boolean): QuadWord;{$IFNDEF no32ASM}assembler;{$ENDIF}
-{$IFDEF no32ASM}
+Function RCLCarry(Value: QuadWord; Shift: Integer; var CF: Boolean): QuadWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
+{$IFDEF PurePascal}
 var
   i:      Integer;
   Carry:  Boolean;
 begin
+Shift := Shift and $3F;
 Carry := CF;
 Result := Value;
 For i := 1 to Shift do
@@ -662,13 +744,110 @@ For i := 1 to Shift do
   end;
 end;
 {$ELSE}
+{$IFDEF x64}
 asm
-  MOV   RAX, RCX
-  MOV   RCX, RDX
-  SHR   byte ptr [R8], 1
-  RCL   RAX, CL
-  SETC  CL
-  MOV   byte ptr [R8], CL
+    MOV   RAX,  RCX
+    MOV   RCX,  RDX
+    SHR   byte ptr [R8],  1
+    RCL   RAX,  CL
+    SETC  CL
+    MOV   byte ptr [R8],  CL
+{$ELSE}
+var
+  TempShift:  Integer;
+asm
+    PUSH  EBX
+    
+    AND   EAX,  $3F
+    MOV   dword ptr [TempShift],  EAX
+    MOV   ECX,  EAX    
+    MOV   EBX,  EDX
+
+    MOV   EAX,  dword ptr [Value]
+    MOV   EDX,  dword ptr [Value + 4]
+    CMP   ECX,  32
+
+    JE    @Exactly32
+    JA    @Above32
+
+{- Shift is below 32  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+    TEST  ECX,  ECX
+    JZ    @FuncEnd
+
+    SHLD  EDX,  EAX, CL
+    JMP   @Shift
+
+{- Shift is above 32  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+  @Above32:
+    AND   ECX,  $1F
+
+    DEC   CL
+    SHLD  EDX,  EAX, CL
+    INC   CL
+
+{- Main shifting  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+  @Shift:
+    SHL   EAX,  CL
+    PUSH  ECX
+    PUSH  EAX
+    MOV   EAX,  dword ptr [Value + 4]
+    SHR   EAX,  2
+    XOR   CL,   31
+    SHR   EAX,  CL
+    POP   ECX
+    OR    EAX,  ECX
+    POP   ECX
+    JMP   @SetCarry
+
+{- Shift is equal to 32, no shifting required, only swap Hi and Lo dwords - - -}
+  @Exactly32:
+    SHR   EDX,  1
+    XCHG  EAX,  EDX
+
+{- Write passed carry bit to the result - - - - - - - - - - - - - - - - - - - -}
+  @SetCarry:
+    DEC   ECX
+    CMP   byte ptr [EBX], 0
+    JE    @ResetBit
+
+    BTS   EAX,  ECX
+    JMP   @Swap
+
+  @ResetBit:
+    BTR   EAX,  ECX
+
+{- Swap Hi and Lo dwords for shift > 32 - - - - - - - - - - - - - - - - - - - -}
+  @Swap:
+    CMP   byte ptr [TempShift],  32
+    JBE   @GetCarry
+    XCHG  EAX,  EDX
+
+{- Get carry bit that will be output in CF parameter  - - - - - - - - - - - - -}
+  @GetCarry:
+    MOV   CL,   byte ptr [TempShift]
+    AND   ECX,  $3F
+    CMP   CL,   32
+    JBE   @FromHigh
+
+    AND   CL,   $1F
+    DEC   CL
+    XOR   CL,   31
+    BT    dword ptr [Value],  ECX
+    JMP   @StoreCarry
+
+  @FromHigh:
+    DEC   CL
+    XOR   CL,   31
+    BT    dword ptr [Value + 4], ECX
+
+  @StoreCarry:
+    SETC  CL
+    MOV   byte ptr [EBX], CL
+
+{- Restore EBX register - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+  @FuncEnd:
+    POP   EBX
+{$ENDIF}  
 end;
 {$ENDIF}
 
@@ -676,41 +855,29 @@ end;
 //==============================================================================
 
 Function RCL(Value: Byte; Shift: Integer; CF: Boolean = False): Byte;
-var
-  Carry:  Boolean;
 begin
-Carry := CF;
-Result := RCLCarry(Value,Shift,Carry);
+Result := RCLCarry(Value,Shift,CF);
 end;
  
 //------------------------------------------------------------------------------
 
 Function RCL(Value: Word; Shift: Integer; CF: Boolean = False): Word;
-var
-  Carry:  Boolean;
 begin
-Carry := CF;
-Result := RCLCarry(Value,Shift,Carry);
+Result := RCLCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCL(Value: LongWord; Shift: Integer; CF: Boolean = False): LongWord;
-var
-  Carry:  Boolean;
 begin
-Carry := CF;
-Result := RCLCarry(Value,Shift,Carry);
+Result := RCLCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCL(Value: QuadWord; Shift: Integer; CF: Boolean = False): QuadWord;
-var
-  Carry:  Boolean;
 begin
-Carry := CF;
-Result := RCLCarry(Value,Shift,Carry);
+Result := RCLCarry(Value,Shift,CF);
 end;
 
 //==============================================================================
@@ -781,6 +948,7 @@ var
   i:      Integer;
   Carry:  Boolean;
 begin
+Shift := Shift and $07;
 Carry := CF;
 Result := Value;
 For i := 1 to Shift do
@@ -793,18 +961,18 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   RAX, RCX
-  MOV   RCX, RDX
-  SHR   byte ptr [R8], 1
-  RCR   AL,  CL
-  SETC  CL
-  MOV   byte ptr [R8], CL
+    MOV   RAX,  RCX
+    MOV   RCX,  RDX
+    SHR   byte ptr [R8],  1
+    RCR   AL,   CL
+    SETC  CL
+    MOV   byte ptr [R8],  CL
 {$ELSE}
-  XCHG  EDX, ECX
-  SHR   byte ptr [EDX], 1
-  RCR   AL,  CL
-  SETC  CL
-  MOV   byte ptr [EDX], CL
+    XCHG  EDX,  ECX
+    SHR   byte ptr [EDX], 1
+    RCR   AL,   CL
+    SETC  CL
+    MOV   byte ptr [EDX], CL
 {$ENDIF}
 end;
 {$ENDIF}
@@ -817,6 +985,7 @@ var
   i:      Integer;
   Carry:  Boolean;
 begin
+Shift := Shift and $0F;
 Carry := CF;
 Result := Value;
 For i := 1 to Shift do
@@ -829,18 +998,18 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   RAX, RCX
-  MOV   RCX, RDX
-  SHR   byte ptr [R8], 1
-  RCR   AX,  CL
-  SETC  CL
-  MOV   byte ptr [R8], CL
+    MOV   RAX,  RCX
+    MOV   RCX,  RDX
+    SHR   byte ptr [R8],  1
+    RCR   AX,   CL
+    SETC  CL
+    MOV   byte ptr [R8],  CL
 {$ELSE}
-  XCHG  EDX, ECX
-  SHR   byte ptr [EDX], 1
-  RCR   AX,  CL
-  SETC  CL
-  MOV   byte ptr [EDX], CL
+    XCHG  EDX,  ECX
+    SHR   byte ptr [EDX], 1
+    RCR   AX,   CL
+    SETC  CL
+    MOV   byte ptr [EDX], CL
 {$ENDIF}
 end;
 {$ENDIF}
@@ -853,6 +1022,7 @@ var
   i:      Integer;
   Carry:  Boolean;
 begin
+Shift := Shift and $1F;
 Carry := CF;
 Result := Value;
 For i := 1 to Shift do
@@ -865,30 +1035,31 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   RAX, RCX
-  MOV   RCX, RDX
-  SHR   byte ptr [R8], 1
-  RCR   EAX, CL
-  SETC  CL
-  MOV   byte ptr [R8], CL
+    MOV   RAX,  RCX
+    MOV   RCX,  RDX
+    SHR   byte ptr [R8],  1
+    RCR   EAX,  CL
+    SETC  CL
+    MOV   byte ptr [R8],  CL
 {$ELSE}
-  XCHG  EDX, ECX
-  SHR   byte ptr [EDX], 1
-  RCR   EAX, CL
-  SETC  CL
-  MOV   byte ptr [EDX], CL
+    XCHG  EDX,  ECX
+    SHR   byte ptr [EDX], 1
+    RCR   EAX,  CL
+    SETC  CL
+    MOV   byte ptr [EDX], CL
 {$ENDIF}
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function RCRCarry(Value: QuadWord; Shift: Integer; var CF: Boolean): QuadWord;{$IFNDEF no32ASM}assembler;{$ENDIF}
-{$IFDEF no32ASM}
+Function RCRCarry(Value: QuadWord; Shift: Integer; var CF: Boolean): QuadWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
+{$IFDEF PurePascal}
 var
   i:      Integer;
   Carry:  Boolean;
 begin
+Shift := Shift and $3F;
 Carry := CF;
 Result := Value;
 For i := 1 to Shift do
@@ -899,54 +1070,138 @@ For i := 1 to Shift do
   end;
 end;
 {$ELSE}
+{$IFDEF x64}
 asm
-  MOV   RAX, RCX
-  MOV   RCX, RDX
-  SHR   byte ptr [R8], 1
-  RCR   RAX, CL
-  SETC  CL
-  MOV   byte ptr [R8], CL
+    MOV   RAX,  RCX
+    MOV   RCX,  RDX
+    SHR   byte ptr [R8],  1
+    RCR   RAX,  CL
+    SETC  CL
+    MOV   byte ptr [R8],  CL
+{$ELSE}
+var
+  TempShift:  Integer;
+asm
+    PUSH  EBX
+
+    AND   EAX,  $3F
+    MOV   dword ptr [TempShift],  EAX
+    MOV   ECX,  EAX    
+    MOV   EBX,  EDX
+
+    MOV   EAX,  dword ptr [Value]
+    MOV   EDX,  dword ptr [Value + 4]
+    CMP   ECX,  32
+
+    JE    @Exactly32
+    JA    @Above32
+
+{- Shift is below 32  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+    TEST  ECX,  ECX
+    JZ    @FuncEnd
+
+    SHRD  EAX,  EDX, CL
+    JMP   @Shift
+
+{- Shift is above 32  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+  @Above32:
+    AND   ECX,  $1F
+
+    DEC   CL
+    SHRD  EAX,  EDX, CL
+    INC   CL
+
+{- Main shifting  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+  @Shift:
+    SHR   EDX,  CL
+    PUSH  ECX
+    PUSH  EDX
+    MOV   EDX,  dword ptr [Value]
+    SHL   EDX,  2
+    XOR   CL,   31
+    SHL   EDX,  CL
+    POP   ECX
+    OR    EDX,  ECX
+    POP   ECX
+    JMP   @SetCarry
+
+{- Shift is equal to 32, no shifting required, only swap Hi and Lo dwords - - -}
+  @Exactly32:
+    SHL   EAX,  1
+    XCHG  EAX,  EDX
+
+{- Write passed carry bit to the result - - - - - - - - - - - - - - - - - - - -}
+  @SetCarry:
+    DEC   ECX
+    XOR   ECX,  31
+    CMP   byte ptr [EBX], 0
+    JE    @ResetBit
+
+    BTS   EDX,  ECX
+    JMP   @Swap
+
+  @ResetBit:
+    BTR   EDX,  ECX
+
+{- Swap Hi and Lo dwords for shift > 32 - - - - - - - - - - - - - - - - - - - -}
+  @Swap:
+    CMP   byte ptr [TempShift],  32
+    JBE   @GetCarry
+    XCHG  EAX,  EDX
+
+{- Get carry bit that will be output in CF parameter  - - - - - - - - - - - - -}
+  @GetCarry:
+    MOV   CL,   byte ptr [TempShift]
+    AND   ECX,  $3F
+    CMP   CL,   32
+    JA    @FromHigh
+
+    DEC   CL
+    BT    dword ptr [Value],  ECX
+    JMP   @StoreCarry
+
+  @FromHigh:
+    AND   CL,   $1F  
+    DEC   CL
+    BT    dword ptr [Value + 4], ECX
+
+  @StoreCarry:
+    SETC  CL
+    MOV   byte ptr [EBX], CL
+
+{- Restore EBX register - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+  @FuncEnd:
+    POP   EBX
+{$ENDIF}
 end;
 {$ENDIF}
 
 //==============================================================================
 
 Function RCR(Value: Byte; Shift: Integer; CF: Boolean = False): Byte;
-var
-  Carry:  Boolean;
 begin
-Carry := CF;
-Result := RCRCarry(Value,Shift,Carry);
+Result := RCRCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCR(Value: Word; Shift: Integer; CF: Boolean = False): Word;
-var
-  Carry:  Boolean;
 begin
-Carry := CF;
-Result := RCRCarry(Value,Shift,Carry);
+Result := RCRCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCR(Value: LongWord; Shift: Integer; CF: Boolean = False): LongWord;
-var
-  Carry:  Boolean;
 begin
-Carry := CF;
-Result := RCRCarry(Value,Shift,Carry);
+Result := RCRCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCR(Value: QuadWord; Shift: Integer; CF: Boolean = False): QuadWord;
-var
-  Carry:  Boolean;
 begin
-Carry := CF;
-Result := RCRCarry(Value,Shift,Carry);
+Result := RCRCarry(Value,Shift,CF);
 end;
 
 //==============================================================================
@@ -1019,10 +1274,10 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV RAX, RCX
+    MOV   RAX,  RCX
 {$ENDIF}
-  MOV CL,  DL
-  SAL AL,  CL
+    MOV   CL,   DL
+    SAL   AL,   CL
 end;
 {$ENDIF}
 
@@ -1036,10 +1291,10 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV RAX, RCX
+    MOV   RAX,  RCX
 {$ENDIF}
-  MOV CL,  DL
-  SAL AX,  CL
+    MOV   CL,   DL
+    SAL   AX,   CL
 end;
 {$ENDIF}
 
@@ -1053,25 +1308,54 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV RAX, RCX
+    MOV   RAX,  RCX
 {$ENDIF}
-  MOV CL,  DL
-  SAL EAX, CL
+    MOV   CL,   DL
+    SAL   EAX,  CL
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function SAL(Value: QuadWord; Shift: Integer): QuadWord;{$IFNDEF no32ASM}assembler;{$ENDIF}
-{$IFDEF no32ASM}
+Function SAL(Value: QuadWord; Shift: Integer): QuadWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
+{$IFDEF PurePascal}
 begin
 Result := Value shl Shift;
 end;
 {$ELSE}
 asm
-  MOV RAX, RCX
-  MOV CL,  DL
-  SAL RAX, CL
+{$IFDEF x64}
+    MOV   RAX,  RCX
+    MOV   CL,   DL
+    SAL   RAX,  CL
+{$ELSE}
+    MOV   ECX,  EAX
+    AND   ECX,  $3F
+
+    CMP   ECX,  31
+    JA    @Above31
+
+{- Shift is below 32  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+    MOV   EAX,  dword ptr [Value]
+    MOV   EDX,  dword ptr [Value + 4]
+
+    TEST  ECX,  ECX
+    JZ    @FuncEnd
+
+    SHLD  EDX,  EAX,  CL
+    SHL   EAX,  CL
+    JMP   @FuncEnd
+
+{- Shift is above 31  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+  @Above31:
+    XOR   EAX,  EAX
+    MOV   EDX,  dword ptr [Value]
+    AND   ECX,  $1F
+    SHL   EDX,  CL
+
+{- End of the function  - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+  @FuncEnd:
+{$ENDIF}
 end;
 {$ENDIF}
 
@@ -1112,6 +1396,7 @@ end;
 Function SAR(Value: Byte; Shift: Integer): Byte;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
+Shift := Shift and $07;
 If (Value shr 7) <> 0 then
   Result := (Value shr Shift) or ($FF shl (8 - Shift))
 else
@@ -1120,10 +1405,10 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV RAX, RCX
+    MOV   RAX,  RCX
 {$ENDIF}
-  MOV CL,  DL
-  SAR AL,  CL
+    MOV   CL,   DL
+    SAR   AL,   CL
 end;
 {$ENDIF}
  
@@ -1132,6 +1417,7 @@ end;
 Function SAR(Value: Word; Shift: Integer): Word;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
+Shift := Shift and $0F;
 If (Value shr 15) <> 0 then
   Result := (Value shr Shift) or ($FFFF shl (16 - Shift))
 else
@@ -1140,10 +1426,10 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV RAX, RCX
+    MOV   RAX,  RCX
 {$ENDIF}
-  MOV CL,  DL
-  SAR AX,  CL
+    MOV   CL,   DL
+    SAR   AX,   CL
 end;
 {$ENDIF}
   
@@ -1152,6 +1438,7 @@ end;
 Function SAR(Value: LongWord; Shift: Integer): LongWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
+Shift := Shift and $1F;
 If (Value shr 31) <> 0 then
   Result := (Value shr Shift) or ($FFFFFFFF shl (32 - Shift))
 else
@@ -1160,18 +1447,19 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV RAX, RCX
+    MOV   RAX,  RCX
 {$ENDIF}
-  MOV CL,  DL
-  SAR EAX, CL
+    MOV   CL,   DL
+    SAR   EAX,  CL
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function SAR(Value: QuadWord; Shift: Integer): QuadWord;{$IFNDEF no32ASM}assembler;{$ENDIF}
-{$IFDEF no32ASM}
+Function SAR(Value: QuadWord; Shift: Integer): QuadWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
+{$IFDEF PurePascal}
 begin
+Shift := Shift and $3F;
 If (Value shr 63) <> 0 then
   Result := (Value shr Shift) or ($FFFFFFFFFFFFFFFF shl (64 - Shift))
 else
@@ -1179,9 +1467,47 @@ else
 end;
 {$ELSE}
 asm
-  MOV RAX, RCX
-  MOV CL,  DL
-  SAR RAX, CL
+{$IFDEF x64}
+    MOV   RAX,  RCX
+    MOV   CL,   DL
+    SAR   RAX,  CL
+{$ELSE}
+    MOV   ECX,  EAX
+    AND   ECX,  $3F
+
+    CMP   ECX,  31
+    JA    @Above31
+
+{- Shift is below 32  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+    MOV   EAX,  dword ptr [Value]
+    MOV   EDX,  dword ptr [Value + 4]
+
+    TEST  ECX,  ECX
+    JZ    @FuncEnd
+
+    SHRD  EAX,  EDX,  CL
+    SAR   EDX,  CL
+    JMP   @FuncEnd
+
+{- Shift is above 31  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+  @Above31:
+    MOV   EAX,  dword ptr [Value + 4]
+    BT    EAX,  31
+    JC    @BitSet
+
+    XOR   EDX,  EDX
+    JMP   @DoShift
+
+  @BitSet:
+    MOV   EDX,  $FFFFFFFF
+
+  @DoShift:
+    AND   ECX,  $1F
+    SAR   EAX,  CL
+
+{- End of the function  - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
+  @FuncEnd:
+{$ENDIF}
 end;
 {$ENDIF}
 
@@ -1227,9 +1553,9 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   RAX, RCX
+    MOV   RAX,  RCX
 {$ENDIF}
-  XCHG  AL,  AH
+    XCHG  AL,   AH
 end;
 {$ENDIF}
   
@@ -1244,9 +1570,9 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   RAX, RCX
+    MOV   RAX,  RCX
 {$ENDIF}
-  BSWAP EAX
+    BSWAP EAX
 end;
 {$ENDIF}
       
@@ -1261,13 +1587,13 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   RAX, RCX
-  BSWAP RAX
+    MOV   RAX,  RCX
+    BSWAP RAX
 {$ELSE}
-  MOV EAX, dword ptr [Value + 4]
-  MOV EDX, dword ptr [Value]
-  BSWAP EAX
-  BSWAP EDX
+    MOV   EAX,  dword ptr [Value + 4]
+    MOV   EDX,  dword ptr [Value]
+    BSWAP EAX
+    BSWAP EDX
 {$ENDIF}
 end;
 {$ENDIF}
@@ -1318,55 +1644,55 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  XCHG  RCX, RDX
-  CMP   RCX, 1
-  JLE   @RoutineEnd
+    XCHG  RCX,  RDX
+    CMP   RCX,  1
+    JLE   @RoutineEnd
 
-  LEA   RAX, [RDX + RCX - 1]
-  SHR   RCX, 1
+    LEA   RAX,  [RDX + RCX - 1]
+    SHR   RCX,  1
 
-{$IFDEF FPC}
-  db $66 db $66 db $90  // Explicit alignment of loop start
-{$ENDIF}
+  {$IFDEF FPC}
+    db $66 db $66 db $90  // Explicit alignment of loop start
+  {$ENDIF}
 
-@LoopStart:
-  MOV   R8B, byte ptr [RDX]
-  MOV   R9B, byte ptr [RAX]
-  MOV   byte ptr [RAX], R8B
-  MOV   byte ptr [RDX], R9B
-  INC   RDX
-  DEC   RAX
-  LOOP  @LoopStart
+  @LoopStart:
+    MOV   R8B,  byte ptr [RDX]
+    MOV   R9B,  byte ptr [RAX]
+    MOV   byte ptr [RAX], R8B
+    MOV   byte ptr [RDX], R9B
+    INC   RDX
+    DEC   RAX
+    LOOP  @LoopStart
 
-@RoutineEnd:
+  @RoutineEnd:
 {$ELSE}
-  MOV   ECX, EDX
-  CMP   ECX, 1
-  JLE   @RoutineEnd
+    MOV   ECX,  EDX
+    CMP   ECX,  1
+    JLE   @RoutineEnd
 
-  PUSH  ESI
-  PUSH  EDI
-  MOV   ESI, EAX
-  LEA   EDI, [EAX + ECX - 1]
-  SHR   ECX, 1
+    PUSH  ESI
+    PUSH  EDI
+    MOV   ESI,  EAX
+    LEA   EDI,  [EAX + ECX - 1]
+    SHR   ECX,  1
 
-{$IFNDEF FPC}
-  db $66 db $66 db $90  // Explicit alignment of loop start
-{$ENDIF}
+  {$IFNDEF FPC}
+    db $66 db $66 db $90  // Explicit alignment of loop start
+  {$ENDIF}
 
-@LoopStart:
-  MOV   AL,  byte ptr [ESI]
-  MOV   DL,  byte ptr [EDI]
-  MOV   byte ptr [EDI], AL
-  MOV   byte ptr [ESI], DL
-  INC   ESI
-  DEC   EDI
-  LOOP  @LoopStart
+  @LoopStart:
+    MOV   AL,   byte ptr [ESI]
+    MOV   DL,   byte ptr [EDI]
+    MOV   byte ptr [EDI], AL
+    MOV   byte ptr [ESI], DL
+    INC   ESI
+    DEC   EDI
+    LOOP  @LoopStart
 
-  POP   EDI
-  POP   ESI
+    POP   EDI
+    POP   ESI
 
-@RoutineEnd:
+  @RoutineEnd:
 {$ENDIF}
 end;
 {$ENDIF}
@@ -1385,11 +1711,11 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  BT    CX, DX
+    BT    CX, DX
 {$ELSE}
-  BT    AX, DX
+    BT    AX, DX
 {$ENDIF}
-  SETC  AL
+    SETC  AL
 end;
 {$ENDIF}
            
@@ -1403,11 +1729,11 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  BT    CX, DX
+    BT    CX, DX
 {$ELSE}
-  BT    AX, DX
+    BT    AX, DX
 {$ENDIF}
-  SETC  AL
+    SETC  AL
 end;
 {$ENDIF}
            
@@ -1421,25 +1747,38 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  BT    ECX, EDX
+    BT    ECX, EDX
 {$ELSE}
-  BT    EAX, EDX
+    BT    EAX, EDX
 {$ENDIF}
-  SETC  AL
+    SETC  AL
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function BT(Value: QuadWord; Bit: Integer): Boolean;{$IFNDEF no32ASM}assembler;{$ENDIF}
-{$IFDEF no32ASM}
+Function BT(Value: QuadWord; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
+{$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
 end;
 {$ELSE}
 asm
-  BT    RCX, RDX
-  SETC  AL
+{$IFDEF x64}
+    BT    RCX,  RDX
+{$ELSE}
+    CMP   EAX,  32
+    JAE   @TestHigh
+
+    BT    dword ptr [Value],  EAX
+    JMP   @SetResult
+
+  @TestHigh:
+    AND   EAX,  $1F
+    BT    dword ptr [Value + 4],  EAX
+{$ENDIF}
+  @SetResult:
+    SETC  AL
 end;
 {$ENDIF}
 
@@ -1458,15 +1797,15 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   AL, byte ptr [RCX]
-  BTS   AX, DX
-  MOV   byte ptr [RCX], AL
+    MOV   AL, byte ptr [RCX]
+    BTS   AX, DX
+    MOV   byte ptr [RCX], AL
 {$ELSE}
-  MOV   CL,  byte ptr [EAX]
-  BTS   CX,  DX
-  MOV   byte ptr [EAX], CL
+    MOV   CL, byte ptr [EAX]
+    BTS   CX, DX
+    MOV   byte ptr [EAX], CL
 {$ENDIF}
-  SETC  AL
+    SETC  AL
 end;
 {$ENDIF}
            
@@ -1481,15 +1820,15 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   AX, word ptr [RCX]
-  BTS   AX, DX
-  MOV   word ptr [RCX], AX
+    MOV   AX, word ptr [RCX]
+    BTS   AX, DX
+    MOV   word ptr [RCX], AX
 {$ELSE}
-  MOV   CX,  word ptr [EAX]
-  BTS   CX,  DX
-  MOV   word ptr [EAX], CX
+    MOV   CX, word ptr [EAX]
+    BTS   CX, DX
+    MOV   word ptr [EAX], CX
 {$ENDIF}
-  SETC  AL
+    SETC  AL
 end;
 {$ENDIF}
 
@@ -1504,32 +1843,45 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   EAX, dword ptr [RCX]
-  BTS   EAX, EDX
-  MOV   dword ptr [RCX], EAX
+    MOV   EAX,  dword ptr [RCX]
+    BTS   EAX,  EDX
+    MOV   dword ptr [RCX],  EAX
 {$ELSE}
-  MOV   ECX, dword ptr [EAX]
-  BTS   ECX, EDX
-  MOV   dword ptr [EAX], ECX
+    MOV   ECX,  dword ptr [EAX]
+    BTS   ECX,  EDX
+    MOV   dword ptr [EAX],  ECX
 {$ENDIF}
-  SETC  AL
+    SETC  AL
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function BTS(var Value: QuadWord; Bit: Integer): Boolean;{$IFNDEF no32ASM}assembler;{$ENDIF}
-{$IFDEF no32ASM}
+Function BTS(var Value: QuadWord; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
+{$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
 Value := Value or (QuadWord(1) shl Bit);
 end;
 {$ELSE}
 asm
-  MOV   RAX, qword ptr [RCX]
-  BTS   RAX, RDX
-  MOV   qword ptr [RCX], RAX
-  SETC  AL
+{$IFDEF x64}
+    MOV   RAX,  qword ptr [RCX]
+    BTS   RAX,  RDX
+    MOV   qword ptr [RCX], RAX
+{$ELSE}
+    CMP   EDX,  32
+    JAE   @TestHigh
+
+    BTS   dword ptr [Value],  EDX
+    JMP   @SetResult
+
+  @TestHigh:
+    AND   EDX,  $1F
+    BTS   dword ptr [Value + 4],  EDX
+{$ENDIF}
+  @SetResult:
+    SETC  AL
 end;
 {$ENDIF}
 
@@ -1548,15 +1900,15 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   AL, byte ptr [RCX]
-  BTR   AX, DX
-  MOV   byte ptr [RCX], AL
+    MOV   AL, byte ptr [RCX]
+    BTR   AX, DX
+    MOV   byte ptr [RCX], AL
 {$ELSE}
-  MOV   CL, byte ptr [EAX]
-  BTR   CX, DX
-  MOV   byte ptr [EAX], CL
+    MOV   CL, byte ptr [EAX]
+    BTR   CX, DX
+    MOV   byte ptr [EAX], CL
 {$ENDIF}
-  SETC  AL
+    SETC  AL
 end;
 {$ENDIF}
 
@@ -1571,15 +1923,15 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   AX, word ptr [RCX]
-  BTR   AX, DX
-  MOV   word ptr [RCX], AX
+    MOV   AX, word ptr [RCX]
+    BTR   AX, DX
+    MOV   word ptr [RCX], AX
 {$ELSE}
-  MOV   CX, word ptr [EAX]
-  BTR   CX, DX
-  MOV   word ptr [EAX], CX
+    MOV   CX, word ptr [EAX]
+    BTR   CX, DX
+    MOV   word ptr [EAX], CX
 {$ENDIF}
-  SETC  AL
+    SETC  AL
 end;
 {$ENDIF}
            
@@ -1594,32 +1946,45 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   EAX, dword ptr [RCX]
-  BTR   EAX, EDX
-  MOV   dword ptr [RCX], EAX
+    MOV   EAX,  dword ptr [RCX]
+    BTR   EAX,  EDX
+    MOV   dword ptr [RCX],  EAX
 {$ELSE}
-  MOV   ECX, dword ptr [EAX]
-  BTR   ECX, EDX
-  MOV   dword ptr [EAX], ECX
+    MOV   ECX,  dword ptr [EAX]
+    BTR   ECX,  EDX
+    MOV   dword ptr [EAX],  ECX
 {$ENDIF}
-  SETC  AL
+    SETC  AL
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function BTR(var Value: QuadWord; Bit: Integer): Boolean;{$IFNDEF no32ASM}assembler;{$ENDIF}
-{$IFDEF no32ASM}
+Function BTR(var Value: QuadWord; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
+{$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
 Value := Value and not(QuadWord(1) shl Bit);
 end;
 {$ELSE}
 asm
-  MOV   RAX, qword ptr [RCX]
-  BTR   RAX, RDX
-  MOV   qword ptr [RCX], RAX
-  SETC  AL
+{$IFDEF x64}
+    MOV   RAX, qword ptr [RCX]
+    BTR   RAX,  RDX
+    MOV   qword ptr [RCX], RAX
+{$ELSE}
+    CMP   EDX,  32
+    JAE   @TestHigh
+
+    BTR   dword ptr [Value],  EDX
+    JMP   @SetResult
+
+  @TestHigh:
+    AND   EDX,  $1F
+    BTR   dword ptr [Value + 4],  EDX
+{$ENDIF}
+  @SetResult:
+    SETC  AL
 end;
 {$ENDIF}
 
@@ -1639,15 +2004,15 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   AL, byte ptr [RCX]
-  BTC   AX, DX
-  MOV   byte ptr [RCX], AL
+    MOV   AL, byte ptr [RCX]
+    BTC   AX, DX
+    MOV   byte ptr [RCX], AL
 {$ELSE}
-  MOV   CL, byte ptr [EAX]
-  BTC   CX, DX
-  MOV   byte ptr [EAX], CL
+    MOV   CL, byte ptr [EAX]
+    BTC   CX, DX
+    MOV   byte ptr [EAX], CL
 {$ENDIF}
-  SETC  AL
+    SETC  AL
 end;
 {$ENDIF}
 
@@ -1663,15 +2028,15 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   AX, word ptr [RCX]
-  BTC   AX, DX
-  MOV   word ptr [RCX], AX
+    MOV   AX, word ptr [RCX]
+    BTC   AX, DX
+    MOV   word ptr [RCX], AX
 {$ELSE}
-  MOV   CX, word ptr [EAX]
-  BTC   CX, DX
-  MOV   word ptr [EAX], CX
+    MOV   CX, word ptr [EAX]
+    BTC   CX, DX
+    MOV   word ptr [EAX], CX
 {$ENDIF}
-  SETC  AL
+    SETC  AL
 end;
 {$ENDIF}
 
@@ -1687,22 +2052,22 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  MOV   EAX, dword ptr [RCX]
-  BTC   EAX, EDX
-  MOV   dword ptr [RCX], EAX
+    MOV   EAX,  dword ptr [RCX]
+    BTC   EAX,  EDX
+    MOV   dword ptr [RCX],  EAX
 {$ELSE}
-  MOV   ECX, dword ptr [EAX]
-  BTC   ECX, EDX
-  MOV   dword ptr [EAX], ECX
+    MOV   ECX,  dword ptr [EAX]
+    BTC   ECX,  EDX
+    MOV   dword ptr [EAX],  ECX
 {$ENDIF}
-  SETC  AL
+    SETC  AL
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function BTC(var Value: QuadWord; Bit: Integer): Boolean;{$IFNDEF no32ASM}assembler;{$ENDIF}
-{$IFDEF no32ASM}
+Function BTC(var Value: QuadWord; Bit: Integer): Boolean;{$IFNDEF PurePascal}assembler;{$ENDIF}
+{$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
 If Result then Value := Value and not(QuadWord(1) shl Bit)
@@ -1710,10 +2075,23 @@ If Result then Value := Value and not(QuadWord(1) shl Bit)
 end;
 {$ELSE}
 asm
-  MOV   RAX, qword ptr [RCX]
-  BTC   RAX, RDX
-  MOV   qword ptr [RCX], RAX
-  SETC  AL
+{$IFDEF x64}
+    MOV   RAX, qword ptr [RCX]
+    BTC   RAX,  RDX
+    MOV   qword ptr [RCX], RAX
+{$ELSE}
+    CMP   EDX,  32
+    JAE   @TestHigh
+
+    BTC   dword ptr [Value],  EDX
+    JMP   @SetResult
+
+  @TestHigh:
+    AND   EDX,  $1F
+    BTC   dword ptr [Value + 4],  EDX
+{$ENDIF}
+  @SetResult:
+    SETC  AL
 end;
 {$ENDIF}
 
@@ -1769,16 +2147,16 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  AND RCX, $FF
-  AND RAX, $FFFF
-  BSF AX,  CX
+    AND   RCX,  $FF
+    XOR   RAX,  RAX
+    BSF   AX,   CX
 {$ELSE}
-  AND EAX, $FF
-  BSF AX,  AX
+    AND   EAX,  $FF
+    BSF   AX,   AX
 {$ENDIF}
-  JNZ @RoutineEnd
-  MOV EAX,  -1
-@RoutineEnd:
+    JNZ   @RoutineEnd
+    MOV   EAX,  -1
+  @RoutineEnd:
 end;
 {$ENDIF}
               
@@ -1794,16 +2172,16 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  AND RCX, $FFFF
-  AND RAX, $FFFF
-  BSF AX,  CX
+    AND   RCX,  $FFFF
+    XOR   RAX,  RAX
+    BSF   AX,   CX
 {$ELSE}
-  AND EAX, $FFFF
-  BSF AX,  AX
+    AND   EAX,  $FFFF
+    BSF   AX,   AX
 {$ENDIF}
-  JNZ @RoutineEnd
-  MOV EAX,  -1
-@RoutineEnd:
+    JNZ   @RoutineEnd
+    MOV   EAX,  -1
+  @RoutineEnd:
 end;
 {$ENDIF}
              
@@ -1819,20 +2197,20 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  BSF EAX, ECX
+    BSF   EAX,  ECX
 {$ELSE}
-  BSF EAX, EAX
+    BSF   EAX,  EAX
 {$ENDIF}
-  JNZ @RoutineEnd
-  MOV EAX, -1
-@RoutineEnd:
+    JNZ   @RoutineEnd
+    MOV   EAX,  -1
+  @RoutineEnd:
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function BSF(Value: QuadWord): Integer;{$IFNDEF no32ASM}assembler;{$ENDIF}
-{$IFDEF no32ASM}
+Function BSF(Value: QuadWord): Integer;{$IFNDEF PurePascal}assembler;{$ENDIF}
+{$IFDEF PurePascal}
 begin
 For Result := 0 to 63 do
   If (Value shr Result) and 1 <> 0 then Exit;
@@ -1840,10 +2218,26 @@ Result := -1;
 end;
 {$ELSE}
 asm
-  BSF RAX, RCX
-  JNZ @RoutineEnd
-  MOV RAX, -1
-@RoutineEnd:
+{$IFDEF x64}
+    BSF   RAX,  RCX
+    JNZ   @RoutineEnd
+    MOV   RAX,  -1
+  @RoutineEnd:
+{$ELSE}
+    BSF   EAX,  dword ptr [Value]
+    JNZ   @RoutineEnd
+
+    BSF   EAX,  dword ptr [Value + 4]
+    JNZ   @Add32
+
+    MOV   EAX,  -1
+    JMP   @RoutineEnd
+
+  @Add32:
+    ADD   EAX,  32
+
+  @RoutineEnd:
+{$ENDIF}
 end;
 {$ENDIF}
 
@@ -1863,16 +2257,16 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  AND RCX, $FF
-  AND RAX, $FFFF
-  BSR AX,  CX
+    AND   RCX,  $FF
+    XOR   RAX,  RAX
+    BSR   AX,   CX
 {$ELSE}
-  AND EAX, $FF
-  BSR AX,  AX
+    AND   EAX,  $FF
+    BSR   AX,   AX
 {$ENDIF}
-  JNZ @RoutineEnd
-  MOV EAX,  -1
-@RoutineEnd:
+    JNZ   @RoutineEnd
+    MOV   EAX,  -1
+  @RoutineEnd:
 end;
 {$ENDIF}
 
@@ -1888,16 +2282,16 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  AND RCX, $FFFF
-  AND RAX, $FFFF
-  BSR AX,  CX
+    AND   RCX,  $FFFF
+    XOR   RAX,  RAX
+    BSR   AX,   CX
 {$ELSE}
-  AND EAX, $FFFF
-  BSR AX,  AX
+    AND   EAX,  $FFFF
+    BSR   AX,   AX
 {$ENDIF}
-  JNZ @RoutineEnd
-  MOV EAX,  -1
-@RoutineEnd:
+    JNZ   @RoutineEnd
+    MOV   EAX,  -1
+  @RoutineEnd:
 end;
 {$ENDIF}
 
@@ -1913,20 +2307,20 @@ end;
 {$ELSE}
 asm
 {$IFDEF x64}
-  BSR EAX, ECX
+    BSR   EAX,  ECX
 {$ELSE}
-  BSR EAX, EAX
+    BSR   EAX,  EAX
 {$ENDIF}
-  JNZ @RoutineEnd
-  MOV EAX, -1
-@RoutineEnd:
+    JNZ   @RoutineEnd
+    MOV   EAX,  -1
+  @RoutineEnd:
 end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function BSR(Value: QuadWord): Integer;{$IFNDEF no32ASM}assembler;{$ENDIF}
-{$IFDEF no32ASM}
+Function BSR(Value: QuadWord): Integer;{$IFNDEF PurePascal}assembler;{$ENDIF}
+{$IFDEF PurePascal}
 begin
 For Result := 63 downto 0 do
   If (Value shr Result) and 1 <> 0 then Exit;
@@ -1934,10 +2328,26 @@ Result := -1;
 end;
 {$ELSE}
 asm
-  BSR RAX, RCX
-  JNZ @RoutineEnd
-  MOV RAX, -1
-@RoutineEnd:
+{$IFDEF x64}
+    BSR   RAX,  RCX
+    JNZ   @RoutineEnd
+    MOV   RAX,  -1
+  @RoutineEnd:
+{$ELSE}
+    BSR   EAX,  dword ptr [Value + 4]
+    JNZ   @Add32
+
+    BSR   EAX,  dword ptr [Value]
+    JNZ   @RoutineEnd
+
+    MOV   EAX,  -1
+    JMP   @RoutineEnd
+
+  @Add32:
+    ADD   EAX,  32
+
+  @RoutineEnd:
+{$ENDIF}
 end;
 {$ENDIF}
 
