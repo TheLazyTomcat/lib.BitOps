@@ -11,7 +11,7 @@
 
   ©František Milt 2015-04-26
 
-  Version 1.2
+  Version 1.2.1
 
 ===============================================================================}
 unit BitOps;
@@ -1621,6 +1621,8 @@ end;
 
 //==============================================================================
 
+{$DEFINE purepascal}
+
 procedure EndianSwap(var Buffer; Size: PtrUInt);{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 var
@@ -1635,9 +1637,9 @@ case Size of
 else
   For i := 0 to Pred(Size div 2) do
     begin
-      ByteBuff := TByteArray(Buffer)[i];
-      TByteArray(Buffer)[i] := TByteArray(Buffer)[Pred(Size - i)];
-      TByteArray(Buffer)[Pred(Size - i)] := ByteBuff;
+      {%H-}ByteBuff := PByte(PtrUInt(Addr(Buffer)) + i)^;
+      {%H-}PByte(PtrUInt(Addr(Buffer)) + i)^ := PByte(PtrUInt(Addr(Buffer)) + Size - i - 1)^;
+      {%H-}PByte(PtrUInt(Addr(Buffer)) + Size - i - 1)^ := ByteBuff;
     end;
 end;
 end;
