@@ -9,7 +9,7 @@
 
   BitOps - Binary operations
 
-  ©2015 František Milt
+  ©František Milt 2015-04-26
 
   Version 1.2
 
