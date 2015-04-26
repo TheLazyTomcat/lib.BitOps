@@ -1621,8 +1621,6 @@ end;
 
 //==============================================================================
 
-{$DEFINE purepascal}
-
 procedure EndianSwap(var Buffer; Size: PtrUInt);{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 var
