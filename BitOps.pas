@@ -9,9 +9,9 @@
 
   BitOps - Binary operations
 
-  ©František Milt 2015-04-26
+  ©František Milt 2015-04-29
 
-  Version 1.2.1
+  Version 1.2.2
 
 ===============================================================================}
 unit BitOps;
@@ -342,7 +342,7 @@ Function ROL(Value: Byte; Shift: Byte): Byte;{$IFNDEF PurePascal}assembler;{$END
 {$IFDEF PurePascal}
 begin
 Shift := Shift and $07;
-Result := (Value shl Shift) or (Value shr (8 - Shift));
+Result := Byte((Value shl Shift) or (Value shr (8 - Shift)));
 end;
 {$ELSE}
 asm
@@ -360,7 +360,7 @@ Function ROL(Value: Word; Shift: Byte): Word;{$IFNDEF PurePascal}assembler;{$END
 {$IFDEF PurePascal}
 begin
 Shift := Shift and $0F;
-Result := (Value shl Shift) or (Value shr (16 - Shift));
+Result := Word((Value shl Shift) or (Value shr (16 - Shift)));
 end;
 {$ELSE}
 asm
@@ -378,7 +378,7 @@ Function ROL(Value: LongWord; Shift: Byte): LongWord;{$IFNDEF PurePascal}assembl
 {$IFDEF PurePascal}
 begin
 Shift := Shift and $1F;
-Result := (Value shl Shift) or (Value shr (32 - Shift));
+Result := LongWord((Value shl Shift) or (Value shr (32 - Shift)));
 end;
 {$ELSE}
 asm
@@ -396,7 +396,7 @@ Function ROL(Value: QuadWord; Shift: Byte): QuadWord;{$IFNDEF PurePascal}assembl
 {$IFDEF PurePascal}
 begin
 Shift := Shift and $3F;
-Result := (Value shl Shift) or (Value shr (64 - Shift));
+Result := QuadWord((Value shl Shift) or (Value shr (64 - Shift)));
 end;
 {$ELSE}
 asm
@@ -481,7 +481,7 @@ Function ROR(Value: Byte; Shift: Byte): Byte;{$IFNDEF PurePascal}assembler;{$END
 {$IFDEF PurePascal}
 begin
 Shift := Shift and $07;
-Result := (Value shr Shift) or (Value shl (32 - Shift));
+Result := Byte((Value shr Shift) or (Value shl (8 - Shift)));
 end;
 {$ELSE}
 asm
@@ -499,7 +499,7 @@ Function ROR(Value: Word; Shift: Byte): Word;{$IFNDEF PurePascal}assembler;{$END
 {$IFDEF PurePascal}
 begin
 Shift := Shift and $0F;
-Result := (Value shr Shift) or (Value shl (16 - Shift));
+Result := Word((Value shr Shift) or (Value shl (16 - Shift)));
 end;
 {$ELSE}
 asm
@@ -517,7 +517,7 @@ Function ROR(Value: LongWord; Shift: Byte): LongWord;{$IFNDEF PurePascal}assembl
 {$IFDEF PurePascal}
 begin
 Shift := Shift and $1F;
-Result := (Value shr Shift) or (Value shl (32 - Shift));
+Result := LongWord((Value shr Shift) or (Value shl (32 - Shift)));
 end;
 {$ELSE}
 asm
@@ -535,7 +535,7 @@ Function ROR(Value: QuadWord; Shift: Byte): QuadWord;{$IFNDEF PurePascal}assembl
 {$IFDEF PurePascal}
 begin
 Shift := Shift and $3F;
-Result := (Value shr Shift) or (Value shl (64 - Shift));
+Result := QuadWord((Value shr Shift) or (Value shl (64 - Shift)));
 end;
 {$ELSE}
 asm
@@ -628,7 +628,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result shr 7) <> 0;
-    Result := (Result shl 1) or (Byte(Carry) and 1);
+    Result := Byte((Result shl 1) or (Byte(Carry) and 1));
     Carry := CF;
   end;
 end;
@@ -665,7 +665,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result shr 15) <> 0;
-    Result := (Result shl 1) or (Byte(Carry) and 1);
+    Result := Word((Result shl 1) or (Byte(Carry) and 1));
     Carry := CF;
   end;
 end;
@@ -702,7 +702,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result shr 31) <> 0;
-    Result := (Result shl 1) or (Byte(Carry) and 1);
+    Result := LongWord((Result shl 1) or (Byte(Carry) and 1));
     Carry := CF;
   end;
 end;
@@ -739,7 +739,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result shr 63) <> 0;
-    Result := (Result shl 1) or (Byte(Carry) and 1);
+    Result := QuadWord((Result shl 1) or (Byte(Carry) and 1));
     Carry := CF;
   end;
 end;
@@ -954,7 +954,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result and 1) <> 0;
-    Result := (Result shr 1) or ((Byte(Carry) and 1) shl 7);
+    Result := Byte((Result shr 1) or ((Byte(Carry) and 1) shl 7));
     Carry := CF;
   end;
 end;
@@ -991,7 +991,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result and 1) <> 0;
-    Result := (Result shr 1) or ((Word(Carry) and 1) shl 15);
+    Result := Word((Result shr 1) or ((Word(Carry) and 1) shl 15));
     Carry := CF;
   end;
 end;
@@ -1028,7 +1028,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result and 1) <> 0;
-    Result := (Result shr 1) or ((LongWord(Carry) and 1) shl 31);
+    Result := LongWord((Result shr 1) or ((LongWord(Carry) and 1) shl 31));
     Carry := CF;
   end;
 end;
@@ -1065,7 +1065,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result and 1) <> 0;
-    Result := (Result shr 1) or ((QuadWord(Carry) and 1) shl 63);
+    Result := QuadWord((Result shr 1) or ((QuadWord(Carry) and 1) shl 63));
     Carry := CF;
   end;
 end;
@@ -1269,7 +1269,7 @@ end;
 Function SAL(Value: Byte; Shift: Byte): Byte;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
-Result := Value shl Shift;
+Result := Byte(Value shl Shift);
 end;
 {$ELSE}
 asm
@@ -1286,7 +1286,7 @@ end;
 Function SAL(Value: Word; Shift: Byte): Word;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
-Result := Value shl Shift;
+Result := Word(Value shl Shift);
 end;
 {$ELSE}
 asm
@@ -1303,7 +1303,7 @@ end;
 Function SAL(Value: LongWord; Shift: Byte): LongWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
-Result := Value shl Shift;
+Result := LongWord(Value shl Shift);
 end;
 {$ELSE}
 asm
@@ -1320,7 +1320,7 @@ end;
 Function SAL(Value: QuadWord; Shift: Byte): QuadWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
-Result := Value shl Shift;
+Result := QuadWord(Value shl Shift);
 end;
 {$ELSE}
 asm
@@ -1398,9 +1398,9 @@ Function SAR(Value: Byte; Shift: Byte): Byte;{$IFNDEF PurePascal}assembler;{$END
 begin
 Shift := Shift and $07;
 If (Value shr 7) <> 0 then
-  Result := (Value shr Shift) or ($FF shl (8 - Shift))
+  Result := Byte((Value shr Shift) or ($FF shl (8 - Shift)))
 else
-  Result := Value shr Shift;
+  Result := Byte(Value shr Shift);
 end;
 {$ELSE}
 asm
@@ -1419,9 +1419,9 @@ Function SAR(Value: Word; Shift: Byte): Word;{$IFNDEF PurePascal}assembler;{$END
 begin
 Shift := Shift and $0F;
 If (Value shr 15) <> 0 then
-  Result := (Value shr Shift) or ($FFFF shl (16 - Shift))
+  Result := Word((Value shr Shift) or ($FFFF shl (16 - Shift)))
 else
-  Result := Value shr Shift;
+  Result := Word(Value shr Shift);
 end;
 {$ELSE}
 asm
@@ -1440,9 +1440,9 @@ Function SAR(Value: LongWord; Shift: Byte): LongWord;{$IFNDEF PurePascal}assembl
 begin
 Shift := Shift and $1F;
 If (Value shr 31) <> 0 then
-  Result := (Value shr Shift) or ($FFFFFFFF shl (32 - Shift))
+  Result := LongWord((Value shr Shift) or ($FFFFFFFF shl (32 - Shift)))
 else
-  Result := Value shr Shift;
+  Result := LongWord(Value shr Shift);
 end;
 {$ELSE}
 asm
@@ -1461,9 +1461,9 @@ Function SAR(Value: QuadWord; Shift: Byte): QuadWord;{$IFNDEF PurePascal}assembl
 begin
 Shift := Shift and $3F;
 If (Value shr 63) <> 0 then
-  Result := (Value shr Shift) or ($FFFFFFFFFFFFFFFF shl (64 - Shift))
+  Result := QuadWord((Value shr Shift) or (QuadWord($FFFFFFFFFFFFFFFF) shl (64 - Shift)))
 else
-  Result := Value shr Shift;
+  Result := QuadWord(Value shr Shift);
 end;
 {$ELSE}
 asm
@@ -1548,7 +1548,7 @@ end;
 Function EndianSwap(Value: Word): Word;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
-Result := (Value shl 8) or (Value shr 8);
+Result := Word((Value shl 8) or (Value shr 8));
 end;
 {$ELSE}
 asm
@@ -1564,8 +1564,8 @@ end;
 Function EndianSwap(Value: LongWord): LongWord;{$IFNDEF PurePascal}assembler;{$ENDIF}
 {$IFDEF PurePascal}
 begin
-Result := (Value and $000000FF shl 24) or (Value and $0000FF00 shl 8) or
-          (Value and $00FF0000 shr 8) or (Value and $FF000000 shr 24);
+Result := LongWord((Value and $000000FF shl 24) or (Value and $0000FF00 shl 8) or
+                   (Value and $00FF0000 shr 8) or (Value and $FF000000 shr 24));
 end;
 {$ELSE}
 asm
@@ -1784,7 +1784,7 @@ Function BTS(var Value: Byte; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := Value or (Byte(1) shl Bit);
+Value := Byte(Value or (Byte(1) shl Bit));
 end;
 {$ELSE}
 asm
@@ -1807,7 +1807,7 @@ Function BTS(var Value: Word; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := Value or (Word(1) shl Bit);
+Value := Word(Value or (Word(1) shl Bit));
 end;
 {$ELSE}
 asm
@@ -1830,7 +1830,7 @@ Function BTS(var Value: LongWord; Bit: Byte): Boolean;{$IFNDEF PurePascal}assemb
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := Value or (LongWord(1) shl Bit);
+Value := LongWord(Value or (LongWord(1) shl Bit));
 end;
 {$ELSE}
 asm
@@ -1853,7 +1853,7 @@ Function BTS(var Value: QuadWord; Bit: Byte): Boolean;{$IFNDEF PurePascal}assemb
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := Value or (QuadWord(1) shl Bit);
+Value := QuadWord(Value or (QuadWord(1) shl Bit));
 end;
 {$ELSE}
 asm
@@ -1887,7 +1887,7 @@ Function BTR(var Value: Byte; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := Value and not(1 shl Bit);
+Value := Byte(Value and not(1 shl Bit));
 end;
 {$ELSE}
 asm
@@ -1910,7 +1910,7 @@ Function BTR(var Value: Word; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := Value and not(1 shl Bit);
+Value := Word(Value and not(1 shl Bit));
 end;
 {$ELSE}
 asm
@@ -1933,7 +1933,7 @@ Function BTR(var Value: LongWord; Bit: Byte): Boolean;{$IFNDEF PurePascal}assemb
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := Value and not(1 shl Bit);
+Value := LongWord(Value and not(1 shl Bit));
 end;
 {$ELSE}
 asm
@@ -1956,7 +1956,7 @@ Function BTR(var Value: QuadWord; Bit: Byte): Boolean;{$IFNDEF PurePascal}assemb
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := Value and not(QuadWord(1) shl Bit);
+Value := QuadWord(Value and not(QuadWord(1) shl Bit));
 end;
 {$ELSE}
 asm
@@ -1990,8 +1990,8 @@ Function BTC(var Value: Byte; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-If Result then Value := Value and not(1 shl Bit)
-  else Value := Value or (Byte(1) shl Bit);
+If Result then Value := Byte(Value and not(1 shl Bit))
+  else Value := Byte(Value or (Byte(1) shl Bit));
 end;
 {$ELSE}
 asm
@@ -2014,8 +2014,8 @@ Function BTC(var Value: Word; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-If Result then Value := Value and not(1 shl Bit)
-  else Value := Value or (Word(1) shl Bit);
+If Result then Value := Word(Value and not(1 shl Bit))
+  else Value := Word(Value or (Word(1) shl Bit));
 end;
 {$ELSE}
 asm
@@ -2038,8 +2038,8 @@ Function BTC(var Value: LongWord; Bit: Byte): Boolean;{$IFNDEF PurePascal}assemb
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-If Result then Value := Value and not(1 shl Bit)
-  else Value := Value or (LongWord(1) shl Bit);
+If Result then Value := LongWord(Value and not(1 shl Bit))
+  else Value := LongWord(Value or (LongWord(1) shl Bit));
 end;
 {$ELSE}
 asm
@@ -2062,8 +2062,8 @@ Function BTC(var Value: QuadWord; Bit: Byte): Boolean;{$IFNDEF PurePascal}assemb
 {$IFDEF PurePascal}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-If Result then Value := Value and not(QuadWord(1) shl Bit)
-  else Value := Value or (QuadWord(1) shl Bit);
+If Result then Value := QuadWord(Value and not(QuadWord(1) shl Bit))
+  else Value := QuadWord(Value or (QuadWord(1) shl Bit));
 end;
 {$ELSE}
 asm
@@ -2357,7 +2357,7 @@ Result := 0;
 For i := 1 to 8 do
   begin
     If (Value and 1) <> 0 then Inc(Result);
-    Value := Value shr 1;
+    Value := Byte(Value shr 1);
   end;
 end;
 
@@ -2371,7 +2371,7 @@ Result := 0;
 For i := 1 to 16 do
   begin
     If (Value and 1) <> 0 then Inc(Result);
-    Value := Value shr 1;
+    Value := Word(Value shr 1);
   end;
 end;
 
@@ -2385,7 +2385,7 @@ Result := 0;
 For i := 1 to 32 do
   begin
     If (Value and 1) <> 0 then Inc(Result);
-    Value := Value shr 1;
+    Value := LongWord(Value shr 1);
   end;
 end;
 
@@ -2399,7 +2399,7 @@ Result := 0;
 For i := 1 to 64 do
   begin
     If (Value and 1) <> 0 then Inc(Result);
-    Value := Value shr 1;
+    Value := QuadWord(Value shr 1);
   end;
 end;
 
