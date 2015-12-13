@@ -9,9 +9,9 @@
 
   BitOps - Binary operations
 
-  ©František Milt 2015-11-17
+  ©František Milt 2015-12-13
 
-  Version 1.2.3
+  Version 1.2.4
 
 ===============================================================================}
 unit BitOps;
@@ -23,7 +23,7 @@ unit BitOps;
   {$IFEND}
 {$ELSEIF defined(CPU386)}
   {$DEFINE x86}
-{$ELSE}    
+{$ELSE}
   {$DEFINE PurePascal}
 {$IFEND}
 
@@ -1388,7 +1388,7 @@ end;
 begin
 Shift := Shift and $07;
 If (Value shr 7) <> 0 then
-  Result := UInt8((Value shr Shift) or ($FF shl (8 - Shift)))
+  Result := UInt8((Value shr Shift) or (UInt8($FF) shl (8 - Shift)))
 else
   Result := UInt8(Value shr Shift);
 end;
@@ -1408,7 +1408,7 @@ end;
 begin
 Shift := Shift and $0F;
 If (Value shr 15) <> 0 then
-  Result := UInt16((Value shr Shift) or ($FFFF shl (16 - Shift)))
+  Result := UInt16((Value shr Shift) or (UInt16($FFFF) shl (16 - Shift)))
 else
   Result := UInt16(Value shr Shift);
 end;
@@ -1428,7 +1428,7 @@ end;
 begin
 Shift := Shift and $1F;
 If (Value shr 31) <> 0 then
-  Result := UInt32((Value shr Shift) or ($FFFFFFFF shl (32 - Shift)))
+  Result := UInt32((Value shr Shift) or (UInt32($FFFFFFFF) shl (32 - Shift)))
 else
   Result := UInt32(Value shr Shift);
 end;
@@ -1645,7 +1645,7 @@ asm
 end;
 {$ELSE}
 var
-  i:        PtrUInt;
+  i:        TMemSize;
   ByteBuff: Byte;
 begin
 case Size of
@@ -1656,9 +1656,9 @@ case Size of
 else
   For i := 0 to Pred(Size div 2) do
     begin
-      {%H-}ByteBuff := PByte(PtrUInt(Addr(Buffer)) + i)^;
-      {%H-}PByte(PtrUInt(Addr(Buffer)) + i)^ := PByte(PtrUInt(Addr(Buffer)) + Size - i - 1)^;
-      {%H-}PByte(PtrUInt(Addr(Buffer)) + Size - i - 1)^ := ByteBuff;
+      {%H-}ByteBuff := {%H-}PByte({%H-}PtrUInt(Addr(Buffer)) + i)^;
+      {%H-}PByte({%H-}PtrUInt(Addr(Buffer)) + i)^ := {%H-}PByte({%H-}PtrUInt(Addr(Buffer)) + (Size - i - 1))^;
+      {%H-}PByte({%H-}PtrUInt(Addr(Buffer)) + (Size - i - 1))^ := ByteBuff;
     end;
 end;
 end;
@@ -1866,7 +1866,7 @@ end;
 {$ELSE}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := UInt8(Value and not(1 shl Bit));
+Value := UInt8(Value and not(UInt8(1) shl Bit));
 end;
 {$ENDIF}
 
@@ -1888,7 +1888,7 @@ end;
 {$ELSE}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := UInt16(Value and not(1 shl Bit));
+Value := UInt16(Value and not(UInt16(1) shl Bit));
 end;
 {$ENDIF}
            
@@ -1910,7 +1910,7 @@ end;
 {$ELSE}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-Value := UInt32(Value and not(1 shl Bit));
+Value := UInt32(Value and not(UInt32(1) shl Bit));
 end;
 {$ENDIF}
 
@@ -1965,7 +1965,7 @@ end;
 {$ELSE}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-If Result then Value := UInt8(Value and not(1 shl Bit))
+If Result then Value := UInt8(Value and not(UInt8(1) shl Bit))
   else Value := UInt8(Value or (UInt8(1) shl Bit));
 end;
 {$ENDIF}
@@ -1988,7 +1988,7 @@ end;
 {$ELSE}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-If Result then Value := UInt16(Value and not(1 shl Bit))
+If Result then Value := UInt16(Value and not(UInt16(1) shl Bit))
   else Value := UInt16(Value or (UInt16(1) shl Bit));
 end;
 {$ENDIF}
@@ -2011,7 +2011,7 @@ end;
 {$ELSE}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-If Result then Value := UInt32(Value and not(1 shl Bit))
+If Result then Value := UInt32(Value and not(UInt32(1) shl Bit))
   else Value := UInt32(Value or (UInt32(1) shl Bit));
 end;
 {$ENDIF}
