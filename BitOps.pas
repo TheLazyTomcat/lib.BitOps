@@ -9,9 +9,9 @@
 
   BitOps - Binary operations
 
-  ©František Milt 2015-12-13
+  ©František Milt 2016-02-28
 
-  Version 1.2.4
+  Version 1.2.5
 
 ===============================================================================}
 unit BitOps;
@@ -639,7 +639,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result shr 7) <> 0;
-    Result := UInt8((Result shl 1) or (UInt8(Carry) and 1));
+    Result := UInt8((Result shl 1) or (UInt8(Carry) and UInt8(1)));
     Carry := CF;
   end;
 end;
@@ -675,7 +675,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result shr 15) <> 0;
-    Result := UInt16((Result shl 1) or (UInt16(Carry) and 1));
+    Result := UInt16((Result shl 1) or (UInt16(Carry) and UInt16(1)));
     Carry := CF;
   end;
 end;
@@ -961,7 +961,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result and 1) <> 0;
-    Result := UInt8((Result shr 1) or ((UInt8(Carry) and 1) shl 7));
+    Result := UInt8((Result shr 1) or ((UInt8(Carry) and UInt8(1)) shl 7));
     Carry := CF;
   end;
 end;
@@ -997,7 +997,7 @@ Result := Value;
 For i := 1 to Shift do
   begin
     CF := (Result and 1) <> 0;
-    Result := UInt16((Result shr 1) or ((UInt16(Carry) and 1) shl 15));
+    Result := UInt16((Result shr 1) or ((UInt16(Carry) and UInt16(1)) shl 15));
     Carry := CF;
   end;
 end;
