@@ -9,9 +9,9 @@
 
   BitOps - Binary operations
 
-  ©František Milt 2016-02-28
+  ©František Milt 2016-03-01
 
-  Version 1.2.5
+  Version 1.2.6
 
 ===============================================================================}
 unit BitOps;
@@ -847,28 +847,28 @@ end;
 
 Function RCL(Value: UInt8; Shift: Byte; CF: Boolean = False): UInt8;
 begin
-Result := RCLCarry(Value,Shift,CF);
+Result := RCLCarry(Value,Shift,{%H-}CF);
 end;
  
 //------------------------------------------------------------------------------
 
 Function RCL(Value: UInt16; Shift: Byte; CF: Boolean = False): UInt16;
 begin
-Result := RCLCarry(Value,Shift,CF);
+Result := RCLCarry(Value,Shift,{%H-}CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCL(Value: UInt32; Shift: Byte; CF: Boolean = False): UInt32;
 begin
-Result := RCLCarry(Value,Shift,CF);
+Result := RCLCarry(Value,Shift,{%H-}CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCL(Value: UInt64; Shift: Byte; CF: Boolean = False): UInt64;
 begin
-Result := RCLCarry(Value,Shift,CF);
+Result := RCLCarry(Value,Shift,{%H-}CF);
 end;
 
 //==============================================================================
@@ -1167,28 +1167,28 @@ end;
 
 Function RCR(Value: UInt8; Shift: Byte; CF: Boolean = False): UInt8;
 begin
-Result := RCRCarry(Value,Shift,CF);
+Result := RCRCarry(Value,Shift,{%H-}CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCR(Value: UInt16; Shift: Byte; CF: Boolean = False): UInt16;
 begin
-Result := RCRCarry(Value,Shift,CF);
+Result := RCRCarry(Value,Shift,{%H-}CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCR(Value: UInt32; Shift: Byte; CF: Boolean = False): UInt32;
 begin
-Result := RCRCarry(Value,Shift,CF);
+Result := RCRCarry(Value,Shift,{%H-}CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCR(Value: UInt64; Shift: Byte; CF: Boolean = False): UInt64;
 begin
-Result := RCRCarry(Value,Shift,CF);
+Result := RCRCarry(Value,Shift,{%H-}CF);
 end;
 
 //==============================================================================
@@ -2103,10 +2103,16 @@ asm
   @RoutineEnd:
 end;
 {$ELSE}
+var
+  i:  Integer;
 begin
-For Result := 0 to 7 do
-  If (Value shr Result) and 1 <> 0 then Exit;
 Result := -1;
+For i := 0 to 7 do
+  If (Value shr i) and 1 <> 0 then
+    begin
+      Result := i;
+      Break;
+    end;
 end;
 {$ENDIF}
               
@@ -2127,10 +2133,16 @@ asm
   @RoutineEnd:
 end;
 {$ELSE}
+var
+  i:  Integer;
 begin
-For Result := 0 to 15 do
-  If (Value shr Result) and 1 <> 0 then Exit;
 Result := -1;
+For i := 0 to 15 do
+  If (Value shr i) and 1 <> 0 then
+    begin
+      Result := i;
+      Break;
+    end;
 end;
 {$ENDIF}
              
@@ -2148,10 +2160,16 @@ asm
   @RoutineEnd:
 end;
 {$ELSE}
+var
+  i:  Integer;
 begin
-For Result := 0 to 31 do
-  If (Value shr Result) and 1 <> 0 then Exit;
 Result := -1;
+For i := 0 to 31 do
+  If (Value shr i) and 1 <> 0 then
+    begin
+      Result := i;
+      Break;
+    end;
 end;
 {$ENDIF}
 
@@ -2181,10 +2199,16 @@ asm
 {$ENDIF}
 end;
 {$ELSE}
+var
+  i:  Integer;
 begin
-For Result := 0 to 63 do
-  If (Value shr Result) and 1 <> 0 then Exit;
 Result := -1;
+For i := 0 to 63 do
+  If (Value shr i) and 1 <> 0 then
+    begin
+      Result := i;
+      Break;
+    end;
 end;
 {$ENDIF}
 
@@ -2209,10 +2233,16 @@ asm
   @RoutineEnd:
 end;
 {$ELSE}
+var
+  i:  Integer;
 begin
-For Result := 7 downto 0 do
-  If (Value shr Result) and 1 <> 0 then Exit;
 Result := -1;
+For i := 7 downto 0 do
+  If (Value shr i) and 1 <> 0 then
+    begin
+      Result := i;
+      Break;
+    end;
 end;
 {$ENDIF}
 
@@ -2233,10 +2263,16 @@ asm
   @RoutineEnd:
 end;
 {$ELSE}
+var
+  i:  Integer;
 begin
-For Result := 15 downto 0 do
-  If (Value shr Result) and 1 <> 0 then Exit;
 Result := -1;
+For i := 15 downto 0 do
+  If (Value shr i) and 1 <> 0 then
+    begin
+      Result := i;
+      Break;
+    end;
 end;
 {$ENDIF}
 
@@ -2254,10 +2290,16 @@ asm
   @RoutineEnd:
 end;
 {$ELSE}
+var
+  i:  Integer;
 begin
-For Result := 31 downto 0 do
-  If (Value shr Result) and 1 <> 0 then Exit;
 Result := -1;
+For i := 31 downto 0 do
+  If (Value shr i) and 1 <> 0 then
+    begin
+      Result := i;
+      Break;
+    end;
 end;
 {$ENDIF}
 
@@ -2287,10 +2329,16 @@ asm
 {$ENDIF}
 end;
 {$ELSE}
+var
+  i:  Integer;
 begin
-For Result := 63 downto 0 do
-  If (Value shr Result) and 1 <> 0 then Exit;
 Result := -1;
+For i := 63 downto 0 do
+  If (Value shr i) and 1 <> 0 then
+    begin
+      Result := i;
+      Break;
+    end;
 end;
 {$ENDIF}
 
