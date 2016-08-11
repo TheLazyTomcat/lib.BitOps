@@ -9,12 +9,20 @@
 
   BitOps - Binary operations
 
-  ©František Milt 2016-07-31
+  ©František Milt 2016-08-11
 
-  Version 1.3
+  Version 1.4
 
 ===============================================================================}
 unit BitOps;
+
+{$IF defined(CPU64) or defined(CPU64BITS)}
+  {$DEFINE 64bit}
+{$ELSEIF defined(CPU16)}
+  {$MESSAGE FATAL '16bit CPU not supported'}
+{$ELSE}
+  {$DEFINE 32bit}
+{$IFEND}
 
 {$IF defined(CPUX86_64) or defined(CPUX64)}
   {$DEFINE x64}
@@ -30,6 +38,12 @@ unit BitOps;
 {$IF defined(FPC) and not defined(PurePascal)}
   {$ASMMODE Intel}
 {$IFEND}
+
+{
+  When defined, PopCount functions will use lookup table instead of testing each
+  bit in a passed value.
+}
+{$DEFINE UseLookupTable}
 
 interface
 
@@ -263,7 +277,11 @@ Function BSR(Value: UInt64): Integer; overload;
 {                               Population count                               }
 {==============================================================================}
 {------------------------------------------------------------------------------}
-
+{
+  There is a posibility of using POPCNT instruction on x86, but it was added
+  very late and therefore is not supported in many still used CPUs.
+  I have decided to not use it.
+}
 Function PopCount(Value: UInt8): Integer; overload;
 Function PopCount(Value: UInt16): Integer; overload;
 Function PopCount(Value: UInt32): Integer; overload;
@@ -393,6 +411,24 @@ procedure SetFlagStateValue(var Value: UInt16; FlagBitmask: UInt16; NewState: Bo
 procedure SetFlagStateValue(var Value: UInt32; FlagBitmask: UInt32; NewState: Boolean); overload;
 procedure SetFlagStateValue(var Value: UInt64; FlagBitmask: UInt64; NewState: Boolean); overload;
 
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                                   Set bits                                   }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{
+  Replaces contiguous segment of bits in Value by corresponding bits from
+  NewBits.
+}
+Function SetBits(Value,NewBits: UInt8; FromBit,ToBit: Integer): UInt8; overload;
+Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Integer): UInt16; overload;
+Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Integer): UInt32; overload;
+Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Integer): UInt64; overload;
+
+procedure SetBitsValue(var Value: UInt8; NewBits: UInt8; FromBit,ToBit: Integer); overload;
+procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Integer); overload;
+procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Integer); overload;
+procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Integer); overload;
 
 implementation
 
@@ -2472,7 +2508,25 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
+{$IFDEF UseLookupTable}
+const
+  PopCountTable: array[Byte] of UInt8 = (
+    0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4,1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,
+    1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
+    1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
+    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
+    1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
+    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
+    2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,
+    3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,4,5,5,6,5,6,6,7,5,6,6,7,6,7,7,8);
+{$ENDIF}
+
 Function PopCount(Value: UInt8): Integer;
+{$IFDEF UseLookupTable}
+begin
+Result := PopCountTable[Value];
+end;
+{$ELSE}
 var
   i:  Integer;
 begin
@@ -2483,10 +2537,16 @@ For i := 1 to 8 do
     Value := UInt8(Value shr 1);
   end;
 end;
+{$ENDIF}
 
 //------------------------------------------------------------------------------
 
 Function PopCount(Value: UInt16): Integer;
+{$IFDEF UseLookupTable}
+begin
+Result := PopCountTable[Byte(Value)] + PopCountTable[Byte(Value shr 8)];
+end;
+{$ELSE}
 var
   i:  Integer;
 begin
@@ -2497,10 +2557,17 @@ For i := 1 to 16 do
     Value := UInt16(Value shr 1);
   end;
 end;
+{$ENDIF}
 
 //------------------------------------------------------------------------------
 
 Function PopCount(Value: UInt32): Integer;
+{$IFDEF UseLookupTable}
+begin
+Result := PopCountTable[Byte(Value)] + PopCountTable[Byte(Value shr 8)] +
+  PopCountTable[Byte(Value shr 16)] + PopCountTable[Byte(Value shr 24)];
+end;
+{$ELSE}
 var
   i:  Integer;
 begin
@@ -2511,10 +2578,23 @@ For i := 1 to 32 do
     Value := UInt32(Value shr 1);
   end;
 end;
+{$ENDIF}
 
 //------------------------------------------------------------------------------
 
 Function PopCount(Value: UInt64): Integer;
+{$IFDEF UseLookupTable}
+begin
+{$IFDEF 64bit}
+Result := PopCountTable[Byte(Value)] + PopCountTable[Byte(Value shr 8)] +
+  PopCountTable[Byte(Value shr 16)] + PopCountTable[Byte(Value shr 24)] +
+  PopCountTable[Byte(Value shr 32)] + PopCountTable[Byte(Value shr 40)] +
+  PopCountTable[Byte(Value shr 48)] + PopCountTable[Byte(Value shr 56)];
+{$ELSE}
+Result := PopCount(Int64Rec(Value).Lo) + PopCount(Int64Rec(Value).Hi);
+{$ENDIF}
+end;
+{$ELSE}
 var
   i:  Integer;
 begin
@@ -2525,6 +2605,7 @@ For i := 1 to 64 do
     Value := UInt64(Value shr 1);
   end;
 end;
+{$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -3077,6 +3158,78 @@ end;
 procedure SetFlagStateValue(var Value: UInt64; FlagBitmask: UInt64; NewState: Boolean);
 begin
 Value := SetFlagState(Value,FlagBitmask,NewState);
+end;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                                   Set bits                                   }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function SetBits(Value,NewBits: UInt8; FromBit,ToBit: Integer): UInt8;
+var
+  Mask: UInt8;
+begin
+Mask := ($FF shl (FromBit and 7)) and ($FF shr (7 - (ToBit and 7)));
+Result := (Value and not Mask) or (NewBits and Mask);
+end;
+
+//------------------------------------------------------------------------------
+
+Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Integer): UInt16;
+var
+  Mask: UInt16;
+begin
+Mask := ($FFFF shl (FromBit and 15)) and ($FFFF shr (15 - (ToBit and 15)));
+Result := (Value and not Mask) or (NewBits and Mask);
+end;
+
+//------------------------------------------------------------------------------
+
+Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Integer): UInt32;
+var
+  Mask: UInt32;
+begin
+Mask := ($FFFFFFFF shl (FromBit and 31)) and ($FFFFFFFF shr (31 - (ToBit and 31)));
+Result := (Value and not Mask) or (NewBits and Mask);
+end;
+
+//------------------------------------------------------------------------------
+
+Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Integer): UInt64;
+var
+  Mask: UInt64;
+begin
+Mask := (UInt64($FFFFFFFFFFFFFFFF) shl (FromBit and 63)) and (UInt64($FFFFFFFFFFFFFFFF) shr (63 - (ToBit and 63)));
+Result := (Value and not Mask) or (NewBits and Mask);
+end;
+
+//==============================================================================
+
+procedure SetBitsValue(var Value: UInt8; NewBits: UInt8; FromBit,ToBit: Integer);
+begin
+Value := SetBits(Value,NewBits,FromBit,ToBit);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Integer);
+begin
+Value := SetBits(Value,NewBits,FromBit,ToBit);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Integer);
+begin
+Value := SetBits(Value,NewBits,FromBit,ToBit);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Integer);
+begin
+Value := SetBits(Value,NewBits,FromBit,ToBit);
 end;
 
 end.
