@@ -45,6 +45,10 @@ unit BitOps;
 }
 {$DEFINE UseLookupTable}
 
+{$IFDEF FPC}
+  {$MODE ObjFPC}{$H+}
+{$ENDIF}
+
 interface
 
 uses
