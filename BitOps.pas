@@ -13,6 +13,9 @@
 
   Version 1.4
 
+  Dependencies:
+    AuxTypes - github.com/ncs-sniper/Lib.AuxTypes
+
 ===============================================================================}
 unit BitOps;
 
