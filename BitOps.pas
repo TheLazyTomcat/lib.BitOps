@@ -9,9 +9,9 @@
 
   BitOps - Binary operations
 
-  ©František Milt 2016-08-11
+  ©František Milt 2016-12-08
 
-  Version 1.4
+  Version 1.5
 
   Dependencies:
     AuxTypes - github.com/ncs-sniper/Lib.AuxTypes
@@ -417,6 +417,19 @@ procedure SetFlagStateValue(var Value: UInt8; FlagBitmask: UInt8; NewState: Bool
 procedure SetFlagStateValue(var Value: UInt16; FlagBitmask: UInt16; NewState: Boolean); overload;
 procedure SetFlagStateValue(var Value: UInt32; FlagBitmask: UInt32; NewState: Boolean); overload;
 procedure SetFlagStateValue(var Value: UInt64; FlagBitmask: UInt64; NewState: Boolean); overload;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                                   Get bits                                   }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+{
+  Returns contiguous segment of bits from passed Value, selected by a bit range.
+}
+Function GetBits(Value: UInt8; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt8; overload;
+Function GetBits(Value: UInt16; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt16; overload;
+Function GetBits(Value: UInt32; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt32; overload;
+Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt64; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -1715,8 +1728,8 @@ asm
 end;
 {$ELSE}
 begin
-Result := UInt32((Value and $000000FF shl 24) or (Value and $0000FF00 shl 8) or
-                 (Value and $00FF0000 shr 8) or (Value and $FF000000 shr 24));
+Result := UInt32(((Value and $000000FF) shl 24) or ((Value and $0000FF00) shl 8) or
+                 ((Value and $00FF0000) shr 8) or ((Value and $FF000000) shr 24));
 end;
 {$ENDIF}
       
@@ -3169,6 +3182,46 @@ end;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
+{                                   Get bits                                   }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function GetBits(Value: UInt8; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt8;
+begin
+Result := Value and UInt8(($FF shl (FromBit and 7)) and ($FF shr (7 - (ToBit and 7))));
+If ShiftDown then
+  Result := Result shr (FromBit and 7);
+end;
+
+//------------------------------------------------------------------------------
+
+Function GetBits(Value: UInt16; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt16;
+begin
+Result := Value and UInt16(($FFFF shl (FromBit and 15)) and ($FFFF shr (15 - (ToBit and 15))));
+If ShiftDown then
+  Result := Result shr (FromBit and 15);
+end;
+
+//------------------------------------------------------------------------------
+
+Function GetBits(Value: UInt32; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt32;
+begin
+Result := Value and UInt32(($FFFFFFFF shl (FromBit and 31)) and ($FFFFFFFF shr (31 - (ToBit and 31))));
+If ShiftDown then
+  Result := Result shr (FromBit and 31);
+end;
+
+//------------------------------------------------------------------------------
+
+Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt64;
+begin
+Result := Value and UInt64((UInt64($FFFFFFFFFFFFFFFF) shl (FromBit and 63)) and (UInt64($FFFFFFFFFFFFFFFF) shr (63 - (ToBit and 63))));
+If ShiftDown then
+  Result := Result shr (FromBit and 63);
+end;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
 {                                   Set bits                                   }
 {==============================================================================}
 {------------------------------------------------------------------------------}
@@ -3177,7 +3230,7 @@ Function SetBits(Value,NewBits: UInt8; FromBit,ToBit: Integer): UInt8;
 var
   Mask: UInt8;
 begin
-Mask := ($FF shl (FromBit and 7)) and ($FF shr (7 - (ToBit and 7)));
+Mask := UInt8(($FF shl (FromBit and 7)) and ($FF shr (7 - (ToBit and 7))));
 Result := (Value and not Mask) or (NewBits and Mask);
 end;
 
@@ -3187,7 +3240,7 @@ Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Integer): UInt16;
 var
   Mask: UInt16;
 begin
-Mask := ($FFFF shl (FromBit and 15)) and ($FFFF shr (15 - (ToBit and 15)));
+Mask := UInt16(($FFFF shl (FromBit and 15)) and ($FFFF shr (15 - (ToBit and 15))));
 Result := (Value and not Mask) or (NewBits and Mask);
 end;
 
@@ -3197,7 +3250,7 @@ Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Integer): UInt32;
 var
   Mask: UInt32;
 begin
-Mask := ($FFFFFFFF shl (FromBit and 31)) and ($FFFFFFFF shr (31 - (ToBit and 31)));
+Mask := UInt32(($FFFFFFFF shl (FromBit and 31)) and ($FFFFFFFF shr (31 - (ToBit and 31))));
 Result := (Value and not Mask) or (NewBits and Mask);
 end;
 
@@ -3207,7 +3260,7 @@ Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Integer): UInt64;
 var
   Mask: UInt64;
 begin
-Mask := (UInt64($FFFFFFFFFFFFFFFF) shl (FromBit and 63)) and (UInt64($FFFFFFFFFFFFFFFF) shr (63 - (ToBit and 63)));
+Mask := UInt64((UInt64($FFFFFFFFFFFFFFFF) shl (FromBit and 63)) and (UInt64($FFFFFFFFFFFFFFFF) shr (63 - (ToBit and 63))));
 Result := (Value and not Mask) or (NewBits and Mask);
 end;
 
