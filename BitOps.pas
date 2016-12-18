@@ -9,9 +9,9 @@
 
   BitOps - Binary operations
 
-  ©František Milt 2016-12-08
+  ©František Milt 2016-12-18
 
-  Version 1.5
+  Version 1.5.1
 
   Dependencies:
     AuxTypes - github.com/ncs-sniper/Lib.AuxTypes
@@ -1794,7 +1794,9 @@ asm
     MOV   byte ptr [RDX], R9B
     INC   RDX
     DEC   RAX
-    LOOP  @LoopStart
+
+    DEC   RCX
+    JNZ   @LoopStart
 
   @RoutineEnd:
 {$ELSE}
@@ -1815,7 +1817,9 @@ asm
     MOV   byte ptr [ESI], DL
     INC   ESI
     DEC   EDI
-    LOOP  @LoopStart
+
+    DEC   ECX
+    JNZ   @LoopStart
 
     POP   EDI
     POP   ESI
