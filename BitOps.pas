@@ -14,7 +14,11 @@
   Version 1.5.1
 
   Dependencies:
-    AuxTypes - github.com/ncs-sniper/Lib.AuxTypes
+    AuxTypes    - github.com/ncs-sniper/Lib.AuxTypes
+  * SimpleCPUID - github.com/ncs-sniper/Lib.SimpleCPUID
+
+  Marked (*) libraries are required only when AllowASMExtensions symbol is
+  defined and PurePascal symbol is not defined.
 
 ===============================================================================}
 unit BitOps;
@@ -29,28 +33,52 @@ unit BitOps;
 
 {$IF defined(CPUX86_64) or defined(CPUX64)}
   {$DEFINE x64}
-  {$IF not(defined(WINDOWS) or defined(MSWINDOWS))}
-    {$DEFINE PurePascal}
-  {$IFEND}
 {$ELSEIF defined(CPU386)}
   {$DEFINE x86}
 {$ELSE}
   {$DEFINE PurePascal}
 {$IFEND}
 
-{$IF defined(FPC) and not defined(PurePascal)}
-  {$ASMMODE Intel}
+{$IF Defined(WINDOWS) or Defined(MSWINDOWS)}
+  {$DEFINE Windows}
 {$IFEND}
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+  {$IFNDEF PurePascal}
+    {$ASMMODE Intel}
+  {$ENDIF}
+{$ELSE}
+  {$IFNDEF x64}
+    {
+      When defined, some ASM instructions are inserted into stream directly as
+      a machine code. It is there because not all compilers supports, and
+      therefore can compile, such instructions.
+      As I am not able to tell which 32bit delphi compilers do support them,
+      I am assuming none of them do. I am also assuming that all 64bit delphi
+      compilers and current FPCs are supporting the instructions.
+      Has no meaning when PurePascal is defined.
+    }
+    {$DEFINE ASM_MachineCode}
+  {$ENDIF}
+{$ENDIF}
+
 {
-  When defined, PopCount functions will use lookup table instead of testing each
-  bit in a passed value.
+  When defined, PopCount functions will, in their PurePascal version, use
+  lookup table instead of testing each bit in a passed value.
 }
 {$DEFINE UseLookupTable}
 
-{$IFDEF FPC}
-  {$MODE ObjFPC}{$H+}
-{$ENDIF}
+{
+  Allows use of x86(-64) instruction extensions in ASM.
+  When defined, availability of each extension is tested at unit initialization.
+  The instructions are used only when proper extension is supported.
+
+  Currently used extensions:
+
+    POPCNT (SSE 4.2)    - PopCount functions
+}
+{$DEFINE AllowASMExtensions}
 
 interface
 
@@ -76,15 +104,15 @@ Function BitsToNumber(const BitString: String): UInt64;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function ROL(Value: UInt8; Shift: Byte): UInt8; overload;
-Function ROL(Value: UInt16; Shift: Byte): UInt16; overload;
-Function ROL(Value: UInt32; Shift: Byte): UInt32; overload;
-Function ROL(Value: UInt64; Shift: Byte): UInt64; overload;
+Function ROL(Value: UInt8; Shift: UInt8): UInt8; overload;
+Function ROL(Value: UInt16; Shift: UInt8): UInt16; overload;
+Function ROL(Value: UInt32; Shift: UInt8): UInt32; overload;
+Function ROL(Value: UInt64; Shift: UInt8): UInt64; overload;
 
-procedure ROLValue(var Value: UInt8; Shift: Byte); overload;
-procedure ROLValue(var Value: UInt16; Shift: Byte); overload;
-procedure ROLValue(var Value: UInt32; Shift: Byte); overload;
-procedure ROLValue(var Value: UInt64; Shift: Byte); overload;
+procedure ROLValue(var Value: UInt8; Shift: UInt8); overload;
+procedure ROLValue(var Value: UInt16; Shift: UInt8); overload;
+procedure ROLValue(var Value: UInt32; Shift: UInt8); overload;
+procedure ROLValue(var Value: UInt64; Shift: UInt8); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -92,15 +120,15 @@ procedure ROLValue(var Value: UInt64; Shift: Byte); overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function ROR(Value: UInt8; Shift: Byte): UInt8; overload;
-Function ROR(Value: UInt16; Shift: Byte): UInt16; overload;
-Function ROR(Value: UInt32; Shift: Byte): UInt32; overload;
-Function ROR(Value: UInt64; Shift: Byte): UInt64; overload;
+Function ROR(Value: UInt8; Shift: UInt8): UInt8; overload;
+Function ROR(Value: UInt16; Shift: UInt8): UInt16; overload;
+Function ROR(Value: UInt32; Shift: UInt8): UInt32; overload;
+Function ROR(Value: UInt64; Shift: UInt8): UInt64; overload;
 
-procedure RORValue(var Value: UInt8; Shift: Byte); overload;
-procedure RORValue(var Value: UInt16; Shift: Byte); overload;
-procedure RORValue(var Value: UInt32; Shift: Byte); overload;
-procedure RORValue(var Value: UInt64; Shift: Byte); overload;
+procedure RORValue(var Value: UInt8; Shift: UInt8); overload;
+procedure RORValue(var Value: UInt16; Shift: UInt8); overload;
+procedure RORValue(var Value: UInt32; Shift: UInt8); overload;
+procedure RORValue(var Value: UInt64; Shift: UInt8); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -108,25 +136,25 @@ procedure RORValue(var Value: UInt64; Shift: Byte); overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function RCLCarry(Value: UInt8; Shift: Byte; var CF: Boolean): UInt8; overload;
-Function RCLCarry(Value: UInt16; Shift: Byte; var CF: Boolean): UInt16; overload;
-Function RCLCarry(Value: UInt32; Shift: Byte; var CF: Boolean): UInt32; overload;
-Function RCLCarry(Value: UInt64; Shift: Byte; var CF: Boolean): UInt64; overload;
+Function RCLCarry(Value: UInt8; Shift: UInt8; var CF: ByteBool): UInt8; overload;
+Function RCLCarry(Value: UInt16; Shift: UInt8; var CF: ByteBool): UInt16; overload;
+Function RCLCarry(Value: UInt32; Shift: UInt8; var CF: ByteBool): UInt32; overload;
+Function RCLCarry(Value: UInt64; Shift: UInt8; var CF: ByteBool): UInt64; overload;
 
-Function RCL(Value: UInt8; Shift: Byte; CF: Boolean = False): UInt8; overload;
-Function RCL(Value: UInt16; Shift: Byte; CF: Boolean = False): UInt16; overload;
-Function RCL(Value: UInt32; Shift: Byte; CF: Boolean = False): UInt32; overload;
-Function RCL(Value: UInt64; Shift: Byte; CF: Boolean = False): UInt64; overload;
+Function RCL(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8; overload;
+Function RCL(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16; overload;
+Function RCL(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32; overload;
+Function RCL(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64; overload;
 
-procedure RCLValueCarry(var Value: UInt8; Shift: Byte; var CF: Boolean); overload;
-procedure RCLValueCarry(var Value: UInt16; Shift: Byte; var CF: Boolean); overload;
-procedure RCLValueCarry(var Value: UInt32; Shift: Byte; var CF: Boolean); overload;
-procedure RCLValueCarry(var Value: UInt64; Shift: Byte; var CF: Boolean); overload;
+procedure RCLValueCarry(var Value: UInt8; Shift: UInt8; var CF: ByteBool); overload;
+procedure RCLValueCarry(var Value: UInt16; Shift: UInt8; var CF: ByteBool); overload;
+procedure RCLValueCarry(var Value: UInt32; Shift: UInt8; var CF: ByteBool); overload;
+procedure RCLValueCarry(var Value: UInt64; Shift: UInt8; var CF: ByteBool); overload;
 
-procedure RCLValue(var Value: UInt8; Shift: Byte; CF: Boolean = False); overload;
-procedure RCLValue(var Value: UInt16; Shift: Byte; CF: Boolean = False); overload;
-procedure RCLValue(var Value: UInt32; Shift: Byte; CF: Boolean = False); overload;
-procedure RCLValue(var Value: UInt64; Shift: Byte; CF: Boolean = False); overload;
+procedure RCLValue(var Value: UInt8; Shift: UInt8; CF: ByteBool = False); overload;
+procedure RCLValue(var Value: UInt16; Shift: UInt8; CF: ByteBool = False); overload;
+procedure RCLValue(var Value: UInt32; Shift: UInt8; CF: ByteBool = False); overload;
+procedure RCLValue(var Value: UInt64; Shift: UInt8; CF: ByteBool = False); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -134,25 +162,25 @@ procedure RCLValue(var Value: UInt64; Shift: Byte; CF: Boolean = False); overloa
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function RCRCarry(Value: UInt8; Shift: Byte; var CF: Boolean): UInt8; overload;
-Function RCRCarry(Value: UInt16; Shift: Byte; var CF: Boolean): UInt16; overload;
-Function RCRCarry(Value: UInt32; Shift: Byte; var CF: Boolean): UInt32; overload;
-Function RCRCarry(Value: UInt64; Shift: Byte; var CF: Boolean): UInt64; overload;
+Function RCRCarry(Value: UInt8; Shift: UInt8; var CF: ByteBool): UInt8; overload;
+Function RCRCarry(Value: UInt16; Shift: UInt8; var CF: ByteBool): UInt16; overload;
+Function RCRCarry(Value: UInt32; Shift: UInt8; var CF: ByteBool): UInt32; overload;
+Function RCRCarry(Value: UInt64; Shift: UInt8; var CF: ByteBool): UInt64; overload;
 
-Function RCR(Value: UInt8; Shift: Byte; CF: Boolean = False): UInt8; overload;
-Function RCR(Value: UInt16; Shift: Byte; CF: Boolean = False): UInt16; overload;
-Function RCR(Value: UInt32; Shift: Byte; CF: Boolean = False): UInt32; overload;
-Function RCR(Value: UInt64; Shift: Byte; CF: Boolean = False): UInt64; overload;
+Function RCR(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8; overload;
+Function RCR(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16; overload;
+Function RCR(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32; overload;
+Function RCR(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64; overload;
 
-procedure RCRValueCarry(var Value: UInt8; Shift: Byte; var CF: Boolean); overload;
-procedure RCRValueCarry(var Value: UInt16; Shift: Byte; var CF: Boolean); overload;
-procedure RCRValueCarry(var Value: UInt32; Shift: Byte; var CF: Boolean); overload;
-procedure RCRValueCarry(var Value: UInt64; Shift: Byte; var CF: Boolean); overload;
+procedure RCRValueCarry(var Value: UInt8; Shift: UInt8; var CF: ByteBool); overload;
+procedure RCRValueCarry(var Value: UInt16; Shift: UInt8; var CF: ByteBool); overload;
+procedure RCRValueCarry(var Value: UInt32; Shift: UInt8; var CF: ByteBool); overload;
+procedure RCRValueCarry(var Value: UInt64; Shift: UInt8; var CF: ByteBool); overload;
 
-procedure RCRValue(var Value: UInt8; Shift: Byte; CF: Boolean = False); overload;
-procedure RCRValue(var Value: UInt16; Shift: Byte; CF: Boolean = False); overload;
-procedure RCRValue(var Value: UInt32; Shift: Byte; CF: Boolean = False); overload;
-procedure RCRValue(var Value: UInt64; Shift: Byte; CF: Boolean = False); overload;
+procedure RCRValue(var Value: UInt8; Shift: UInt8; CF: ByteBool = False); overload;
+procedure RCRValue(var Value: UInt16; Shift: UInt8; CF: ByteBool = False); overload;
+procedure RCRValue(var Value: UInt32; Shift: UInt8; CF: ByteBool = False); overload;
+procedure RCRValue(var Value: UInt64; Shift: UInt8; CF: ByteBool = False); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -160,15 +188,15 @@ procedure RCRValue(var Value: UInt64; Shift: Byte; CF: Boolean = False); overloa
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function SAL(Value: UInt8; Shift: Byte): UInt8; overload;
-Function SAL(Value: UInt16; Shift: Byte): UInt16; overload;
-Function SAL(Value: UInt32; Shift: Byte): UInt32; overload;
-Function SAL(Value: UInt64; Shift: Byte): UInt64; overload;
+Function SAL(Value: UInt8; Shift: UInt8): UInt8; overload;
+Function SAL(Value: UInt16; Shift: UInt8): UInt16; overload;
+Function SAL(Value: UInt32; Shift: UInt8): UInt32; overload;
+Function SAL(Value: UInt64; Shift: UInt8): UInt64; overload;
 
-procedure SALValue(var Value: UInt8; Shift: Byte); overload;
-procedure SALValue(var Value: UInt16; Shift: Byte); overload;
-procedure SALValue(var Value: UInt32; Shift: Byte); overload;
-procedure SALValue(var Value: UInt64; Shift: Byte); overload;
+procedure SALValue(var Value: UInt8; Shift: UInt8); overload;
+procedure SALValue(var Value: UInt16; Shift: UInt8); overload;
+procedure SALValue(var Value: UInt32; Shift: UInt8); overload;
+procedure SALValue(var Value: UInt64; Shift: UInt8); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -176,15 +204,15 @@ procedure SALValue(var Value: UInt64; Shift: Byte); overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function SAR(Value: UInt8; Shift: Byte): UInt8; overload;
-Function SAR(Value: UInt16; Shift: Byte): UInt16; overload;
-Function SAR(Value: UInt32; Shift: Byte): UInt32; overload;
-Function SAR(Value: UInt64; Shift: Byte): UInt64; overload;
+Function SAR(Value: UInt8; Shift: UInt8): UInt8; overload;
+Function SAR(Value: UInt16; Shift: UInt8): UInt16; overload;
+Function SAR(Value: UInt32; Shift: UInt8): UInt32; overload;
+Function SAR(Value: UInt64; Shift: UInt8): UInt64; overload;
 
-procedure SARValue(var Value: UInt8; Shift: Byte); overload;
-procedure SARValue(var Value: UInt16; Shift: Byte); overload;
-procedure SARValue(var Value: UInt32; Shift: Byte); overload;
-procedure SARValue(var Value: UInt64; Shift: Byte); overload;
+procedure SARValue(var Value: UInt8; Shift: UInt8); overload;
+procedure SARValue(var Value: UInt16; Shift: UInt8); overload;
+procedure SARValue(var Value: UInt32; Shift: UInt8); overload;
+procedure SARValue(var Value: UInt64; Shift: UInt8); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -208,10 +236,10 @@ procedure EndianSwap(var Buffer; Size: TMemSize); overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BT(Value: UInt8; Bit: Byte): Boolean; overload;
-Function BT(Value: UInt16; Bit: Byte): Boolean; overload;
-Function BT(Value: UInt32; Bit: Byte): Boolean; overload;
-Function BT(Value: UInt64; Bit: Byte): Boolean; overload;
+Function BT(Value: UInt8; Bit: UInt8): ByteBool; overload;
+Function BT(Value: UInt16; Bit: UInt8): ByteBool; overload;
+Function BT(Value: UInt32; Bit: UInt8): ByteBool; overload;
+Function BT(Value: UInt64; Bit: UInt8): ByteBool; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -219,10 +247,10 @@ Function BT(Value: UInt64; Bit: Byte): Boolean; overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BTS(var Value: UInt8; Bit: Byte): Boolean; overload;
-Function BTS(var Value: UInt16; Bit: Byte): Boolean; overload;
-Function BTS(var Value: UInt32; Bit: Byte): Boolean; overload;
-Function BTS(var Value: UInt64; Bit: Byte): Boolean; overload;
+Function BTS(var Value: UInt8; Bit: UInt8): ByteBool; overload;
+Function BTS(var Value: UInt16; Bit: UInt8): ByteBool; overload;
+Function BTS(var Value: UInt32; Bit: UInt8): ByteBool; overload;
+Function BTS(var Value: UInt64; Bit: UInt8): ByteBool; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -230,10 +258,10 @@ Function BTS(var Value: UInt64; Bit: Byte): Boolean; overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BTR(var Value: UInt8; Bit: Byte): Boolean; overload;
-Function BTR(var Value: UInt16; Bit: Byte): Boolean; overload;
-Function BTR(var Value: UInt32; Bit: Byte): Boolean; overload;
-Function BTR(var Value: UInt64; Bit: Byte): Boolean; overload;
+Function BTR(var Value: UInt8; Bit: UInt8): ByteBool; overload;
+Function BTR(var Value: UInt16; Bit: UInt8): ByteBool; overload;
+Function BTR(var Value: UInt32; Bit: UInt8): ByteBool; overload;
+Function BTR(var Value: UInt64; Bit: UInt8): ByteBool; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -241,10 +269,10 @@ Function BTR(var Value: UInt64; Bit: Byte): Boolean; overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BTC(var Value: UInt8; Bit: Byte): Boolean; overload;
-Function BTC(var Value: UInt16; Bit: Byte): Boolean; overload;
-Function BTC(var Value: UInt32; Bit: Byte): Boolean; overload;
-Function BTC(var Value: UInt64; Bit: Byte): Boolean; overload;
+Function BTC(var Value: UInt8; Bit: UInt8): ByteBool; overload;
+Function BTC(var Value: UInt16; Bit: UInt8): ByteBool; overload;
+Function BTC(var Value: UInt32; Bit: UInt8): ByteBool; overload;
+Function BTC(var Value: UInt64; Bit: UInt8): ByteBool; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -252,10 +280,10 @@ Function BTC(var Value: UInt64; Bit: Byte): Boolean; overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BitSetTo(var Value: UInt8; Bit: Byte; NewValue: Boolean): Boolean; overload;
-Function BitSetTo(var Value: UInt16; Bit: Byte; NewValue: Boolean): Boolean; overload;
-Function BitSetTo(var Value: UInt32; Bit: Byte; NewValue: Boolean): Boolean; overload;
-Function BitSetTo(var Value: UInt64; Bit: Byte; NewValue: Boolean): Boolean; overload;
+Function BitSetTo(var Value: UInt8; Bit: UInt8; NewValue: ByteBool): ByteBool; overload;
+Function BitSetTo(var Value: UInt16; Bit: UInt8; NewValue: ByteBool): ByteBool; overload;
+Function BitSetTo(var Value: UInt32; Bit: UInt8; NewValue: ByteBool): ByteBool; overload;
+Function BitSetTo(var Value: UInt64; Bit: UInt8; NewValue: ByteBool): ByteBool; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -263,10 +291,10 @@ Function BitSetTo(var Value: UInt64; Bit: Byte; NewValue: Boolean): Boolean; ove
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BSF(Value: UInt8): Integer; overload;
-Function BSF(Value: UInt16): Integer; overload;
-Function BSF(Value: UInt32): Integer; overload;
-Function BSF(Value: UInt64): Integer; overload;
+Function BSF(Value: UInt8): Int32; overload;
+Function BSF(Value: UInt16): Int32; overload;
+Function BSF(Value: UInt32): Int32; overload;
+Function BSF(Value: UInt64): Int32; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -274,25 +302,21 @@ Function BSF(Value: UInt64): Integer; overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BSR(Value: UInt8): Integer; overload;
-Function BSR(Value: UInt16): Integer; overload;
-Function BSR(Value: UInt32): Integer; overload;
-Function BSR(Value: UInt64): Integer; overload;
+Function BSR(Value: UInt8): Int32; overload;
+Function BSR(Value: UInt16): Int32; overload;
+Function BSR(Value: UInt32): Int32; overload;
+Function BSR(Value: UInt64): Int32; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
 {                               Population count                               }
 {==============================================================================}
 {------------------------------------------------------------------------------}
-{
-  There is a posibility of using POPCNT instruction on x86, but it was added
-  very late and therefore is not supported in many still used CPUs.
-  I have decided to not use it.
-}
-Function PopCount(Value: UInt8): Integer; overload;
-Function PopCount(Value: UInt16): Integer; overload;
-Function PopCount(Value: UInt32): Integer; overload;
-Function PopCount(Value: UInt64): Integer; overload;
+
+Function PopCount(Value: UInt8): Int32; overload;
+Function PopCount(Value: UInt16): Int32; overload;
+Function PopCount(Value: UInt32): Int32; overload;
+Function PopCount(Value: UInt64): Int32; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -327,8 +351,9 @@ Function GetFlagState(Value,FlagBitmask: UInt64; ExactMatch: Boolean = False): B
 {------------------------------------------------------------------------------}
 {
   Functions with bits noted in name (*_8, *_16, ...) are there mainly for older
-  versions of Delphi (up to Delphi 2007), because they are not able distinguish
-  what overloaded function to call (problem with open array parameter parsing).
+  versions of Delphi (up to Delphi 2007), because they are not able to
+  distinguish what overloaded function to call (some problem with open array
+  parameter parsing).
 }
 
 Function SetFlag(Value,FlagBitmask: UInt8): UInt8; overload;
@@ -368,8 +393,9 @@ procedure SetFlagsValue(var Value: UInt64; Flags: array of UInt64); overload;
 {------------------------------------------------------------------------------}
 {
   Functions with bits noted in name (*_8, *_16, ...) are there mainly for older
-  versions of Delphi (up to Delphi 2007), because they are not able distinguish
-  what overloaded function to call (problem with open array parameter parsing).
+  versions of Delphi (up to Delphi 2007), because they are not able to
+  distinguish what overloaded function to call (some problem with open array
+  parameter parsing).
 }
 
 Function ResetFlag(Value,FlagBitmask: UInt8): UInt8; overload;
@@ -426,10 +452,10 @@ procedure SetFlagStateValue(var Value: UInt64; FlagBitmask: UInt64; NewState: Bo
 {
   Returns contiguous segment of bits from passed Value, selected by a bit range.
 }
-Function GetBits(Value: UInt8; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt8; overload;
-Function GetBits(Value: UInt16; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt16; overload;
-Function GetBits(Value: UInt32; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt32; overload;
-Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt64; overload;
+Function GetBits(Value: UInt8; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt8; overload;
+Function GetBits(Value: UInt16; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt16; overload;
+Function GetBits(Value: UInt32; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt32; overload;
+Function GetBits(Value: UInt64; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt64; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -440,20 +466,39 @@ Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = Tru
   Replaces contiguous segment of bits in Value by corresponding bits from
   NewBits.
 }
-Function SetBits(Value,NewBits: UInt8; FromBit,ToBit: Integer): UInt8; overload;
-Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Integer): UInt16; overload;
-Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Integer): UInt32; overload;
-Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Integer): UInt64; overload;
+Function SetBits(Value,NewBits: UInt8; FromBit,ToBit: Int32): UInt8; overload;
+Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Int32): UInt16; overload;
+Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Int32): UInt32; overload;
+Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Int32): UInt64; overload;
 
-procedure SetBitsValue(var Value: UInt8; NewBits: UInt8; FromBit,ToBit: Integer); overload;
-procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Integer); overload;
-procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Integer); overload;
-procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Integer); overload;
+procedure SetBitsValue(var Value: UInt8; NewBits: UInt8; FromBit,ToBit: Int32); overload;
+procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Int32); overload;
+procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Int32); overload;
+procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Int32); overload;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                                 Reverse bits                                 }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function ReverseBits(Value: UInt8): UInt8; overload;
+Function ReverseBits(Value: UInt16): UInt16; overload;
+Function ReverseBits(Value: UInt32): UInt32; overload;
+Function ReverseBits(Value: UInt64): UInt64; overload;
+
+procedure ReverseBitsValue(var Value: UInt8); overload;
+procedure ReverseBitsValue(var Value: UInt16); overload;
+procedure ReverseBitsValue(var Value: UInt32); overload;
+procedure ReverseBitsValue(var Value: UInt64); overload;
 
 implementation
 
 uses
-  SysUtils, Math;
+  SysUtils, Math
+{$IF Defined(AllowASMExtensions) and not Defined(PurePascal)}
+  , SimpleCPUID
+{$IFEND};
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -461,7 +506,7 @@ uses
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function _NumberToBits(Number: UInt64; Bits: Byte): String;
+Function _NumberToBits(Number: UInt64; Bits: UInt8): String;
 var
   i:  Integer;
 begin
@@ -521,29 +566,29 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function ROL(Value: UInt8; Shift: Byte): UInt8;{$IFNDEF PurePascal}assembler;
+Function ROL(Value: UInt8; Shift: UInt8): UInt8;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   AL,   CL
+    MOV   AL,   Value
 {$ENDIF}
-    MOV   CL,   DL
+    MOV   CL,   Shift
     ROL   AL,   CL
 end;
 {$ELSE}
 begin
 Shift := Shift and $07;
 Result := UInt8((Value shl Shift) or (Value shr (8 - Shift)));
-end; 
+end;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function ROL(Value: UInt16; Shift: Byte): UInt16;{$IFNDEF PurePascal}assembler;
+Function ROL(Value: UInt16; Shift: UInt8): UInt16;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   AX,   CX
+    MOV   AX,   Value
 {$ENDIF}
-    MOV   CL,   DL
+    MOV   CL,   Shift
     ROL   AX,   CL
 end;
 {$ELSE}
@@ -555,12 +600,12 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function ROL(Value: UInt32; Shift: Byte): UInt32;{$IFNDEF PurePascal}assembler;
+Function ROL(Value: UInt32; Shift: UInt8): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   EAX,  ECX
+    MOV   EAX,  Value
 {$ENDIF}
-    MOV   CL,   DL
+    MOV   CL,   Shift
     ROL   EAX,  CL
 end;
 {$ELSE}
@@ -572,11 +617,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function ROL(Value: UInt64; Shift: Byte): UInt64;{$IFNDEF PurePascal}assembler;
+Function ROL(Value: UInt64; Shift: UInt8): UInt64;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
-    MOV   CL,   DL
+    MOV   RAX,  Value
+    MOV   CL,   Shift
     ROL   RAX,  CL
 {$ELSE}
     MOV   ECX,  EAX
@@ -624,28 +669,28 @@ end;
 
 //==============================================================================
 
-procedure ROLValue(var Value: UInt8; Shift: Byte);
+procedure ROLValue(var Value: UInt8; Shift: UInt8);
 begin
 Value := ROL(Value,Shift);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure ROLValue(var Value: UInt16; Shift: Byte);
+procedure ROLValue(var Value: UInt16; Shift: UInt8);
 begin
 Value := ROL(Value,Shift);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure ROLValue(var Value: UInt32; Shift: Byte);
+procedure ROLValue(var Value: UInt32; Shift: UInt8);
 begin
 Value := ROL(Value,Shift);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure ROLValue(var Value: UInt64; Shift: Byte);
+procedure ROLValue(var Value: UInt64; Shift: UInt8);
 begin
 Value := ROL(Value,Shift);
 end;
@@ -656,12 +701,12 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function ROR(Value: UInt8; Shift: Byte): UInt8;{$IFNDEF PurePascal}assembler;
+Function ROR(Value: UInt8; Shift: UInt8): UInt8;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   AL,   CL
+    MOV   AL,   Value
 {$ENDIF}
-    MOV   CL,   DL
+    MOV   CL,   Shift
     ROR   AL,   CL
 end;
 {$ELSE}
@@ -673,12 +718,12 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function ROR(Value: UInt16; Shift: Byte): UInt16;{$IFNDEF PurePascal}assembler;
+Function ROR(Value: UInt16; Shift: UInt8): UInt16;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   AX,   CX
+    MOV   AX,   Value
 {$ENDIF}
-    MOV   CL,   DL
+    MOV   CL,   Shift
     ROR   AX,   CL
 end;
 {$ELSE}
@@ -690,12 +735,12 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function ROR(Value: UInt32; Shift: Byte): UInt32;{$IFNDEF PurePascal}assembler;
+Function ROR(Value: UInt32; Shift: UInt8): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   EAX,  ECX
+    MOV   EAX,  Value
 {$ENDIF}
-    MOV   CL,   DL
+    MOV   CL,   Shift
     ROR   EAX,  CL
 end;
 {$ELSE}
@@ -707,11 +752,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function ROR(Value: UInt64; Shift: Byte): UInt64;{$IFNDEF PurePascal}assembler;
+Function ROR(Value: UInt64; Shift: UInt8): UInt64;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
-    MOV   CL,   DL
+    MOV   RAX,  Value
+    MOV   CL,   Shift
     ROR   RAX,  CL
 {$ELSE}
     MOV   ECX,  EAX
@@ -759,28 +804,28 @@ end;
 
 //==============================================================================
 
-procedure RORValue(var Value: UInt8; Shift: Byte);
+procedure RORValue(var Value: UInt8; Shift: UInt8);
 begin
 Value := ROR(Value,Shift);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure RORValue(var Value: UInt16; Shift: Byte);
+procedure RORValue(var Value: UInt16; Shift: UInt8);
 begin
 Value := ROR(Value,Shift);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure RORValue(var Value: UInt32; Shift: Byte);
+procedure RORValue(var Value: UInt32; Shift: UInt8);
 begin
 Value := ROR(Value,Shift);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure RORValue(var Value: UInt64; Shift: Byte);
+procedure RORValue(var Value: UInt64; Shift: UInt8);
 begin
 Value := ROR(Value,Shift);
 end;
@@ -791,21 +836,19 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function RCLCarry(Value: UInt8; Shift: Byte; var CF: Boolean): UInt8;{$IFNDEF PurePascal}assembler;
+Function RCLCarry(Value: UInt8; Shift: UInt8; var CF: ByteBool): UInt8;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
-    MOV   RCX,  RDX
-    SHR   byte ptr [R8],  1
-    RCL   AL,   CL
-    SETC  CL
-    MOV   byte ptr [R8],  CL
+    MOV     AL,   Value
+    MOV     CL,   Shift
+    SHR     byte ptr [CF],  1
+    RCL     AL,   CL
+    SETC    byte ptr [CF]
 {$ELSE}
-    XCHG  EDX,  ECX
-    SHR   byte ptr [EDX], 1
-    RCL   AL,   CL
-    SETC  CL
-    MOV   byte ptr [EDX], CL
+    XCHG    EDX,  ECX
+    SHR     byte ptr [EDX], 1
+    RCL     AL,   CL
+    SETC    byte ptr [EDX]
 {$ENDIF}
 end;
 {$ELSE}
@@ -824,24 +867,22 @@ For i := 1 to Shift do
   end;
 end;
 {$ENDIF}
-      
+
 //------------------------------------------------------------------------------
 
-Function RCLCarry(Value: UInt16; Shift: Byte; var CF: Boolean): UInt16;{$IFNDEF PurePascal}assembler;
+Function RCLCarry(Value: UInt16; Shift: UInt8; var CF: ByteBool): UInt16;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
-    MOV   RCX,  RDX
-    SHR   byte ptr [R8],  1
+    MOV   AX,   Value
+    MOV   CL,   Shift
+    SHR   byte ptr [CF],  1
     RCL   AX,   CL
-    SETC  CL
-    MOV   byte ptr [R8],  CL
+    SETC  byte ptr [CF]
 {$ELSE}
     XCHG  EDX,  ECX
     SHR   byte ptr [EDX], 1
     RCL   AX,   CL
-    SETC  CL
-    MOV   byte ptr [EDX], CL
+    SETC  byte ptr [EDX]
 {$ENDIF}
 end;
 {$ELSE}
@@ -863,21 +904,19 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function RCLCarry(Value: UInt32; Shift: Byte; var CF: Boolean): UInt32;{$IFNDEF PurePascal}assembler;
+Function RCLCarry(Value: UInt32; Shift: UInt8; var CF: ByteBool): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
-    MOV   RCX,  RDX
-    SHR   byte ptr [R8],  1
+    MOV   EAX,  Value
+    MOV   CL,   Shift
+    SHR   byte ptr [CF],  1
     RCL   EAX,  CL
-    SETC  CL
-    MOV   byte ptr [R8],  CL
+    SETC  byte ptr [CF]
 {$ELSE}
     XCHG  EDX,  ECX
     SHR   byte ptr [EDX], 1
     RCL   EAX,  CL
-    SETC  CL
-    MOV   byte ptr [EDX], CL
+    SETC  byte ptr [EDX]
 {$ENDIF}
 end;
 {$ELSE}
@@ -899,24 +938,24 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function RCLCarry(Value: UInt64; Shift: Byte; var CF: Boolean): UInt64;{$IFNDEF PurePascal}assembler;
+Function RCLCarry(Value: UInt64; Shift: UInt8; var CF: ByteBool): UInt64;{$IFNDEF PurePascal}register; assembler;
 {$IFDEF x64}
 asm
-    MOV   RAX,  RCX
-    MOV   RCX,  RDX
-    SHR   byte ptr [R8],  1
+    MOV   RAX,  Value
+    MOV   CL,   Shift
+    SHR   byte ptr [CF],  1
     RCL   RAX,  CL
-    SETC  CL
-    MOV   byte ptr [R8],  CL
+    SETC  byte ptr [CF]
+end;
 {$ELSE}
 var
-  TempShift:  Integer;
+  TempShift:  UInt32;
 asm
     PUSH  EBX
-    
+
     AND   EAX,  $3F
     MOV   dword ptr [TempShift],  EAX
-    MOV   ECX,  EAX    
+    MOV   ECX,  EAX
     MOV   EBX,  EDX
 
     MOV   EAX,  dword ptr [Value]
@@ -1003,8 +1042,8 @@ asm
 {- Restore EBX register - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
   @FuncEnd:
     POP   EBX
-{$ENDIF}  
 end;
+{$ENDIF}
 {$ELSE}
 var
   i:      Integer;
@@ -1025,84 +1064,84 @@ end;
 
 //==============================================================================
 
-Function RCL(Value: UInt8; Shift: Byte; CF: Boolean = False): UInt8;
-begin
-Result := RCLCarry(Value,Shift,{%H-}CF);
-end;
- 
-//------------------------------------------------------------------------------
-
-Function RCL(Value: UInt16; Shift: Byte; CF: Boolean = False): UInt16;
+Function RCL(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8;
 begin
 Result := RCLCarry(Value,Shift,{%H-}CF);
 end;
 
 //------------------------------------------------------------------------------
 
-Function RCL(Value: UInt32; Shift: Byte; CF: Boolean = False): UInt32;
+Function RCL(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16;
 begin
 Result := RCLCarry(Value,Shift,{%H-}CF);
 end;
 
 //------------------------------------------------------------------------------
 
-Function RCL(Value: UInt64; Shift: Byte; CF: Boolean = False): UInt64;
+Function RCL(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32;
+begin
+Result := RCLCarry(Value,Shift,{%H-}CF);
+end;
+
+//------------------------------------------------------------------------------
+
+Function RCL(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64;
 begin
 Result := RCLCarry(Value,Shift,{%H-}CF);
 end;
 
 //==============================================================================
 
-procedure RCLValueCarry(var Value: UInt8; Shift: Byte; var CF: Boolean);
+procedure RCLValueCarry(var Value: UInt8; Shift: UInt8; var CF: ByteBool);
 begin
 Value := RCLCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure RCLValueCarry(var Value: UInt16; Shift: Byte; var CF: Boolean);
+procedure RCLValueCarry(var Value: UInt16; Shift: UInt8; var CF: ByteBool);
 begin
 Value := RCLCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure RCLValueCarry(var Value: UInt32; Shift: Byte; var CF: Boolean);
+procedure RCLValueCarry(var Value: UInt32; Shift: UInt8; var CF: ByteBool);
 begin
 Value := RCLCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure RCLValueCarry(var Value: UInt64; Shift: Byte; var CF: Boolean);
+procedure RCLValueCarry(var Value: UInt64; Shift: UInt8; var CF: ByteBool);
 begin
 Value := RCLCarry(Value,Shift,CF);
 end;
 
 //==============================================================================
 
-procedure RCLValue(var Value: UInt8; Shift: Byte; CF: Boolean = False);
-begin
-Value := RCL(Value,Shift,CF);
-end;
- 
-//------------------------------------------------------------------------------
-
-procedure RCLValue(var Value: UInt16; Shift: Byte; CF: Boolean = False);
-begin
-Value := RCL(Value,Shift,CF);
-end;
- 
-//------------------------------------------------------------------------------
-
-procedure RCLValue(var Value: UInt32; Shift: Byte; CF: Boolean = False);
+procedure RCLValue(var Value: UInt8; Shift: UInt8; CF: ByteBool = False);
 begin
 Value := RCL(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure RCLValue(var Value: UInt64; Shift: Byte; CF: Boolean = False);
+procedure RCLValue(var Value: UInt16; Shift: UInt8; CF: ByteBool = False);
+begin
+Value := RCL(Value,Shift,CF);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure RCLValue(var Value: UInt32; Shift: UInt8; CF: ByteBool = False);
+begin
+Value := RCL(Value,Shift,CF);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure RCLValue(var Value: UInt64; Shift: UInt8; CF: ByteBool = False);
 begin
 Value := RCL(Value,Shift,CF);
 end;
@@ -1113,21 +1152,19 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function RCRCarry(Value: UInt8; Shift: Byte; var CF: Boolean): UInt8;{$IFNDEF PurePascal}assembler;
+Function RCRCarry(Value: UInt8; Shift: UInt8; var CF: ByteBool): UInt8;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
-    MOV   RCX,  RDX
-    SHR   byte ptr [R8],  1
+    MOV   AL,   Value
+    MOV   CL,   Shift
+    SHR   byte ptr [CF],  1
     RCR   AL,   CL
-    SETC  CL
-    MOV   byte ptr [R8],  CL
+    SETC  byte ptr [CF]
 {$ELSE}
     XCHG  EDX,  ECX
     SHR   byte ptr [EDX], 1
     RCR   AL,   CL
-    SETC  CL
-    MOV   byte ptr [EDX], CL
+    SETC  byte ptr [EDX]
 {$ENDIF}
 end;
 {$ELSE}
@@ -1149,21 +1186,19 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function RCRCarry(Value: UInt16; Shift: Byte; var CF: Boolean): UInt16;{$IFNDEF PurePascal}assembler;
+Function RCRCarry(Value: UInt16; Shift: UInt8; var CF: ByteBool): UInt16;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
-    MOV   RCX,  RDX
-    SHR   byte ptr [R8],  1
+    MOV   AX,   Value
+    MOV   CL,   Shift
+    SHR   byte ptr [CF],  1
     RCR   AX,   CL
-    SETC  CL
-    MOV   byte ptr [R8],  CL
+    SETC  byte ptr [CF]
 {$ELSE}
     XCHG  EDX,  ECX
     SHR   byte ptr [EDX], 1
     RCR   AX,   CL
-    SETC  CL
-    MOV   byte ptr [EDX], CL
+    SETC  byte ptr [EDX]
 {$ENDIF}
 end;
 {$ELSE}
@@ -1185,21 +1220,19 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function RCRCarry(Value: UInt32; Shift: Byte; var CF: Boolean): UInt32;{$IFNDEF PurePascal}assembler;
+Function RCRCarry(Value: UInt32; Shift: UInt8; var CF: ByteBool): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
-    MOV   RCX,  RDX
-    SHR   byte ptr [R8],  1
+    MOV   EAX,  Value
+    MOV   CL,   Shift
+    SHR   byte ptr [CF],  1
     RCR   EAX,  CL
-    SETC  CL
-    MOV   byte ptr [R8],  CL
+    SETC  byte ptr [CF]
 {$ELSE}
     XCHG  EDX,  ECX
     SHR   byte ptr [EDX], 1
     RCR   EAX,  CL
-    SETC  CL
-    MOV   byte ptr [EDX], CL
+    SETC  byte ptr [EDX]
 {$ENDIF}
 end;
 {$ELSE}
@@ -1221,24 +1254,24 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function RCRCarry(Value: UInt64; Shift: Byte; var CF: Boolean): UInt64;{$IFNDEF PurePascal}assembler;
+Function RCRCarry(Value: UInt64; Shift: UInt8; var CF: ByteBool): UInt64;{$IFNDEF PurePascal}register; assembler;
 {$IFDEF x64}
 asm
-    MOV   RAX,  RCX
-    MOV   RCX,  RDX
-    SHR   byte ptr [R8],  1
+    MOV   RAX,  Value
+    MOV   CL,   Shift
+    SHR   byte ptr [CF],  1
     RCR   RAX,  CL
-    SETC  CL
-    MOV   byte ptr [R8],  CL
+    SETC  byte ptr [CF]
+end;
 {$ELSE}
 var
-  TempShift:  Integer;
+  TempShift:  UInt32;
 asm
     PUSH  EBX
 
     AND   EAX,  $3F
     MOV   dword ptr [TempShift],  EAX
-    MOV   ECX,  EAX    
+    MOV   ECX,  EAX
     MOV   EBX,  EDX
 
     MOV   EAX,  dword ptr [Value]
@@ -1313,7 +1346,7 @@ asm
     JMP   @StoreCarry
 
   @FromHigh:
-    AND   CL,   $1F  
+    AND   CL,   $1F
     DEC   CL
     BT    dword ptr [Value + 4], ECX
 
@@ -1324,8 +1357,8 @@ asm
 {- Restore EBX register - - - - - - - - - - - - - - - - - - - - - - - - - - - -}
   @FuncEnd:
     POP   EBX
-{$ENDIF}
 end;
+{$ENDIF}
 {$ELSE}
 var
   i:      Integer;
@@ -1345,84 +1378,84 @@ end;
 
 //==============================================================================
 
-Function RCR(Value: UInt8; Shift: Byte; CF: Boolean = False): UInt8;
+Function RCR(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8;
 begin
 Result := RCRCarry(Value,Shift,{%H-}CF);
 end;
 
 //------------------------------------------------------------------------------
 
-Function RCR(Value: UInt16; Shift: Byte; CF: Boolean = False): UInt16;
+Function RCR(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16;
 begin
 Result := RCRCarry(Value,Shift,{%H-}CF);
 end;
 
 //------------------------------------------------------------------------------
 
-Function RCR(Value: UInt32; Shift: Byte; CF: Boolean = False): UInt32;
+Function RCR(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32;
 begin
 Result := RCRCarry(Value,Shift,{%H-}CF);
 end;
 
 //------------------------------------------------------------------------------
 
-Function RCR(Value: UInt64; Shift: Byte; CF: Boolean = False): UInt64;
+Function RCR(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64;
 begin
 Result := RCRCarry(Value,Shift,{%H-}CF);
 end;
 
 //==============================================================================
 
-procedure RCRValueCarry(var Value: UInt8; Shift: Byte; var CF: Boolean);
-begin
-Value := RCRCarry(Value,Shift,CF);
-end;
- 
-//------------------------------------------------------------------------------
-
-procedure RCRValueCarry(var Value: UInt16; Shift: Byte; var CF: Boolean);
-begin
-Value := RCRCarry(Value,Shift,CF);
-end;
-  
-//------------------------------------------------------------------------------
-
-procedure RCRValueCarry(var Value: UInt32; Shift: Byte; var CF: Boolean);
+procedure RCRValueCarry(var Value: UInt8; Shift: UInt8; var CF: ByteBool);
 begin
 Value := RCRCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure RCRValueCarry(var Value: UInt64; Shift: Byte; var CF: Boolean);
+procedure RCRValueCarry(var Value: UInt16; Shift: UInt8; var CF: ByteBool);
+begin
+Value := RCRCarry(Value,Shift,CF);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure RCRValueCarry(var Value: UInt32; Shift: UInt8; var CF: ByteBool);
+begin
+Value := RCRCarry(Value,Shift,CF);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure RCRValueCarry(var Value: UInt64; Shift: UInt8; var CF: ByteBool);
 begin
 Value := RCRCarry(Value,Shift,CF);
 end;
 
 //==============================================================================
 
-procedure RCRValue(var Value: UInt8; Shift: Byte; CF: Boolean = False);
-begin
-Value := RCR(Value,Shift,CF);
-end;
- 
-//------------------------------------------------------------------------------
-
-procedure RCRValue(var Value: UInt16; Shift: Byte; CF: Boolean = False);
+procedure RCRValue(var Value: UInt8; Shift: UInt8; CF: ByteBool = False);
 begin
 Value := RCR(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure RCRValue(var Value: UInt32; Shift: Byte; CF: Boolean = False);
+procedure RCRValue(var Value: UInt16; Shift: UInt8; CF: ByteBool = False);
 begin
 Value := RCR(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure RCRValue(var Value: UInt64; Shift: Byte; CF: Boolean = False);
+procedure RCRValue(var Value: UInt32; Shift: UInt8; CF: ByteBool = False);
+begin
+Value := RCR(Value,Shift,CF);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure RCRValue(var Value: UInt64; Shift: UInt8; CF: ByteBool = False);
 begin
 Value := RCR(Value,Shift,CF);
 end;
@@ -1433,12 +1466,12 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function SAL(Value: UInt8; Shift: Byte): UInt8;{$IFNDEF PurePascal}assembler;
+Function SAL(Value: UInt8; Shift: UInt8): UInt8;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
+    MOV   AL,   Value
 {$ENDIF}
-    MOV   CL,   DL
+    MOV   CL,   Shift
     SAL   AL,   CL
 end;
 {$ELSE}
@@ -1449,12 +1482,12 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function SAL(Value: UInt16; Shift: Byte): UInt16;{$IFNDEF PurePascal}assembler;
+Function SAL(Value: UInt16; Shift: UInt8): UInt16;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
+    MOV   AX,   Value
 {$ENDIF}
-    MOV   CL,   DL
+    MOV   CL,   Shift
     SAL   AX,   CL
 end;
 {$ELSE}
@@ -1465,12 +1498,12 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function SAL(Value: UInt32; Shift: Byte): UInt32;{$IFNDEF PurePascal}assembler;
+Function SAL(Value: UInt32; Shift: UInt8): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
+    MOV   EAX,  Value
 {$ENDIF}
-    MOV   CL,   DL
+    MOV   CL,   Shift
     SAL   EAX,  CL
 end;
 {$ELSE}
@@ -1481,11 +1514,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function SAL(Value: UInt64; Shift: Byte): UInt64;{$IFNDEF PurePascal}assembler;
+Function SAL(Value: UInt64; Shift: UInt8): UInt64;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
-    MOV   CL,   DL
+    MOV   RAX,  Value
+    MOV   CL,   Shift
     SAL   RAX,  CL
 {$ELSE}
     MOV   ECX,  EAX
@@ -1524,28 +1557,28 @@ end;
 
 //==============================================================================
 
-procedure SALValue(var Value: UInt8; Shift: Byte);
-begin
-Value := SAL(Value,Shift);
-end;
- 
-//------------------------------------------------------------------------------
-
-procedure SALValue(var Value: UInt16; Shift: Byte);
+procedure SALValue(var Value: UInt8; Shift: UInt8);
 begin
 Value := SAL(Value,Shift);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure SALValue(var Value: UInt32; Shift: Byte);
+procedure SALValue(var Value: UInt16; Shift: UInt8);
 begin
 Value := SAL(Value,Shift);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure SALValue(var Value: UInt64; Shift: Byte);
+procedure SALValue(var Value: UInt32; Shift: UInt8);
+begin
+Value := SAL(Value,Shift);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SALValue(var Value: UInt64; Shift: UInt8);
 begin
 Value := SAL(Value,Shift);
 end;
@@ -1556,12 +1589,12 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function SAR(Value: UInt8; Shift: Byte): UInt8;{$IFNDEF PurePascal}assembler;
+Function SAR(Value: UInt8; Shift: UInt8): UInt8;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
+    MOV   AL,   Value
 {$ENDIF}
-    MOV   CL,   DL
+    MOV   CL,   Shift
     SAR   AL,   CL
 end;
 {$ELSE}
@@ -1573,15 +1606,15 @@ else
   Result := UInt8(Value shr Shift);
 end;
 {$ENDIF}
- 
+
 //------------------------------------------------------------------------------
 
-Function SAR(Value: UInt16; Shift: Byte): UInt16;{$IFNDEF PurePascal}assembler;
+Function SAR(Value: UInt16; Shift: UInt8): UInt16;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
+    MOV   AX,   Value
 {$ENDIF}
-    MOV   CL,   DL
+    MOV   CL,   Shift
     SAR   AX,   CL
 end;
 {$ELSE}
@@ -1593,15 +1626,15 @@ else
   Result := UInt16(Value shr Shift);
 end;
 {$ENDIF}
-  
+
 //------------------------------------------------------------------------------
 
-Function SAR(Value: UInt32; Shift: Byte): UInt32;{$IFNDEF PurePascal}assembler;
+Function SAR(Value: UInt32; Shift: UInt8): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
+    MOV   EAX,  Value
 {$ENDIF}
-    MOV   CL,   DL
+    MOV   CL,   Shift
     SAR   EAX,  CL
 end;
 {$ELSE}
@@ -1616,11 +1649,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function SAR(Value: UInt64; Shift: Byte): UInt64;{$IFNDEF PurePascal}assembler;
+Function SAR(Value: UInt64; Shift: UInt8): UInt64;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
-    MOV   CL,   DL
+    MOV   RAX,  Value
+    MOV   CL,   Shift
     SAR   RAX,  CL
 {$ELSE}
     MOV   ECX,  EAX
@@ -1672,28 +1705,28 @@ end;
 
 //==============================================================================
 
-procedure SARValue(var Value: UInt8; Shift: Byte);
+procedure SARValue(var Value: UInt8; Shift: UInt8);
 begin
 Value := SAL(Value,Shift);
 end;
- 
+
 //------------------------------------------------------------------------------
 
-procedure SARValue(var Value: UInt16; Shift: Byte);
+procedure SARValue(var Value: UInt16; Shift: UInt8);
 begin
 Value := SAR(Value,Shift);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure SARValue(var Value: UInt32; Shift: Byte);
+procedure SARValue(var Value: UInt32; Shift: UInt8);
 begin
 Value := SAR(Value,Shift);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure SARValue(var Value: UInt64; Shift: Byte);
+procedure SARValue(var Value: UInt64; Shift: UInt8);
 begin
 Value := SAR(Value,Shift);
 end;
@@ -1704,10 +1737,10 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function EndianSwap(Value: UInt16): UInt16;{$IFNDEF PurePascal}assembler;
+Function EndianSwap(Value: UInt16): UInt16;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
+    MOV   AX,   Value
 {$ENDIF}
     XCHG  AL,   AH
 end;
@@ -1716,13 +1749,13 @@ begin
 Result := UInt16((Value shl 8) or (Value shr 8));
 end;
 {$ENDIF}
-  
+
 //------------------------------------------------------------------------------
 
-Function EndianSwap(Value: UInt32): UInt32;{$IFNDEF PurePascal}assembler;
+Function EndianSwap(Value: UInt32): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
+    MOV   EAX,  Value
 {$ENDIF}
     BSWAP EAX
 end;
@@ -1732,13 +1765,13 @@ Result := UInt32(((Value and $000000FF) shl 24) or ((Value and $0000FF00) shl 8)
                  ((Value and $00FF0000) shr 8) or ((Value and $FF000000) shr 24));
 end;
 {$ENDIF}
-      
+
 //------------------------------------------------------------------------------
 
-Function EndianSwap(Value: UInt64): UInt64;{$IFNDEF PurePascal}assembler;
+Function EndianSwap(Value: UInt64): UInt64;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  RCX
+    MOV   RAX,  Value
     BSWAP RAX
 {$ELSE}
     MOV   EAX,  dword ptr [Value + 4]
@@ -1760,7 +1793,7 @@ procedure EndianSwapValue(var Value: UInt16);
 begin
 Value := EndianSwap(Value);
 end;
-             
+
 //------------------------------------------------------------------------------
 
 procedure EndianSwapValue(var Value: UInt32);
@@ -1777,10 +1810,16 @@ end;
 
 //==============================================================================
 
-procedure EndianSwap(var Buffer; Size: TMemSize);{$IFNDEF PurePascal}assembler;
+procedure EndianSwap(var Buffer; Size: TMemSize);{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
+  {$IFDEF Windows}
     XCHG  RCX,  RDX
+  {$ELSE}
+    MOV   RDX,  RDI
+    MOV   RCX,  RSI
+  {$ENDIF}
+
     CMP   RCX,  1
     JBE   @RoutineEnd
 
@@ -1806,6 +1845,7 @@ asm
 
     PUSH  ESI
     PUSH  EDI
+
     MOV   ESI,  EAX
     LEA   EDI,  [EAX + ECX - 1]
     SHR   ECX,  1
@@ -1854,46 +1894,19 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BT(Value: UInt8; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BT(Value: UInt8; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    BT    CX, DX
+  {$IFDEF Windows}
+    AND   DX,   $7
+    BT    CX,   DX
+  {$ELSE}
+    AND   SI,   $7
+    BT    DI,   SI
+  {$ENDIF}
 {$ELSE}
-    BT    AX, DX
-{$ENDIF}
-    SETC  AL
-end;
-{$ELSE}
-begin
-Result := ((Value shr Bit) and 1) <> 0;
-end;
-{$ENDIF}
-           
-//------------------------------------------------------------------------------
-
-Function BT(Value: UInt16; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
-asm
-{$IFDEF x64}
-    BT    CX, DX
-{$ELSE}
-    BT    AX, DX
-{$ENDIF}
-    SETC  AL
-end;
-{$ELSE}
-begin
-Result := ((Value shr Bit) and 1) <> 0;
-end;
-{$ENDIF}
-           
-//------------------------------------------------------------------------------
-
-Function BT(Value: UInt32; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
-asm
-{$IFDEF x64}
-    BT    ECX, EDX
-{$ELSE}
-    BT    EAX, EDX
+    AND   DX,   $7
+    BT    AX,   DX
 {$ENDIF}
     SETC  AL
 end;
@@ -1905,10 +1918,56 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BT(Value: UInt64; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BT(Value: UInt16; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
+  {$IFDEF Windows}
+    BT    CX,   DX
+  {$ELSE}
+    BT    DI,   SI
+  {$ENDIF}
+{$ELSE}
+    BT    AX,   DX
+{$ENDIF}
+    SETC  AL
+end;
+{$ELSE}
+begin
+Result := ((Value shr Bit) and 1) <> 0;
+end;
+{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function BT(Value: UInt32; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    BT    ECX,  EDX
+  {$ELSE}
+    BT    EDI,  ESI
+  {$ENDIF}
+{$ELSE}
+    BT    EAX,  EDX
+{$ENDIF}
+    SETC  AL
+end;
+{$ELSE}
+begin
+Result := ((Value shr Bit) and 1) <> 0;
+end;
+{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function BT(Value: UInt64; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
     BT    RCX,  RDX
+  {$ELSE}
+    BT    RDI,  RSI
+  {$ENDIF}
 {$ELSE}
     CMP   EAX,  32
     JAE   @TestHigh
@@ -1935,18 +1994,27 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BTS(var Value: UInt8; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BTS(var Value: UInt8; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   AL, byte ptr [RCX]
-    BTS   AX, DX
-    MOV   byte ptr [RCX], AL
+  {$IFDEF Windows}
+    AND     DX,   $7
+    MOVZX   RAX,  byte ptr [RCX]
+    BTS     AX,   DX
+    MOV     byte ptr [RCX], AL
+  {$ELSE}
+    AND     SI,   $7
+    MOVZX   RAX,  byte ptr [RDI]
+    BTS     AX,   SI
+    MOV     byte ptr [RDI], AL
+  {$ENDIF}
 {$ELSE}
-    MOV   CL, byte ptr [EAX]
-    BTS   CX, DX
-    MOV   byte ptr [EAX], CL
+    AND     DX,   $7
+    MOVZX   ECX,  byte ptr [EAX]
+    BTS     CX,   DX
+    MOV     byte ptr [EAX], CL
 {$ENDIF}
-    SETC  AL
+    SETC    AL
 end;
 {$ELSE}
 begin
@@ -1954,19 +2022,22 @@ Result := ((Value shr Bit) and 1) <> 0;
 Value := UInt8(Value or (UInt8(1) shl Bit));
 end;
 {$ENDIF}
-           
+
 //------------------------------------------------------------------------------
 
-Function BTS(var Value: UInt16; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BTS(var Value: UInt16; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   AX, word ptr [RCX]
-    BTS   AX, DX
-    MOV   word ptr [RCX], AX
+  {$IFDEF Windows}
+    AND   DX, $FF
+    BTS   word ptr [RCX], DX
+  {$ELSE}
+    AND   SI, $FF
+    BTS   word ptr [RDI], SI
+  {$ENDIF}
 {$ELSE}
-    MOV   CX, word ptr [EAX]
-    BTS   CX, DX
-    MOV   word ptr [EAX], CX
+    AND   DX, $FF
+    BTS   word ptr [EAX], DX
 {$ENDIF}
     SETC  AL
 end;
@@ -1979,16 +2050,19 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BTS(var Value: UInt32; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BTS(var Value: UInt32; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   EAX,  dword ptr [RCX]
-    BTS   EAX,  EDX
-    MOV   dword ptr [RCX],  EAX
+  {$IFDEF Windows}
+    AND   EDX,  $FF
+    BTS   dword ptr [RCX],  EDX
+  {$ELSE}
+    AND   ESI,  $FF
+    BTS   dword ptr [RDI],  ESI
+  {$ENDIF}
 {$ELSE}
-    MOV   ECX,  dword ptr [EAX]
-    BTS   ECX,  EDX
-    MOV   dword ptr [EAX],  ECX
+    AND   EDX,  $FF
+    BTS   dword ptr [EAX],  EDX
 {$ENDIF}
     SETC  AL
 end;
@@ -2001,12 +2075,16 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BTS(var Value: UInt64; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BTS(var Value: UInt64; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX,  qword ptr [RCX]
-    BTS   RAX,  RDX
-    MOV   qword ptr [RCX], RAX
+  {$IFDEF Windows}
+    AND   RDX,  $FF
+    BTS   dword ptr [RCX],  RDX
+  {$ELSE}
+    AND   RSI,  $FF
+    BTS   dword ptr [RDI],  RSI
+  {$ENDIF}
 {$ELSE}
     CMP   EDX,  32
     JAE   @TestHigh
@@ -2016,7 +2094,7 @@ asm
 
   @TestHigh:
     AND   EDX,  $1F
-    BTS   dword ptr [Value + 4],  EDX
+    BTS   dword ptr [EAX + 4],  EDX
 {$ENDIF}
   @SetResult:
     SETC  AL
@@ -2034,18 +2112,27 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BTR(var Value: UInt8; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BTR(var Value: UInt8; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   AL, byte ptr [RCX]
-    BTR   AX, DX
-    MOV   byte ptr [RCX], AL
+  {$IFDEF Windows}
+    AND     DX,   $7
+    MOVZX   RAX,  byte ptr [RCX]
+    BTR     AX,   DX
+    MOV     byte ptr [RCX], AL
+  {$ELSE}
+    AND     SI,   $7
+    MOVZX   RAX,  byte ptr [RDI]
+    BTR     AX,   SI
+    MOV     byte ptr [RDI], AL
+  {$ENDIF}
 {$ELSE}
-    MOV   CL, byte ptr [EAX]
-    BTR   CX, DX
-    MOV   byte ptr [EAX], CL
+    AND     DX,   $7
+    MOVZX   ECX,  byte ptr [EAX]
+    BTR     CX,   DX
+    MOV     byte ptr [EAX], CL
 {$ENDIF}
-    SETC  AL
+    SETC    AL
 end;
 {$ELSE}
 begin
@@ -2056,16 +2143,19 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BTR(var Value: UInt16; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BTR(var Value: UInt16; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   AX, word ptr [RCX]
-    BTR   AX, DX
-    MOV   word ptr [RCX], AX
+  {$IFDEF Windows}
+    AND   DX, $FF
+    BTR   word ptr [RCX], DX
+  {$ELSE}
+    AND   SI, $FF
+    BTR   word ptr [RDI], SI
+  {$ENDIF}
 {$ELSE}
-    MOV   CX, word ptr [EAX]
-    BTR   CX, DX
-    MOV   word ptr [EAX], CX
+    AND   DX, $FF
+    BTR   word ptr [EAX], DX
 {$ENDIF}
     SETC  AL
 end;
@@ -2075,19 +2165,22 @@ Result := ((Value shr Bit) and 1) <> 0;
 Value := UInt16(Value and not(UInt16(1) shl Bit));
 end;
 {$ENDIF}
-           
+
 //------------------------------------------------------------------------------
 
-Function BTR(var Value: UInt32; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BTR(var Value: UInt32; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   EAX,  dword ptr [RCX]
-    BTR   EAX,  EDX
-    MOV   dword ptr [RCX],  EAX
+  {$IFDEF Windows}
+    AND   EDX,  $FF
+    BTR   dword ptr [RCX],  EDX
+  {$ELSE}
+    AND   ESI,  $FF
+    BTR   dword ptr [RDI],  ESI
+  {$ENDIF}
 {$ELSE}
-    MOV   ECX,  dword ptr [EAX]
-    BTR   ECX,  EDX
-    MOV   dword ptr [EAX],  ECX
+    AND   EDX,  $FF
+    BTR   dword ptr [EAX],  EDX
 {$ENDIF}
     SETC  AL
 end;
@@ -2100,12 +2193,16 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BTR(var Value: UInt64; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BTR(var Value: UInt64; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX, qword ptr [RCX]
-    BTR   RAX,  RDX
-    MOV   qword ptr [RCX], RAX
+  {$IFDEF Windows}
+    AND   RDX,  $FF
+    BTR   dword ptr [RCX],  RDX
+  {$ELSE}
+    AND   RSI,  $FF
+    BTR   dword ptr [RDI],  RSI
+  {$ENDIF}
 {$ELSE}
     CMP   EDX,  32
     JAE   @TestHigh
@@ -2115,7 +2212,7 @@ asm
 
   @TestHigh:
     AND   EDX,  $1F
-    BTR   dword ptr [Value + 4],  EDX
+    BTR   dword ptr [EAX + 4],  EDX
 {$ENDIF}
   @SetResult:
     SETC  AL
@@ -2133,18 +2230,27 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BTC(var Value: UInt8; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BTC(var Value: UInt8; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   AL, byte ptr [RCX]
-    BTC   AX, DX
-    MOV   byte ptr [RCX], AL
+  {$IFDEF Windows}
+    AND     DX,   $7
+    MOVZX   RAX,  byte ptr [RCX]
+    BTC     AX,   DX
+    MOV     byte ptr [RCX], AL
+  {$ELSE}
+    AND     SI,   $7
+    MOVZX   RAX,  byte ptr [RDI]
+    BTC     AX,   SI
+    MOV     byte ptr [RDI], AL
+  {$ENDIF}
 {$ELSE}
-    MOV   CL, byte ptr [EAX]
-    BTC   CX, DX
-    MOV   byte ptr [EAX], CL
+    AND     DX,   $7
+    MOVZX   ECX,  byte ptr [EAX]
+    BTC     CX,   DX
+    MOV     byte ptr [EAX], CL
 {$ENDIF}
-    SETC  AL
+    SETC    AL
 end;
 {$ELSE}
 begin
@@ -2156,16 +2262,19 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BTC(var Value: UInt16; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BTC(var Value: UInt16; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   AX, word ptr [RCX]
-    BTC   AX, DX
-    MOV   word ptr [RCX], AX
+  {$IFDEF Windows}
+    AND   DX, $FF
+    BTC   word ptr [RCX], DX
+  {$ELSE}
+    AND   SI, $FF
+    BTC   word ptr [RDI], SI
+  {$ENDIF}
 {$ELSE}
-    MOV   CX, word ptr [EAX]
-    BTC   CX, DX
-    MOV   word ptr [EAX], CX
+    AND   DX, $FF
+    BTC   word ptr [EAX], DX
 {$ENDIF}
     SETC  AL
 end;
@@ -2179,16 +2288,19 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BTC(var Value: UInt32; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BTC(var Value: UInt32; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   EAX,  dword ptr [RCX]
-    BTC   EAX,  EDX
-    MOV   dword ptr [RCX],  EAX
+  {$IFDEF Windows}
+    AND   EDX,  $FF
+    BTC   dword ptr [RCX],  EDX
+  {$ELSE}
+    AND   ESI,  $FF
+    BTC   dword ptr [RDI],  ESI
+  {$ENDIF}
 {$ELSE}
-    MOV   ECX,  dword ptr [EAX]
-    BTC   ECX,  EDX
-    MOV   dword ptr [EAX],  ECX
+    AND   EDX,  $FF
+    BTC   dword ptr [EAX],  EDX
 {$ENDIF}
     SETC  AL
 end;
@@ -2202,12 +2314,16 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BTC(var Value: UInt64; Bit: Byte): Boolean;{$IFNDEF PurePascal}assembler;
+Function BTC(var Value: UInt64; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    MOV   RAX, qword ptr [RCX]
-    BTC   RAX,  RDX
-    MOV   qword ptr [RCX], RAX
+  {$IFDEF Windows}
+    AND   RDX,  $FF
+    BTC   dword ptr [RCX],  RDX
+  {$ELSE}
+    AND   RSI,  $FF
+    BTC   dword ptr [RDI],  RSI
+  {$ENDIF}
 {$ELSE}
     CMP   EDX,  32
     JAE   @TestHigh
@@ -2217,7 +2333,7 @@ asm
 
   @TestHigh:
     AND   EDX,  $1F
-    BTC   dword ptr [Value + 4],  EDX
+    BTC   dword ptr [EAX + 4],  EDX
 {$ENDIF}
   @SetResult:
     SETC  AL
@@ -2236,23 +2352,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BitSetTo(var Value: UInt8; Bit: Byte; NewValue: Boolean): Boolean;
-begin
-If NewValue then Result := BTS(Value,Bit)
-  else Result := BTR(Value,Bit);
-end;
-             
-//------------------------------------------------------------------------------
-
-Function BitSetTo(var Value: UInt16; Bit: Byte; NewValue: Boolean): Boolean;
-begin
-If NewValue then Result := BTS(Value,Bit)
-  else Result := BTR(Value,Bit);
-end;
-            
-//------------------------------------------------------------------------------
-
-Function BitSetTo(var Value: UInt32; Bit: Byte; NewValue: Boolean): Boolean;
+Function BitSetTo(var Value: UInt8; Bit: UInt8; NewValue: ByteBool): ByteBool;
 begin
 If NewValue then Result := BTS(Value,Bit)
   else Result := BTR(Value,Bit);
@@ -2260,7 +2360,23 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BitSetTo(var Value: UInt64; Bit: Byte; NewValue: Boolean): Boolean;
+Function BitSetTo(var Value: UInt16; Bit: UInt8; NewValue: ByteBool): ByteBool;
+begin
+If NewValue then Result := BTS(Value,Bit)
+  else Result := BTR(Value,Bit);
+end;
+
+//------------------------------------------------------------------------------
+
+Function BitSetTo(var Value: UInt32; Bit: UInt8; NewValue: ByteBool): ByteBool;
+begin
+If NewValue then Result := BTS(Value,Bit)
+  else Result := BTR(Value,Bit);
+end;
+
+//------------------------------------------------------------------------------
+
+Function BitSetTo(var Value: UInt64; Bit: UInt8; NewValue: ByteBool): ByteBool;
 begin
 If NewValue then Result := BTS(Value,Bit)
   else Result := BTR(Value,Bit);
@@ -2272,12 +2388,17 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BSF(Value: UInt8): Integer;{$IFNDEF PurePascal}assembler;
+Function BSF(Value: UInt8): Int32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    AND   RCX,  $FF
     XOR   RAX,  RAX
+  {$IFDEF Windows}
+    AND   RCX,  $FF
     BSF   AX,   CX
+  {$ELSE}
+    AND   RDI,  $FF
+    BSF   AX,   DI
+  {$ENDIF}
 {$ELSE}
     AND   EAX,  $FF
     BSF   AX,   AX
@@ -2299,15 +2420,18 @@ For i := 0 to 7 do
     end;
 end;
 {$ENDIF}
-              
+
 //------------------------------------------------------------------------------
 
-Function BSF(Value: UInt16): Integer;{$IFNDEF PurePascal}assembler;
+Function BSF(Value: UInt16): Int32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    AND   RCX,  $FFFF
     XOR   RAX,  RAX
+  {$IFDEF Windows}
     BSF   AX,   CX
+  {$ELSE}
+    BSF   AX,   DI
+  {$ENDIF}
 {$ELSE}
     AND   EAX,  $FFFF
     BSF   AX,   AX
@@ -2329,13 +2453,17 @@ For i := 0 to 15 do
     end;
 end;
 {$ENDIF}
-             
+
 //------------------------------------------------------------------------------
 
-Function BSF(Value: UInt32): Integer;{$IFNDEF PurePascal}assembler;
+Function BSF(Value: UInt32): Int32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
+  {$IFDEF Windows}
     BSF   EAX,  ECX
+  {$ELSE}
+    BSF   EAX,  EDI
+  {$ENDIF}
 {$ELSE}
     BSF   EAX,  EAX
 {$ENDIF}
@@ -2359,12 +2487,18 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BSF(Value: UInt64): Integer;{$IFNDEF PurePascal}assembler;
+Function BSF(Value: UInt64): Int32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
+  {$IFDEF Windows}
     BSF   RAX,  RCX
+  {$ELSE}
+    BSF   RAX,  RDI
+  {$ENDIF}
+
     JNZ   @RoutineEnd
-    MOV   RAX,  -1
+    MOV   EAX,  -1
+
   @RoutineEnd:
 {$ELSE}
     BSF   EAX,  dword ptr [Value]
@@ -2373,8 +2507,7 @@ asm
     BSF   EAX,  dword ptr [Value + 4]
     JNZ   @Add32
 
-    MOV   EAX,  -1
-    JMP   @RoutineEnd
+    MOV   EAX,  -33
 
   @Add32:
     ADD   EAX,  32
@@ -2402,12 +2535,17 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BSR(Value: UInt8): Integer; register;{$IFNDEF PurePascal}assembler;
+Function BSR(Value: UInt8): Int32; {$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    AND   RCX,  $FF
     XOR   RAX,  RAX
+  {$IFDEF Windows}
+    AND   RCX,  $FF
     BSR   AX,   CX
+  {$ELSE}
+    AND   RDI,  $FF
+    BSR   AX,   DI
+  {$ENDIF}
 {$ELSE}
     AND   EAX,  $FF
     BSR   AX,   AX
@@ -2432,12 +2570,15 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BSR(Value: UInt16): Integer;{$IFNDEF PurePascal}assembler;
+Function BSR(Value: UInt16): Int32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
-    AND   RCX,  $FFFF
     XOR   RAX,  RAX
+  {$IFDEF Windows}
     BSR   AX,   CX
+  {$ELSE}
+    BSR   AX,   DI
+  {$ENDIF}
 {$ELSE}
     AND   EAX,  $FFFF
     BSR   AX,   AX
@@ -2462,10 +2603,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BSR(Value: UInt32): Integer;{$IFNDEF PurePascal}assembler;
+Function BSR(Value: UInt32): Int32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
+  {$IFDEF Windows}
     BSR   EAX,  ECX
+  {$ELSE}
+    BSR   EAX,  EDI
+  {$ENDIF}
 {$ELSE}
     BSR   EAX,  EAX
 {$ENDIF}
@@ -2489,28 +2634,29 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BSR(Value: UInt64): Integer;{$IFNDEF PurePascal}assembler;
+Function BSR(Value: UInt64): Int32;{$IFNDEF PurePascal}register; assembler;
 asm
 {$IFDEF x64}
+  {$IFDEF Windows}
     BSR   RAX,  RCX
-    JNZ   @RoutineEnd
-    MOV   RAX,  -1
-  @RoutineEnd:
+  {$ELSE}
+    BSR   RAX,  RDI
+  {$ENDIF}
 {$ELSE}
     BSR   EAX,  dword ptr [Value + 4]
-    JNZ   @Add32
+    JZ    @ScanLow
 
-    BSR   EAX,  dword ptr [Value]
-    JNZ   @RoutineEnd
-
-    MOV   EAX,  -1
+    ADD   EAX,  32
     JMP   @RoutineEnd
 
-  @Add32:
-    ADD   EAX,  32
+  @ScanLow:
+    BSR   EAX,  dword ptr [Value]
+{$ENDIF}
+
+    JNZ   @RoutineEnd
+    MOV   EAX,  -1
 
   @RoutineEnd:
-{$ENDIF}
 end;
 {$ELSE}
 var
@@ -2534,7 +2680,7 @@ end;
 
 {$IFDEF UseLookupTable}
 const
-  PopCountTable: array[Byte] of UInt8 = (
+  PopCountTable: array[UInt8] of UInt8 = (
     0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4,1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,
     1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
     1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,5,2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6,
@@ -2545,7 +2691,7 @@ const
     3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,4,5,5,6,5,6,6,7,5,6,6,7,6,7,7,8);
 {$ENDIF}
 
-Function PopCount(Value: UInt8): Integer;
+Function Fce_PopCount_8_Pas(Value: UInt8): Int32;
 {$IFDEF UseLookupTable}
 begin
 Result := PopCountTable[Value];
@@ -2565,10 +2711,10 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function PopCount(Value: UInt16): Integer;
+Function Fce_PopCount_16_Pas(Value: UInt16): Int32;
 {$IFDEF UseLookupTable}
 begin
-Result := PopCountTable[Byte(Value)] + PopCountTable[Byte(Value shr 8)];
+Result := PopCountTable[UInt8(Value)] + PopCountTable[UInt8(Value shr 8)];
 end;
 {$ELSE}
 var
@@ -2585,11 +2731,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function PopCount(Value: UInt32): Integer;
+Function Fce_PopCount_32_Pas(Value: UInt32): Int32;
 {$IFDEF UseLookupTable}
 begin
-Result := PopCountTable[Byte(Value)] + PopCountTable[Byte(Value shr 8)] +
-  PopCountTable[Byte(Value shr 16)] + PopCountTable[Byte(Value shr 24)];
+Result := PopCountTable[UInt8(Value)] + PopCountTable[UInt8(Value shr 8)] +
+  PopCountTable[UInt8(Value shr 16)] + PopCountTable[UInt8(Value shr 24)];
 end;
 {$ELSE}
 var
@@ -2606,14 +2752,14 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function PopCount(Value: UInt64): Integer;
+Function Fce_PopCount_64_Pas(Value: UInt64): Int32;
 {$IFDEF UseLookupTable}
 begin
 {$IFDEF 64bit}
-Result := PopCountTable[Byte(Value)] + PopCountTable[Byte(Value shr 8)] +
-  PopCountTable[Byte(Value shr 16)] + PopCountTable[Byte(Value shr 24)] +
-  PopCountTable[Byte(Value shr 32)] + PopCountTable[Byte(Value shr 40)] +
-  PopCountTable[Byte(Value shr 48)] + PopCountTable[Byte(Value shr 56)];
+Result := PopCountTable[UInt8(Value)] + PopCountTable[UInt8(Value shr 8)] +
+  PopCountTable[UInt8(Value shr 16)] + PopCountTable[UInt8(Value shr 24)] +
+  PopCountTable[UInt8(Value shr 32)] + PopCountTable[UInt8(Value shr 40)] +
+  PopCountTable[UInt8(Value shr 48)] + PopCountTable[UInt8(Value shr 56)];
 {$ELSE}
 Result := PopCount(Int64Rec(Value).Lo) + PopCount(Int64Rec(Value).Hi);
 {$ENDIF}
@@ -2630,6 +2776,115 @@ For i := 1 to 64 do
   end;
 end;
 {$ENDIF}
+
+//==============================================================================
+
+{$IFNDEF PurePascal}
+
+Function Fce_PopCount_8_Asm(Value: UInt8): Int32; register; assembler;
+asm
+{$IFDEF x64}
+    MOVZX   RAX,  Value
+{$ELSE}
+    AND     EAX,  $FF
+{$ENDIF}
+{$IFDEF ASM_MachineCode}
+    DB  $F3, $66, $0F, $B8, $C0   // POPCNT  AX, AX
+{$ELSE}
+    POPCNT  AX,   AX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_PopCount_16_Asm(Value: UInt16): Int32; register; assembler;
+asm
+{$IFDEF x64}
+    MOVZX   RAX,  Value
+{$ELSE}
+    AND     EAX,  $FFFF
+{$ENDIF}
+{$IFDEF ASM_MachineCode}
+    DB  $F3, $66, $0F, $B8, $C0   // POPCNT  AX, AX
+{$ELSE}
+    POPCNT  AX,   AX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_PopCount_32_Asm(Value: UInt32): Int32; register; assembler;
+asm
+{$IFDEF x64}
+    MOV     EAX,  Value
+{$ENDIF}
+{$IFDEF ASM_MachineCode}
+    DB  $F3, $0F, $B8, $C0  // POPCNT  EAX, EAX
+{$ELSE}
+    POPCNT  EAX,  EAX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_PopCount_64_Asm(Value: UInt64): Int32; register; assembler;
+asm
+{$IFDEF x64}
+    MOV     RAX,  Value
+  {$IFDEF ASM_MachineCode}
+    DB  $F3, $48, $0F, $B8, $C0   // POPCNT  RAX, RAX
+  {$ELSE}
+    POPCNT  RAX,  RAX
+  {$ENDIF}
+{$ELSE}
+    MOV     EAX,  dword ptr [Value]
+    MOV     EDX,  dword ptr [Value + 4]
+  {$IFDEF ASM_MachineCode}
+    DB  $F3, $0F, $B8, $C0        // POPCNT  EAX, EAX
+    DB  $F3, $0F, $B8, $D2        // POPCNT  EDX, EDX
+  {$ELSE}
+    POPCNT  EAX,  EAX
+    POPCNT  EDX,  EDX
+  {$ENDIF}
+    ADD     EAX,  EDX
+{$ENDIF}
+end;
+
+{$ENDIF}
+
+//==============================================================================
+
+var
+  Var_PopCount_8: Function(Value: UInt8): Int32;
+  Var_PopCount_16: Function(Value: UInt16): Int32;
+  Var_PopCount_32: Function(Value: UInt32): Int32;
+  Var_PopCount_64: Function(Value: UInt64): Int32;
+
+Function PopCount(Value: UInt8): Int32;
+begin
+Result := Var_PopCount_8(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function PopCount(Value: UInt16): Int32;
+begin
+Result := Var_PopCount_16(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function PopCount(Value: UInt32): Int32;
+begin
+Result := Var_PopCount_32(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function PopCount(Value: UInt64): Int32;
+begin
+Result := Var_PopCount_64(Value);
+end;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -2806,7 +3061,7 @@ For i := Low(Flags) to High(flags) do
   TempBitmask := TempBitmask or Flags[i];
 Result := SetFlag(Value,TempBitmask);
 end;
- 
+
 //------------------------------------------------------------------------------
 
 Function SetFlags_32(Value: UInt32; Flags: array of UInt32): UInt32;
@@ -2819,7 +3074,7 @@ For i := Low(Flags) to High(flags) do
   TempBitmask := TempBitmask or Flags[i];
 Result := SetFlag(Value,TempBitmask);
 end;
- 
+
 //------------------------------------------------------------------------------
 
 Function SetFlags_64(Value: UInt64; Flags: array of UInt64): UInt64;
@@ -2911,7 +3166,7 @@ SetFlagsValue_32(Value,Flags);
 end;
 
 //------------------------------------------------------------------------------
- 
+
 procedure SetFlagsValue(var Value: UInt64; Flags: array of UInt64);
 begin
 SetFlagsValue_64(Value,Flags);
@@ -3190,7 +3445,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function GetBits(Value: UInt8; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt8;
+Function GetBits(Value: UInt8; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt8;
 begin
 Result := Value and UInt8(($FF shl (FromBit and 7)) and ($FF shr (7 - (ToBit and 7))));
 If ShiftDown then
@@ -3199,7 +3454,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function GetBits(Value: UInt16; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt16;
+Function GetBits(Value: UInt16; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt16;
 begin
 Result := Value and UInt16(($FFFF shl (FromBit and 15)) and ($FFFF shr (15 - (ToBit and 15))));
 If ShiftDown then
@@ -3208,7 +3463,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function GetBits(Value: UInt32; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt32;
+Function GetBits(Value: UInt32; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt32;
 begin
 Result := Value and UInt32(($FFFFFFFF shl (FromBit and 31)) and ($FFFFFFFF shr (31 - (ToBit and 31))));
 If ShiftDown then
@@ -3217,7 +3472,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt64;
+Function GetBits(Value: UInt64; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt64;
 begin
 Result := Value and UInt64((UInt64($FFFFFFFFFFFFFFFF) shl (FromBit and 63)) and (UInt64($FFFFFFFFFFFFFFFF) shr (63 - (ToBit and 63))));
 If ShiftDown then
@@ -3230,7 +3485,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function SetBits(Value,NewBits: UInt8; FromBit,ToBit: Integer): UInt8;
+Function SetBits(Value,NewBits: UInt8; FromBit,ToBit: Int32): UInt8;
 var
   Mask: UInt8;
 begin
@@ -3240,7 +3495,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Integer): UInt16;
+Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Int32): UInt16;
 var
   Mask: UInt16;
 begin
@@ -3250,7 +3505,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Integer): UInt32;
+Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Int32): UInt32;
 var
   Mask: UInt32;
 begin
@@ -3260,7 +3515,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Integer): UInt64;
+Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Int32): UInt64;
 var
   Mask: UInt64;
 begin
@@ -3270,30 +3525,154 @@ end;
 
 //==============================================================================
 
-procedure SetBitsValue(var Value: UInt8; NewBits: UInt8; FromBit,ToBit: Integer);
+procedure SetBitsValue(var Value: UInt8; NewBits: UInt8; FromBit,ToBit: Int32);
 begin
 Value := SetBits(Value,NewBits,FromBit,ToBit);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Integer);
+procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Int32);
 begin
 Value := SetBits(Value,NewBits,FromBit,ToBit);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Integer);
+procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Int32);
 begin
 Value := SetBits(Value,NewBits,FromBit,ToBit);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Integer);
+procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Int32);
 begin
 Value := SetBits(Value,NewBits,FromBit,ToBit);
 end;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                                 Reverse bits                                 }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+const
+  RevBitsTable: array[UInt8] of UInt8 = (
+    $00, $80, $40, $C0, $20, $A0, $60, $E0, $10, $90, $50, $D0, $30, $B0, $70, $F0,
+    $08, $88, $48, $C8, $28, $A8, $68, $E8, $18, $98, $58, $D8, $38, $B8, $78, $F8,
+    $04, $84, $44, $C4, $24, $A4, $64, $E4, $14, $94, $54, $D4, $34, $B4, $74, $F4,
+    $0C, $8C, $4C, $CC, $2C, $AC, $6C, $EC, $1C, $9C, $5C, $DC, $3C, $BC, $7C, $FC,
+    $02, $82, $42, $C2, $22, $A2, $62, $E2, $12, $92, $52, $D2, $32, $B2, $72, $F2,
+    $0A, $8A, $4A, $CA, $2A, $AA, $6A, $EA, $1A, $9A, $5A, $DA, $3A, $BA, $7A, $FA,
+    $06, $86, $46, $C6, $26, $A6, $66, $E6, $16, $96, $56, $D6, $36, $B6, $76, $F6,
+    $0E, $8E, $4E, $CE, $2E, $AE, $6E, $EE, $1E, $9E, $5E, $DE, $3E, $BE, $7E, $FE,
+    $01, $81, $41, $C1, $21, $A1, $61, $E1, $11, $91, $51, $D1, $31, $B1, $71, $F1,
+    $09, $89, $49, $C9, $29, $A9, $69, $E9, $19, $99, $59, $D9, $39, $B9, $79, $F9,
+    $05, $85, $45, $C5, $25, $A5, $65, $E5, $15, $95, $55, $D5, $35, $B5, $75, $F5,
+    $0D, $8D, $4D, $CD, $2D, $AD, $6D, $ED, $1D, $9D, $5D, $DD, $3D, $BD, $7D, $FD,
+    $03, $83, $43, $C3, $23, $A3, $63, $E3, $13, $93, $53, $D3, $33, $B3, $73, $F3,
+    $0B, $8B, $4B, $CB, $2B, $AB, $6B, $EB, $1B, $9B, $5B, $DB, $3B, $BB, $7B, $FB,
+    $07, $87, $47, $C7, $27, $A7, $67, $E7, $17, $97, $57, $D7, $37, $B7, $77, $F7,
+    $0F, $8F, $4F, $CF, $2F, $AF, $6F, $EF, $1F, $9F, $5F, $DF, $3F, $BF, $7F, $FF);
+
+Function ReverseBits(Value: UInt8): UInt8;
+begin
+Result := UInt8(RevBitsTable[UInt8(Value)]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function ReverseBits(Value: UInt16): UInt16;
+begin
+Result := UInt16((UInt16(RevBitsTable[UInt8(Value)]) shl 8) or
+                  UInt16(RevBitsTable[UInt8(Value shr 8)]));
+end;
+
+//------------------------------------------------------------------------------
+
+Function ReverseBits(Value: UInt32): UInt32;
+begin
+Result := UInt32((UInt32(RevBitsTable[UInt8(Value)]) shl 24) or
+                 (UInt32(RevBitsTable[UInt8(Value shr 8)]) shl 16) or
+                 (UInt32(RevBitsTable[UInt8(Value shr 16)]) shl 8) or
+                  UInt32(RevBitsTable[UInt8(Value shr 24)]));
+end;
+
+//------------------------------------------------------------------------------
+
+Function ReverseBits(Value: UInt64): UInt64;
+begin
+Int64Rec(Result).Hi := ReverseBits(Int64Rec(Value).Lo);
+Int64Rec(Result).Lo := ReverseBits(Int64Rec(Value).Hi);
+end;
+
+//==============================================================================
+
+procedure ReverseBitsValue(var Value: UInt8);
+begin
+Value := ReverseBits(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure ReverseBitsValue(var Value: UInt16);
+begin
+Value := ReverseBits(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure ReverseBitsValue(var Value: UInt32);
+begin
+Value := ReverseBits(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure ReverseBitsValue(var Value: UInt64);
+begin
+Value := ReverseBits(Value);
+end;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                              Unit initialization                             }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+procedure LoadDefault;
+begin
+// PopCount
+Var_PopCount_8 := Fce_PopCount_8_Pas;
+Var_PopCount_16 := Fce_PopCount_16_Pas;
+Var_PopCount_32 := Fce_PopCount_32_Pas;
+Var_PopCount_64 := Fce_PopCount_64_Pas;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure Initialize;
+begin
+LoadDefault;
+{$IF Defined(AllowASMExtensions) and not Defined(PurePascal)}
+  with TSimpleCPUID.Create do
+  try
+    // PopCount
+    If Info.SupportedExtensions.POPCNT then
+      begin
+        Var_PopCount_8 := Fce_PopCount_8_Asm;
+        Var_PopCount_16 := Fce_PopCount_16_Asm;
+        Var_PopCount_32 := Fce_PopCount_32_Asm;
+        Var_PopCount_64 := Fce_PopCount_64_Asm;
+      end;
+  finally
+    Free;
+  end;
+{$IFEND}
+end;
+
+initialization
+  Initialize;
 
 end.
