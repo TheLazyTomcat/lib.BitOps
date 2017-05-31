@@ -9,16 +9,16 @@
 
   BitOps - Binary operations
 
-  ©František Milt 2016-12-18
+  ©František Milt 2017-05-31
 
-  Version 1.5.1
+  Version 1.6
 
   Dependencies:
     AuxTypes    - github.com/ncs-sniper/Lib.AuxTypes
   * SimpleCPUID - github.com/ncs-sniper/Lib.SimpleCPUID
 
-  Marked (*) libraries are required only when AllowASMExtensions symbol is
-  defined and PurePascal symbol is not defined.
+  SimpleCPUID is required only when AllowASMExtensions symbol is defined and
+  PurePascal symbol is not defined.
 
 ===============================================================================}
 unit BitOps;
@@ -51,8 +51,10 @@ unit BitOps;
 {$ELSE}
   {$IFNDEF x64}
     {
-      When defined, some ASM instructions are inserted into stream directly as
-      a machine code. It is there because not all compilers supports, and
+      ASM_MachineCode
+
+      When defined, some ASM instructions are inserted into byte stream directly
+      as a machine code. It is there because not all compilers supports, and
       therefore can compile, such instructions.
       As I am not able to tell which 32bit delphi compilers do support them,
       I am assuming none of them do. I am also assuming that all 64bit delphi
@@ -63,20 +65,37 @@ unit BitOps;
   {$ENDIF}
 {$ENDIF}
 
+{$IFOPT Q+}
+  {$DEFINE OverflowChecks}
+{$ENDIF}
+
 {
+  UseLookupTable
+
   When defined, PopCount functions will, in their PurePascal version, use
   lookup table instead of testing each bit in a passed value.
 }
 {$DEFINE UseLookupTable}
 
 {
+  AllowASMExtensions
+
   Allows use of x86(-64) instruction extensions in ASM.
   When defined, availability of each extension is tested at unit initialization.
-  The instructions are used only when proper extension is supported.
+  The instructions are used only when proper extension is supported. When it is
+  not, pascal form of the function is called instead.
 
   Currently used extensions:
 
-    POPCNT (SSE 4.2)    - PopCount functions
+    CMOV      - ParallelBitsDeposit(CMOVcc)[32b,v64]
+    POPCNT    - PopCount, ParallelBitsExtract[32b,v64], ParallelBitsDeposit[32b,v64]
+    LZCNT     - LZCount
+    BMI1      - TZCount(TZCNT), ExtractBits(BEXTR)
+    BMI2      - ParallelBitsExtract(PEXT), ParallelBitsDeposit(PDEP)
+
+      [32b] = 32bit ASM variant of the function
+      [p64] = function accepting 64bit values
+      (ins) = ins is a specific used instruction from the extension set
 }
 {$DEFINE AllowASMExtensions}
 
@@ -91,12 +110,53 @@ uses
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function NumberToBits(Number: UInt8): String; overload;
-Function NumberToBits(Number: UInt16): String; overload;
-Function NumberToBits(Number: UInt32): String; overload;
-Function NumberToBits(Number: UInt64): String; overload;
+type
+  TBitStringSplit = (bssNone,bss4bits,bss8bits,bss16bits,bss32bits);
 
-Function BitsToNumber(const BitString: String): UInt64;
+  TBitStringFormat = record
+    Split:        TBitStringSplit;
+    SetBitChar:   Char;
+    ZeroBitChar:  Char;
+    SplitChar:    Char;
+  end;
+
+const
+  DefBitStringFormat: TBitStringFormat = (
+    Split:        bssNone;
+    SetBitChar:   '1';
+    ZeroBitChar:  '0';
+    SplitChar:    ' ');
+
+Function NumberToBitStr(Number: UInt8; BitStringFormat: TBitStringFormat): String; overload;
+Function NumberToBitStr(Number: UInt16; BitStringFormat: TBitStringFormat): String; overload;
+Function NumberToBitStr(Number: UInt32; BitStringFormat: TBitStringFormat): String; overload;
+Function NumberToBitStr(Number: UInt64; BitStringFormat: TBitStringFormat): String; overload;
+
+Function NumberToBitStr(Number: UInt8; Split: TBitStringSplit): String; overload;
+Function NumberToBitStr(Number: UInt16; Split: TBitStringSplit): String; overload;
+Function NumberToBitStr(Number: UInt32; Split: TBitStringSplit): String; overload;
+Function NumberToBitStr(Number: UInt64; Split: TBitStringSplit): String; overload;
+
+Function NumberToBitStr(Number: UInt8): String; overload;
+Function NumberToBitStr(Number: UInt16): String; overload;
+Function NumberToBitStr(Number: UInt32): String; overload;
+Function NumberToBitStr(Number: UInt64): String; overload;
+
+Function BitStrToNumber(const BitString: String; BitStringFormat: TBitStringFormat): UInt64; overload;
+Function BitStrToNumber(const BitString: String): UInt64; overload;
+
+Function TryBitStrToNumber(const BitString: String; out Value: UInt8; BitStringFormat: TBitStringFormat): Boolean; overload;
+Function TryBitStrToNumber(const BitString: String; out Value: UInt16; BitStringFormat: TBitStringFormat): Boolean; overload;
+Function TryBitStrToNumber(const BitString: String; out Value: UInt32; BitStringFormat: TBitStringFormat): Boolean; overload;
+Function TryBitStrToNumber(const BitString: String; out Value: UInt64; BitStringFormat: TBitStringFormat): Boolean; overload;
+
+Function TryBitStrToNumber(const BitString: String; out Value: UInt8): Boolean; overload;
+Function TryBitStrToNumber(const BitString: String; out Value: UInt16): Boolean; overload;
+Function TryBitStrToNumber(const BitString: String; out Value: UInt32): Boolean; overload;
+Function TryBitStrToNumber(const BitString: String; out Value: UInt64): Boolean; overload;
+
+Function BitStrToNumberDef(const BitString: String; Default: UInt64; BitStringFormat: TBitStringFormat): UInt64; overload;
+Function BitStrToNumberDef(const BitString: String; Default: UInt64): UInt64; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -452,10 +512,10 @@ procedure SetFlagStateValue(var Value: UInt64; FlagBitmask: UInt64; NewState: Bo
 {
   Returns contiguous segment of bits from passed Value, selected by a bit range.
 }
-Function GetBits(Value: UInt8; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt8; overload;
-Function GetBits(Value: UInt16; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt16; overload;
-Function GetBits(Value: UInt32; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt32; overload;
-Function GetBits(Value: UInt64; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt64; overload;
+Function GetBits(Value: UInt8; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt8; overload;
+Function GetBits(Value: UInt16; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt16; overload;
+Function GetBits(Value: UInt32; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt32; overload;
+Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt64; overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -466,15 +526,15 @@ Function GetBits(Value: UInt64; FromBit,ToBit: Int32; ShiftDown: Boolean = True)
   Replaces contiguous segment of bits in Value by corresponding bits from
   NewBits.
 }
-Function SetBits(Value,NewBits: UInt8; FromBit,ToBit: Int32): UInt8; overload;
-Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Int32): UInt16; overload;
-Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Int32): UInt32; overload;
-Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Int32): UInt64; overload;
+Function SetBits(Value,NewBits: UInt8; FromBit,ToBit: Integer): UInt8; overload;
+Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Integer): UInt16; overload;
+Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Integer): UInt32; overload;
+Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Integer): UInt64; overload;
 
-procedure SetBitsValue(var Value: UInt8; NewBits: UInt8; FromBit,ToBit: Int32); overload;
-procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Int32); overload;
-procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Int32); overload;
-procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Int32); overload;
+procedure SetBitsValue(var Value: UInt8; NewBits: UInt8; FromBit,ToBit: Integer); overload;
+procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Integer); overload;
+procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Integer); overload;
+procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Integer); overload;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -492,10 +552,65 @@ procedure ReverseBitsValue(var Value: UInt16); overload;
 procedure ReverseBitsValue(var Value: UInt32); overload;
 procedure ReverseBitsValue(var Value: UInt64); overload;
 
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                              Leading zero count                              }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function LZCount(Value: UInt8): Int32; overload;
+Function LZCount(Value: UInt16): Int32; overload;
+Function LZCount(Value: UInt32): Int32; overload;
+Function LZCount(Value: UInt64): Int32; overload;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                             Trailing zero count                              }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function TZCount(Value: UInt8): Int32; overload;
+Function TZCount(Value: UInt16): Int32; overload;
+Function TZCount(Value: UInt32): Int32; overload;
+Function TZCount(Value: UInt64): Int32; overload;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                                 Extract bits                                 }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function ExtractBits(Value: UInt8; Start, Length: UInt8): UInt8; overload;
+Function ExtractBits(Value: UInt16; Start, Length: UInt8): UInt16; overload;
+Function ExtractBits(Value: UInt32; Start, Length: UInt8): UInt32; overload;
+Function ExtractBits(Value: UInt64; Start, Length: UInt8): UInt64; overload;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                             Parallel bits extract                            }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function ParallelBitsExtract(Value, Mask: UInt8): UInt8; overload;
+Function ParallelBitsExtract(Value, Mask: UInt16): UInt16; overload;
+Function ParallelBitsExtract(Value, Mask: UInt32): UInt32; overload;
+Function ParallelBitsExtract(Value, Mask: UInt64): UInt64; overload;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                             Parallel bits deposit                            }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function ParallelBitsDeposit(Value, Mask: UInt8): UInt8; overload;
+Function ParallelBitsDeposit(Value, Mask: UInt16): UInt16; overload;
+Function ParallelBitsDeposit(Value, Mask: UInt32): UInt32; overload;
+Function ParallelBitsDeposit(Value, Mask: UInt64): UInt64; overload;
+
 implementation
 
 uses
-  SysUtils, Math
+  SysUtils
 {$IF Defined(AllowASMExtensions) and not Defined(PurePascal)}
   , SimpleCPUID
 {$IFEND};
@@ -506,58 +621,248 @@ uses
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function _NumberToBits(Number: UInt64; Bits: UInt8): String;
+Function NumberToBitString(Number: UInt64; Bits: UInt8; BitStringFormat: TBitStringFormat): String;
 var
-  i:  Integer;
+  i,SplitCnt: Integer;
 begin
-Result := StringOfChar('0',Bits);
+case BitStringFormat.Split of
+  bss4bits:   SplitCnt := 4;
+  bss8bits:   SplitCnt := 8;
+  bss16bits:  SplitCnt := 16;
+  bss32bits:  SplitCnt := 32;
+else
+  SplitCnt := Bits;
+end;
+If SplitCnt > Bits then SplitCnt := Bits;
+Result := StringOfChar(BitStringFormat.ZeroBitChar,Bits + (Pred(Bits) div SplitCnt));
 For i := Bits downto 1 do
   begin
-    If (Number and 1) <> 0 then Result[i] := '1';
+    If (Number and 1) <> 0 then
+      Result[i + (Pred(i) div SplitCnt)] := BitStringFormat.SetBitChar;
     Number := Number shr 1;
   end;
+For i := 1 to Pred(Bits div SplitCnt) do
+  Result[(i * SplitCnt) + i] := BitStringFormat.SplitChar;
 end;
 
 //------------------------------------------------------------------------------
 
-Function NumberToBits(Number: UInt8): String;
+Function NumberToBitStr(Number: UInt8; BitStringFormat: TBitStringFormat): String;
 begin
-Result := _NumberToBits(Number,8);
+Result := NumberToBitString(Number,8,BitStringFormat);
 end;
 
 //------------------------------------------------------------------------------
 
-Function NumberToBits(Number: UInt16): String;
+Function NumberToBitStr(Number: UInt16; BitStringFormat: TBitStringFormat): String;
 begin
-Result := _NumberToBits(Number,16);
+Result := NumberToBitString(Number,16,BitStringFormat);
 end;
 
 //------------------------------------------------------------------------------
 
-Function NumberToBits(Number: UInt32): String;
+Function NumberToBitStr(Number: UInt32; BitStringFormat: TBitStringFormat): String;
 begin
-Result := _NumberToBits(Number,32);
+Result := NumberToBitString(Number,32,BitStringFormat);
 end;
 
 //------------------------------------------------------------------------------
 
-Function NumberToBits(Number: UInt64): String;
+Function NumberToBitStr(Number: UInt64; BitStringFormat: TBitStringFormat): String;
 begin
-Result := _NumberToBits(Number,64);
+Result := NumberToBitString(Number,64,BitStringFormat);
+end;
+
+//------------------------------------------------------------------------------
+
+Function NumberToBitStr(Number: UInt8; Split: TBitStringSplit): String;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;
+Result := NumberToBitStr(Number,Format);
+end;
+
+//------------------------------------------------------------------------------
+
+Function NumberToBitStr(Number: UInt16; Split: TBitStringSplit): String;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;
+Result := NumberToBitStr(Number,Format);
+end;
+
+//------------------------------------------------------------------------------
+
+Function NumberToBitStr(Number: UInt32; Split: TBitStringSplit): String;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;
+Result := NumberToBitStr(Number,Format);
+end;
+
+//------------------------------------------------------------------------------
+
+Function NumberToBitStr(Number: UInt64; Split: TBitStringSplit): String;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;
+Result := NumberToBitStr(Number,Format);
+end;
+
+//------------------------------------------------------------------------------
+
+Function NumberToBitStr(Number: UInt8): String;
+begin
+Result := NumberToBitString(Number,8,DefBitStringFormat);
+end;
+
+//------------------------------------------------------------------------------
+
+Function NumberToBitStr(Number: UInt16): String;
+begin
+Result := NumberToBitString(Number,16,DefBitStringFormat);
+end;
+
+//------------------------------------------------------------------------------
+
+Function NumberToBitStr(Number: UInt32): String;
+begin
+Result := NumberToBitString(Number,32,DefBitStringFormat);
+end;
+
+//------------------------------------------------------------------------------
+
+Function NumberToBitStr(Number: UInt64): String;
+begin
+Result := NumberToBitString(Number,64,DefBitStringFormat);
 end;
 
 //==============================================================================
 
-Function BitsToNumber(const BitString: String): UInt64;
+Function BitStrToNumber(const BitString: String; BitStringFormat: TBitStringFormat): UInt64;
 var
   i:  Integer;
 begin
 Result := 0;
-For i := 1 to Min(Length(BitString),64) do
+For i := 1 to Length(BitString) do
   begin
-    Result := Result shl 1;
-    If BitString[i] <> '0' then Result := Result or 1;
+    If BitString[i] <> BitStringFormat.SplitChar then
+      begin
+        Result := Result shl 1;
+        If BitString[i] = BitStringFormat.SetBitChar then
+          Result := Result or 1
+        else If BitString[i] <> BitStringFormat.ZeroBitChar then
+          raise Exception.CreateFmt('BitStrToNumber: Unknown character (#%d) in bitstring.',[Ord(BitString[i])]);
+      end
+    else Continue{For i};
   end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function BitStrToNumber(const BitString: String): UInt64;
+begin
+Result := BitStrToNumber(BitString,DefBitStringFormat);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryBitStrToNumber(const BitString: String; out Value: UInt8; BitStringFormat: TBitStringFormat): Boolean;
+begin
+try
+  Value := UInt8(BitStrToNumber(BitString,BitStringFormat));
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryBitStrToNumber(const BitString: String; out Value: UInt16; BitStringFormat: TBitStringFormat): Boolean;
+begin
+try
+  Value := UInt16(BitStrToNumber(BitString,BitStringFormat));
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryBitStrToNumber(const BitString: String; out Value: UInt32; BitStringFormat: TBitStringFormat): Boolean;
+begin
+try
+  Value := UInt32(BitStrToNumber(BitString,BitStringFormat));
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryBitStrToNumber(const BitString: String; out Value: UInt64; BitStringFormat: TBitStringFormat): Boolean;
+begin
+try
+  Value := BitStrToNumber(BitString,BitStringFormat);
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryBitStrToNumber(const BitString: String; out Value: UInt8): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,Value,DefBitStringFormat);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryBitStrToNumber(const BitString: String; out Value: UInt16): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,Value,DefBitStringFormat);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryBitStrToNumber(const BitString: String; out Value: UInt32): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,Value,DefBitStringFormat);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryBitStrToNumber(const BitString: String; out Value: UInt64): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,Value,DefBitStringFormat);
+end;
+
+//------------------------------------------------------------------------------
+
+Function BitStrToNumberDef(const BitString: String; Default: UInt64; BitStringFormat: TBitStringFormat): UInt64;
+begin
+If not TryBitStrToNumber(BitString,Result,BitStringFormat) then
+  Result := Default;
+end;
+
+//------------------------------------------------------------------------------
+
+Function BitStrToNumberDef(const BitString: String; Default: UInt64): UInt64;
+begin
+If not TryBitStrToNumber(BitString,Result,DefBitStringFormat) then
+  Result := Default;
 end;
 
 {------------------------------------------------------------------------------}
@@ -2255,8 +2560,7 @@ end;
 {$ELSE}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-If Result then Value := UInt8(Value and not(UInt8(1) shl Bit))
-  else Value := UInt8(Value or (UInt8(1) shl Bit));
+Value := UInt8(Value xor (UInt8(1) shl Bit));
 end;
 {$ENDIF}
 
@@ -2281,8 +2585,7 @@ end;
 {$ELSE}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-If Result then Value := UInt16(Value and not(UInt16(1) shl Bit))
-  else Value := UInt16(Value or (UInt16(1) shl Bit));
+Value := UInt16(Value xor (UInt16(1) shl Bit));
 end;
 {$ENDIF}
 
@@ -2307,8 +2610,7 @@ end;
 {$ELSE}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-If Result then Value := UInt32(Value and not(UInt32(1) shl Bit))
-  else Value := UInt32(Value or (UInt32(1) shl Bit));
+Value := UInt32(Value xor (UInt32(1) shl Bit));
 end;
 {$ENDIF}
 
@@ -2341,8 +2643,7 @@ end;
 {$ELSE}
 begin
 Result := ((Value shr Bit) and 1) <> 0;
-If Result then Value := UInt64(Value and not(UInt64(1) shl Bit))
-  else Value := UInt64(Value or (UInt64(1) shl Bit));
+Value := UInt64(Value xor (UInt64(1) shl Bit));
 end;
 {$ENDIF}
 
@@ -2691,7 +2992,7 @@ const
     3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,4,5,5,6,5,6,6,7,5,6,6,7,6,7,7,8);
 {$ENDIF}
 
-Function Fce_PopCount_8_Pas(Value: UInt8): Int32;
+Function Fce_PopCount_8_Pas(Value: UInt8): Int32; register;
 {$IFDEF UseLookupTable}
 begin
 Result := PopCountTable[Value];
@@ -2711,7 +3012,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Fce_PopCount_16_Pas(Value: UInt16): Int32;
+Function Fce_PopCount_16_Pas(Value: UInt16): Int32; register;
 {$IFDEF UseLookupTable}
 begin
 Result := PopCountTable[UInt8(Value)] + PopCountTable[UInt8(Value shr 8)];
@@ -2731,7 +3032,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Fce_PopCount_32_Pas(Value: UInt32): Int32;
+Function Fce_PopCount_32_Pas(Value: UInt32): Int32; register;
 {$IFDEF UseLookupTable}
 begin
 Result := PopCountTable[UInt8(Value)] + PopCountTable[UInt8(Value shr 8)] +
@@ -2752,7 +3053,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function Fce_PopCount_64_Pas(Value: UInt64): Int32;
+Function Fce_PopCount_64_Pas(Value: UInt64): Int32; register;
 {$IFDEF UseLookupTable}
 begin
 {$IFDEF 64bit}
@@ -2789,7 +3090,7 @@ asm
     AND     EAX,  $FF
 {$ENDIF}
 {$IFDEF ASM_MachineCode}
-    DB  $F3, $66, $0F, $B8, $C0   // POPCNT  AX, AX
+    DB  $66, $F3, $0F, $B8, $C0   // POPCNT  AX, AX
 {$ELSE}
     POPCNT  AX,   AX
 {$ENDIF}
@@ -2805,7 +3106,7 @@ asm
     AND     EAX,  $FFFF
 {$ENDIF}
 {$IFDEF ASM_MachineCode}
-    DB  $F3, $66, $0F, $B8, $C0   // POPCNT  AX, AX
+    DB  $66, $F3, $0F, $B8, $C0   // POPCNT  AX, AX
 {$ELSE}
     POPCNT  AX,   AX
 {$ENDIF}
@@ -2855,10 +3156,12 @@ end;
 //==============================================================================
 
 var
-  Var_PopCount_8: Function(Value: UInt8): Int32;
-  Var_PopCount_16: Function(Value: UInt16): Int32;
-  Var_PopCount_32: Function(Value: UInt32): Int32;
-  Var_PopCount_64: Function(Value: UInt64): Int32;
+  Var_PopCount_8: Function(Value: UInt8): Int32; register;
+  Var_PopCount_16: Function(Value: UInt16): Int32; register;
+  Var_PopCount_32: Function(Value: UInt32): Int32; register;
+  Var_PopCount_64: Function(Value: UInt64): Int32; register;
+
+//------------------------------------------------------------------------------
 
 Function PopCount(Value: UInt8): Int32;
 begin
@@ -3445,7 +3748,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function GetBits(Value: UInt8; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt8;
+Function GetBits(Value: UInt8; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt8;
 begin
 Result := Value and UInt8(($FF shl (FromBit and 7)) and ($FF shr (7 - (ToBit and 7))));
 If ShiftDown then
@@ -3454,7 +3757,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function GetBits(Value: UInt16; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt16;
+Function GetBits(Value: UInt16; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt16;
 begin
 Result := Value and UInt16(($FFFF shl (FromBit and 15)) and ($FFFF shr (15 - (ToBit and 15))));
 If ShiftDown then
@@ -3463,7 +3766,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function GetBits(Value: UInt32; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt32;
+Function GetBits(Value: UInt32; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt32;
 begin
 Result := Value and UInt32(($FFFFFFFF shl (FromBit and 31)) and ($FFFFFFFF shr (31 - (ToBit and 31))));
 If ShiftDown then
@@ -3472,7 +3775,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function GetBits(Value: UInt64; FromBit,ToBit: Int32; ShiftDown: Boolean = True): UInt64;
+Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt64;
 begin
 Result := Value and UInt64((UInt64($FFFFFFFFFFFFFFFF) shl (FromBit and 63)) and (UInt64($FFFFFFFFFFFFFFFF) shr (63 - (ToBit and 63))));
 If ShiftDown then
@@ -3485,7 +3788,7 @@ end;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function SetBits(Value,NewBits: UInt8; FromBit,ToBit: Int32): UInt8;
+Function SetBits(Value,NewBits: UInt8; FromBit,ToBit: Integer): UInt8;
 var
   Mask: UInt8;
 begin
@@ -3495,7 +3798,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Int32): UInt16;
+Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Integer): UInt16;
 var
   Mask: UInt16;
 begin
@@ -3505,7 +3808,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Int32): UInt32;
+Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Integer): UInt32;
 var
   Mask: UInt32;
 begin
@@ -3515,7 +3818,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Int32): UInt64;
+Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Integer): UInt64;
 var
   Mask: UInt64;
 begin
@@ -3525,28 +3828,28 @@ end;
 
 //==============================================================================
 
-procedure SetBitsValue(var Value: UInt8; NewBits: UInt8; FromBit,ToBit: Int32);
+procedure SetBitsValue(var Value: UInt8; NewBits: UInt8; FromBit,ToBit: Integer);
 begin
 Value := SetBits(Value,NewBits,FromBit,ToBit);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Int32);
+procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Integer);
 begin
 Value := SetBits(Value,NewBits,FromBit,ToBit);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Int32);
+procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Integer);
 begin
 Value := SetBits(Value,NewBits,FromBit,ToBit);
 end;
 
 //------------------------------------------------------------------------------
 
-procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Int32);
+procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Integer);
 begin
 Value := SetBits(Value,NewBits,FromBit,ToBit);
 end;
@@ -3637,40 +3940,1166 @@ end;
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
+{                              Leading zero count                              }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function Fce_LZCount_8_Pas(Value: UInt8): Int32; register;
+var
+  i:  Integer;
+begin
+Result := 8;
+For i := 0 to 7 do
+  If (Value and (UInt8($80) shr i)) <> 0 then
+    begin
+      Result := i;
+      Break{For i};
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_LZCount_16_Pas(Value: UInt16): Int32; register;
+var
+  i:  Integer;
+begin
+Result := 16;
+For i := 0 to 15 do
+  If (Value and (UInt16($8000) shr i)) <> 0 then
+    begin
+      Result := i;
+      Break{For i};
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_LZCount_32_Pas(Value: UInt32): Int32; register;
+var
+  i:  Integer;
+begin
+Result := 32;
+For i := 0 to 31 do
+  If (Value and (UInt32($80000000) shr i)) <> 0 then
+    begin
+      Result := i;
+      Break{For i};
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_LZCount_64_Pas(Value: UInt64): Int32; register;
+var
+  i:  Integer;
+begin
+Result := 64;
+For i := 0 to 63 do
+  If (Value and (UInt64($8000000000000000) shr i)) <> 0 then
+    begin
+      Result := i;
+      Break{For i};
+    end;
+end;
+
+//==============================================================================
+
+{$IFNDEF PurePascal}
+
+Function Fce_LZCount_8_Asm(Value: UInt8): Int32; register; assembler;
+asm
+{$IFDEF x64}
+    MOVZX   RAX,  Value
+{$ELSE}
+    AND     EAX,  $FF
+{$ENDIF}
+{$IFDEF ASM_MachineCode}
+    DB  $66, $F3, $0F, $BD, $C0   // LZCNT   AX,  AX
+{$ELSE}
+    LZCNT   AX,   AX
+    SUB     AX,   8
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_LZCount_16_Asm(Value: UInt16): Int32; register; assembler;
+asm
+{$IFDEF x64}
+    MOVZX   RAX,  Value
+{$ELSE}
+    AND     EAX,  $FFFF
+{$ENDIF}
+{$IFDEF ASM_MachineCode}
+    DB  $66, $F3, $0F, $BD, $C0   // LZCNT   AX,  AX
+{$ELSE}
+    LZCNT   AX,   AX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_LZCount_32_Asm(Value: UInt32): Int32; register; assembler;
+asm
+{$IFDEF x64}
+    MOV     EAX,  Value
+{$ENDIF}
+{$IFDEF ASM_MachineCode}
+    DB   $F3, $0F, $BD, $C0       // LZCNT  EAX, EAX
+{$ELSE}
+    LZCNT   EAX,  EAX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_LZCount_64_Asm(Value: UInt64): Int32; register; assembler;
+asm
+{$IFDEF x64}
+    MOV     RAX,  Value
+  {$IFDEF ASM_MachineCode}
+    DB  $F3, $48, $0F, $BD, $C0   // LZCNT  RAX, RAX
+  {$ELSE}
+    LZCNT   RAX,  RAX
+  {$ENDIF}
+{$ELSE}
+    MOV     EAX,  dword ptr [Value + 4]
+    TEST    EAX,  EAX
+    JZ      @ScanLow
+
+  {$IFDEF ASM_MachineCode}
+    DB   $F3, $0F, $BD, $C0       // LZCNT  EAX, EAX
+  {$ELSE}
+    LZCNT   EAX,  EAX
+  {$ENDIF}
+    JMP     @RoutineEnd
+
+  @ScanLow:
+    MOV     EAX,  dword ptr [Value]
+  {$IFDEF ASM_MachineCode}
+    DB   $F3, $0F, $BD, $C0       // LZCNT  EAX, EAX
+  {$ELSE}
+    LZCNT   EAX,  EAX
+  {$ENDIF}
+    ADD     EAX,  32
+
+  @RoutineEnd:
+{$ENDIF}
+end;
+
+{$ENDIF}
+
+//==============================================================================
+
+var
+  Var_LZCount_8: Function(Value: UInt8): Int32; register;
+  Var_LZCount_16: Function(Value: UInt16): Int32; register;
+  Var_LZCount_32: Function(Value: UInt32): Int32; register;
+  Var_LZCount_64: Function(Value: UInt64): Int32; register;
+
+//------------------------------------------------------------------------------
+
+Function LZCount(Value: UInt8): Int32;
+begin
+Result := Var_LZCount_8(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function LZCount(Value: UInt16): Int32;
+begin
+Result := Var_LZCount_16(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function LZCount(Value: UInt32): Int32;
+begin
+Result := Var_LZCount_32(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function LZCount(Value: UInt64): Int32;
+begin
+Result := Var_LZCount_64(Value);
+end;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                             Trailing zero count                              }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function Fce_TZCount_8_Pas(Value: UInt8): Int32; register;
+var
+  i:  Integer;
+begin
+Result := 8;
+For i := 0 to 7 do
+  If ((Value shr i) and 1) <> 0 then
+    begin
+      Result := i;
+      Break{For i};
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_TZCount_16_Pas(Value: UInt16): Int32; register;
+var
+  i:  Integer;
+begin
+Result := 16;
+For i := 0 to 15 do
+  If ((Value shr i) and 1) <> 0 then
+    begin
+      Result := i;
+      Break{For i};
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_TZCount_32_Pas(Value: UInt32): Int32; register;
+var
+  i:  Integer;
+begin
+Result := 32;
+For i := 0 to 31 do
+  If ((Value shr i) and 1) <> 0 then
+    begin
+      Result := i;
+      Break{For i};
+    end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_TZCount_64_Pas(Value: UInt64): Int32; register;
+var
+  i:  Integer;
+begin
+Result := 64;
+For i := 0 to 63 do
+  If ((Value shr i) and 1) <> 0 then
+    begin
+      Result := i;
+      Break{For i};
+    end;
+end;
+
+//==============================================================================
+
+{$IFNDEF PurePascal}
+
+Function Fce_TZCount_8_Asm(Value: UInt8): Int32; register; assembler;
+asm
+{$IFDEF x64}
+    MOVZX   RAX,  Value
+{$ELSE}
+    AND     EAX,  $FF
+{$ENDIF}
+{$IFDEF ASM_MachineCode}
+    DB  $66, $F3, $0F, $BC, $C0   // TZCNT   AX,  AX
+{$ELSE}
+    MOV     AH,   $FF
+    TZCNT   AX,   AX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_TZCount_16_Asm(Value: UInt16): Int32; register; assembler;
+asm
+{$IFDEF x64}
+    MOVZX   RAX,  Value
+{$ELSE}
+    AND     EAX,  $FFFF
+{$ENDIF}
+{$IFDEF ASM_MachineCode}
+    DB  $66, $F3, $0F, $BC, $C0   // TZCNT   AX,  AX
+{$ELSE}
+    TZCNT   AX,   AX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_TZCount_32_Asm(Value: UInt32): Int32; register; assembler;
+asm
+{$IFDEF x64}
+    MOV     EAX,  Value
+{$ENDIF}
+{$IFDEF ASM_MachineCode}
+    DB   $F3, $0F, $BC, $C0       // TZCNT  EAX, EAX
+{$ELSE}
+    TZCNT   EAX,  EAX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_TZCount_64_Asm(Value: UInt64): Int32; register; assembler;
+asm
+{$IFDEF x64}
+    MOV     RAX,  Value
+  {$IFDEF ASM_MachineCode}
+    DB  $F3, $48, $0F, $BC, $C0   // TZCNT  RAX, RAX
+  {$ELSE}
+    TZCNT   RAX,  RAX
+  {$ENDIF}
+{$ELSE}
+    MOV     EAX,  dword ptr [Value]
+    TEST    EAX,  EAX
+    JZ      @ScanHigh
+
+  {$IFDEF ASM_MachineCode}
+    DB   $F3, $0F, $BC, $C0       // TZCNT  EAX, EAX
+  {$ELSE}
+    TZCNT   EAX,  EAX
+  {$ENDIF}
+    JMP     @RoutineEnd
+
+  @ScanHigh:
+    MOV     EAX,  dword ptr [Value + 4]
+  {$IFDEF ASM_MachineCode}
+    DB   $F3, $0F, $BC, $C0       // TZCNT  EAX, EAX
+  {$ELSE}
+    TZCNT   EAX,  EAX
+  {$ENDIF}
+    ADD     EAX,  32
+
+  @RoutineEnd:
+{$ENDIF}
+end;
+
+{$ENDIF}
+
+//==============================================================================
+
+var
+  Var_TZCount_8: Function(Value: UInt8): Int32; register;
+  Var_TZCount_16: Function(Value: UInt16): Int32; register;
+  Var_TZCount_32: Function(Value: UInt32): Int32; register;
+  Var_TZCount_64: Function(Value: UInt64): Int32; register;
+
+//------------------------------------------------------------------------------
+
+Function TZCount(Value: UInt8): Int32;
+begin
+Result := Var_TZCount_8(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TZCount(Value: UInt16): Int32;
+begin
+Result := Var_TZCount_16(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TZCount(Value: UInt32): Int32;
+begin
+Result := Var_TZCount_32(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TZCount(Value: UInt64): Int32;
+begin
+Result := Var_TZCount_64(Value);
+end;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                                 Extract bits                                 }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+{$IFDEF OverflowChecks}{$Q-}{$ENDIF}
+
+Function Fce_ExtractBits_8_Pas(Value: UInt8; Start, Length: UInt8): UInt8; register;
+begin
+If Start <= 7 then
+  begin
+    If Length <= 7 then
+      Result := UInt8(Value shr Start) and UInt8(Int8(UInt8(1) shl Length) - 1)
+    else
+      Result := UInt8(Value shr Start) and UInt8(-1);
+  end
+else Result := 0;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ExtractBits_16_Pas(Value: UInt16; Start, Length: UInt8): UInt16; register;
+begin
+If Start <= 15 then
+  begin
+    If Length <= 15 then
+      Result := UInt16(Value shr Start) and UInt16(Int16(UInt16(1) shl Length) - 1)
+    else
+      Result := UInt16(Value shr Start) and UInt16(-1);
+  end
+else Result := 0;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ExtractBits_32_Pas(Value: UInt32; Start, Length: UInt8): UInt32; register;
+begin
+If Start <= 31 then
+  begin
+    If Length <= 31 then
+      Result := UInt32(Value shr Start) and UInt32(Int32(UInt32(1) shl Length) - 1)
+    else
+      Result := UInt32(Value shr Start) and UInt32(-1);
+  end
+else Result := 0;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ExtractBits_64_Pas(Value: UInt64; Start, Length: UInt8): UInt64; register;
+begin
+If Start <= 63 then
+  begin
+    If Length <= 63 then
+      Result := UInt64(Value shr Start) and UInt64(Int64(UInt64(1) shl Length) - 1)
+    else
+      Result := UInt64(Value shr Start) and UInt64(-1);
+  end
+else Result := 0;
+end;
+
+{$IFDEF OverflowChecks}{$Q+}{$ENDIF}
+
+//==============================================================================
+
+{$IFNDEF PurePascal}
+
+Function Fce_ExtractBits_8_Asm(Value: UInt8; Start, Length: UInt8): UInt8; register; assembler;
+asm
+{$IFDEF x64}
+    MOVZX   RAX,    Value
+  {$IFDEF Windows}
+    SHL     R8,     8
+    AND     RDX,    $FF
+    OR      RDX,    R8
+  {$ELSE}
+    SHL     RDX,    8
+    MOV     DL,     SIL
+  {$ENDIF}
+{$ELSE}
+    AND     EAX,  $FF
+    MOV     DH,   CL
+{$ENDIF}
+{$IFDEF ASM_MachineCode}
+    DB  $C4, $E2, $68, $F7, $C0   // BEXTR  EAX, EAX, EDX
+{$ELSE}
+    BEXTR   EAX,  EAX,  EDX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ExtractBits_16_Asm(Value: UInt16; Start, Length: UInt8): UInt16; register; assembler;
+asm
+{$IFDEF x64}
+    MOVZX   RAX,    Value
+  {$IFDEF Windows}
+    SHL     R8,     8
+    AND     RDX,    $FF
+    OR      RDX,    R8
+  {$ELSE}
+    SHL     RDX,    8
+    MOV     DL,     SIL
+  {$ENDIF}
+{$ELSE}
+    AND     EAX,  $FFFF
+    MOV     DH,   CL
+{$ENDIF}
+{$IFDEF ASM_MachineCode}
+    DB  $C4, $E2, $68, $F7, $C0   // BEXTR  EAX, EAX, EDX
+{$ELSE}
+    BEXTR   EAX,  EAX,  EDX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ExtractBits_32_Asm(Value: UInt32; Start, Length: UInt8): UInt32; register; assembler;
+asm
+{$IFDEF x64}
+    MOV     EAX,    Value
+  {$IFDEF Windows}
+    SHL     R8,     8
+    AND     RDX,    $FF
+    OR      RDX,    R8
+  {$ELSE}
+    SHL     RDX,    8
+    MOV     DL,     SIL
+  {$ENDIF}
+{$ELSE}
+    MOV     DH,   CL
+{$ENDIF}
+{$IFDEF ASM_MachineCode}
+    DB  $C4, $E2, $68, $F7, $C0   // BEXTR  EAX, EAX, EDX
+{$ELSE}
+    BEXTR   EAX,  EAX,  EDX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ExtractBits_64_Asm(Value: UInt64; Start, Length: UInt8): UInt64; register; assembler;
+asm
+{$IFDEF x64}
+    MOV     RAX,  Value
+  {$IFDEF Windows}
+    SHL     R8,     8
+    AND     RDX,    $FF
+    OR      RDX,    R8
+  {$ELSE}
+    SHL     RDX,    8
+    MOV     DL,     SIL
+  {$ENDIF}
+  {$IFDEF ASM_MachineCode}
+    DB  $C4, $E2, $E8, $F7, $C0   // BEXTR  RAX, RAX, RDX
+  {$ELSE}
+    BEXTR   RAX,  RAX,  RDX
+  {$ENDIF}
+{$ELSE}
+    MOV     CL,   AL
+    MOV     CH,   DL
+
+    AND     EAX,  $FF
+    AND     EDX,  $FF
+    ADD     EAX,  EDX
+
+    XOR     EDX,  EDX
+
+    CMP     CL,   31
+    JA      @AllHigh
+
+    CMP     EAX,  32
+    JBE     @AllLow
+
+    // extraction is done across low and high dwords boundary
+    MOV     EAX,  dword ptr [Value]
+    MOV     EDX,  dword ptr [Value + 4]
+
+    // extract from low dword
+  {$IFDEF ASM_MachineCode}
+    DB $C4, $E2, $70, $F7, $C0        // BEXTR  EAX, EAX, ECX
+  {$ELSE}
+    BEXTR   EAX,  EAX,  ECX
+  {$ENDIF}
+
+    // extract form high dword
+    PUSH    ECX
+    ADD     CH,   CL
+    SUB     CH,   32
+    XOR     CL,   CL
+
+  {$IFDEF ASM_MachineCode}
+    DB $C4, $E2, $70, $F7, $D2        // BEXTR  EDX, EDX, ECX
+  {$ELSE}
+    BEXTR   EDX,  EDX,  ECX
+  {$ENDIF}
+
+    // combine results
+    POP     ECX
+    PUSH    EBX
+
+    XOR     EBX,  EBX
+    SHRD    EBX,  EDX,  CL
+    SHR     EDX,  CL
+    OR      EAX,  EBX
+
+    POP     EBX
+    JMP     @RoutineEnd
+
+  // extraction is done only from low dword
+  @AllLow:
+
+    MOV     EAX,  dword ptr [Value]
+  {$IFDEF ASM_MachineCode}
+    DB $C4, $E2, $70, $F7, $C0        // BEXTR  EAX, EAX, ECX
+  {$ELSE}
+    BEXTR   EAX,  EAX,  ECX
+  {$ENDIF}
+    JMP     @RoutineEnd
+
+  // extraction is done only from high dword
+  @AllHigh:
+
+    SUB     CL,   32
+    MOV     EAX,  dword ptr [Value + 4]
+  {$IFDEF ASM_MachineCode}
+    DB $C4, $E2, $70, $F7, $C0        // BEXTR  EAX, EAX, ECX
+  {$ELSE}
+    BEXTR   EAX,  EAX,  ECX
+  {$ENDIF}
+
+  @RoutineEnd:
+{$ENDIF}
+end;
+
+{$ENDIF}
+
+//==============================================================================
+
+var
+  Var_ExtractBits_8: Function(Value: UInt8; Start, Length: UInt8): UInt8; register;
+  Var_ExtractBits_16: Function(Value: UInt16; Start, Length: UInt8): UInt16; register;
+  Var_ExtractBits_32: Function(Value: UInt32; Start, Length: UInt8): UInt32; register;
+  Var_ExtractBits_64: Function(Value: UInt64; Start, Length: UInt8): UInt64; register;
+
+//------------------------------------------------------------------------------
+
+Function ExtractBits(Value: UInt8; Start, Length: UInt8): UInt8;
+begin
+Result := Var_ExtractBits_8(Value,Start,Length);
+end;
+
+//------------------------------------------------------------------------------
+
+Function ExtractBits(Value: UInt16; Start, Length: UInt8): UInt16;
+begin
+Result := Var_ExtractBits_16(Value,Start,Length);
+end;
+
+//------------------------------------------------------------------------------
+
+Function ExtractBits(Value: UInt32; Start, Length: UInt8): UInt32;
+begin
+Result := Var_ExtractBits_32(Value,Start,Length);
+end;
+
+//------------------------------------------------------------------------------
+
+Function ExtractBits(Value: UInt64; Start, Length: UInt8): UInt64;
+begin
+Result := Var_ExtractBits_64(Value,Start,Length);
+end;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                             Parallel bits extract                            }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function Fce_ParallelBitsExtract_8_Pas(Value, Mask: UInt8): UInt8; register;
+var
+  i:  Integer;
+begin
+Result := 0;
+For i := 7 downto 0 do
+  If ((Mask shr i) and 1) <> 0 then
+    Result := UInt8(Result shl 1) or UInt8((Value shr i) and 1);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ParallelBitsExtract_16_Pas(Value, Mask: UInt16): UInt16; register;
+var
+  i:  Integer;
+begin
+Result := 0;
+For i := 15 downto 0 do
+  If ((Mask shr i) and 1) <> 0 then
+    Result := UInt16(Result shl 1) or UInt16((Value shr i) and 1);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ParallelBitsExtract_32_Pas(Value, Mask: UInt32): UInt32; register;
+var
+  i:  Integer;
+begin
+Result := 0;
+For i := 31 downto 0 do
+  If ((Mask shr i) and 1) <> 0 then
+    Result := UInt32(Result shl 1) or UInt32((Value shr i) and 1);
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ParallelBitsExtract_64_Pas(Value, Mask: UInt64): UInt64; register;
+var
+  i:  Integer;
+begin
+Result := 0;
+For i := 63 downto 0 do
+  If ((Mask shr i) and 1) <> 0 then
+    Result := UInt64(Result shl 1) or UInt64((Value shr i) and 1);
+end;
+
+//==============================================================================
+
+{$IFNDEF PurePascal}
+
+Function Fce_ParallelBitsExtract_8_Asm(Value, Mask: UInt8): UInt8; register; assembler;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    AND   RCX,  $FF
+    AND   RDX,  $FF
+    DB  $C4, $E2, $72, $F5, $C2     // PEXT   EAX,  ECX,  EDX
+  {$ELSE}
+    AND   RDI,  $FF
+    AND   RSI,  $FF
+    DB  $C4, $E2, $42, $F5, $C6     // PEXT   EAX,  EDI,  ESI
+  {$ENDIF}
+{$ELSE}
+    AND   EAX,  $FF
+    AND   EDX,  $FF
+    DB  $C4, $E2, $7A, $F5, $C2     // PEXT   EAX,  EAX,  EDX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ParallelBitsExtract_16_Asm(Value, Mask: UInt16): UInt16; register; assembler;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    AND   RCX,  $FFFF
+    AND   RDX,  $FFFF
+    DB  $C4, $E2, $72, $F5, $C2     // PEXT   EAX,  ECX,  EDX
+  {$ELSE}
+    AND   RDI,  $FFFF
+    AND   RSI,  $FFFF
+    DB  $C4, $E2, $42, $F5, $C6     // PEXT   EAX,  EDI,  ESI
+  {$ENDIF}
+{$ELSE}
+    AND   EAX,  $FFFF
+    AND   EDX,  $FFFF
+    DB  $C4, $E2, $7A, $F5, $C2     // PEXT   EAX,  EAX,  EDX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ParallelBitsExtract_32_Asm(Value, Mask: UInt32): UInt32; register; assembler;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    DB  $C4, $E2, $72, $F5, $C2     // PEXT   EAX,  ECX,  EDX
+  {$ELSE}
+    DB  $C4, $E2, $42, $F5, $C6     // PEXT   EAX,  EDI,  ESI
+  {$ENDIF}
+{$ELSE}
+    DB  $C4, $E2, $7A, $F5, $C2     // PEXT   EAX,  EAX,  EDX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ParallelBitsExtract_64_Asm(Value, Mask: UInt64): UInt64; register; assembler;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    DB  $C4, $E2, $F2, $F5, $C2     // PEXT   RAX,  RCX,  RDX
+  {$ELSE}
+    DB  $C4, $E2, $C2, $F5, $C6     // PEXT   RAX,  RDI,  RSI
+  {$ENDIF}
+{$ELSE}
+    MOV     EAX,  dword ptr [Value]
+    MOV     EDX,  dword ptr [Value + 4]
+    MOV     ECX,  dword ptr [Mask]
+
+    DB  $C4, $E2, $7A, $F5, $C1         // PEXT  EAX,  EAX,  ECX
+    DB  $C4, $E2, $6A, $F5, $55, $0C    // PEXT  EDX,  EDX,  dword ptr [EBP + 12 {Mask + 4}]
+
+    // combine results
+    TEST    ECX,  ECX
+    JNZ     @Shift
+
+    // low dword is empty
+    MOV     EAX,  EDX
+    XOR     EDX,  EDX
+    JMP     @RoutineEnd
+
+  @Shift:
+  {$IFDEF ASM_MachineCode}
+    DB  $F3, $0F, $B8, $C9              // POPCNT  ECX,  ECX
+  {$ELSE}
+    POPCNT  ECX,  ECX
+  {$ENDIF}
+
+    PUSH    EBX
+    XOR     EBX,  EBX
+
+    NEG     CL
+    ADD     CL,   32
+
+    SHRD    EBX,  EDX,  CL
+    SHR     EDX,  CL
+    OR      EAX,  EBX
+
+    POP     EBX
+
+  @RoutineEnd:
+{$ENDIF}
+end;
+
+{$ENDIF}
+
+//==============================================================================
+
+var
+  Var_ParallelBitsExtract_8: Function(Value, Mask: UInt8): UInt8; register;
+  Var_ParallelBitsExtract_16: Function(Value, Mask: UInt16): UInt16; register;
+  Var_ParallelBitsExtract_32: Function(Value, Mask: UInt32): UInt32; register;
+  Var_ParallelBitsExtract_64: Function(Value, Mask: UInt64): UInt64; register;
+
+//------------------------------------------------------------------------------
+
+Function ParallelBitsExtract(Value, Mask: UInt8): UInt8;
+begin
+Result := Var_ParallelBitsExtract_8(Value,Mask);
+end;
+
+//------------------------------------------------------------------------------
+
+Function ParallelBitsExtract(Value, Mask: UInt16): UInt16;
+begin
+Result := Var_ParallelBitsExtract_16(Value,Mask);
+end;
+
+//------------------------------------------------------------------------------
+
+Function ParallelBitsExtract(Value, Mask: UInt32): UInt32;
+begin
+Result := Var_ParallelBitsExtract_32(Value,Mask);
+end;
+
+//------------------------------------------------------------------------------
+
+Function ParallelBitsExtract(Value, Mask: UInt64): UInt64;
+begin
+Result := Var_ParallelBitsExtract_64(Value,Mask);
+end;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
+{                             Parallel bits deposit                            }
+{==============================================================================}
+{------------------------------------------------------------------------------}
+
+Function Fce_ParallelBitsDeposit_8_Pas(Value, Mask: UInt8): UInt8; register;
+var
+  i:  Integer;
+begin
+Result := 0;
+For i := 0 to 7 do
+  begin
+    If ((Mask shr i) and 1) <> 0 then
+      begin
+        Result := Result or UInt8(UInt8(Value and 1) shl i);
+        Value := Value shr 1;
+      end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ParallelBitsDeposit_16_Pas(Value, Mask: UInt16): UInt16; register;
+var
+  i:  Integer;
+begin
+Result := 0;
+For i := 0 to 15 do
+  begin
+    If ((Mask shr i) and 1) <> 0 then
+      begin
+        Result := Result or UInt16(UInt16(Value and 1) shl i);
+        Value := Value shr 1;
+      end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ParallelBitsDeposit_32_Pas(Value, Mask: UInt32): UInt32; register;
+var
+  i:  Integer;
+begin
+Result := 0;
+For i := 0 to 31 do
+  begin
+    If ((Mask shr i) and 1) <> 0 then
+      begin
+        Result := Result or UInt32(UInt32(Value and 1) shl i);
+        Value := Value shr 1;
+      end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ParallelBitsDeposit_64_Pas(Value, Mask: UInt64): UInt64; register;
+var
+  i:  Integer;
+begin
+Result := 0;
+For i := 0 to 63 do
+  begin
+    If ((Mask shr i) and 1) <> 0 then
+      begin
+        Result := Result or UInt64(UInt64(Value and 1) shl i);
+        Value := Value shr 1;
+      end;
+  end;
+end;
+
+//==============================================================================
+
+{$IFNDEF PurePascal}
+
+Function Fce_ParallelBitsDeposit_8_Asm(Value, Mask: UInt8): UInt8; register; assembler;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    AND   RCX,  $FF
+    AND   RDX,  $FF
+    DB  $C4, $E2, $73, $F5, $C2     // PDEP   EAX,  ECX,  EDX
+  {$ELSE}
+    AND   RDI,  $FF
+    AND   RSI,  $FF
+    DB  $C4, $E2, $43, $F5, $C6     // PDEP   EAX,  EDI,  ESI
+  {$ENDIF}
+{$ELSE}
+    AND   EAX,  $FF
+    AND   EDX,  $FF
+    DB  $C4, $E2, $7B, $F5, $C2     // PDEP   EAX,  EAX,  EDX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ParallelBitsDeposit_16_Asm(Value, Mask: UInt16): UInt16; register; assembler;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    AND   RCX,  $FFFF
+    AND   RDX,  $FFFF
+    DB  $C4, $E2, $73, $F5, $C2     // PDEP   EAX,  ECX,  EDX
+  {$ELSE}
+    AND   RDI,  $FFFF
+    AND   RSI,  $FFFF
+    DB  $C4, $E2, $43, $F5, $C6     // PDEP   EAX,  EDI,  ESI
+  {$ENDIF}
+{$ELSE}
+    AND   EAX,  $FFFF
+    AND   EDX,  $FFFF
+    DB  $C4, $E2, $7B, $F5, $C2     // PDEP   EAX,  EAX,  EDX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ParallelBitsDeposit_32_Asm(Value, Mask: UInt32): UInt32; register; assembler;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    DB  $C4, $E2, $73, $F5, $C2     // PDEP   EAX,  ECX,  EDX
+  {$ELSE}
+    DB  $C4, $E2, $43, $F5, $C6     // PDEP   EAX,  EDI,  ESI
+  {$ENDIF}
+{$ELSE}
+    DB  $C4, $E2, $7B, $F5, $C2     // PDEP   EAX,  EAX,  EDX
+{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function Fce_ParallelBitsDeposit_64_Asm(Value, Mask: UInt64): UInt64; register; assembler;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    DB  $C4, $E2, $F3, $F5, $C2     // PDEP   RAX,  RCX,  RDX
+  {$ELSE}
+    DB  $C4, $E2, $C3, $F5, $C6     // PDEP   RAX,  RDI,  RSI
+  {$ENDIF}
+{$ELSE}
+    XOR     EAX,  EAX
+    MOV     EDX,  dword ptr [Value]
+    MOV     ECX,  dword ptr [Mask]
+
+    TEST    ECX,  ECX
+    JZ      @DepositHigh
+
+    DB  $C4, $E2, $6B, $F5, $C1       // PDEP   EAX,  EDX,  ECX
+
+  {$IFDEF ASM_MachineCode}
+    DB  $F3, $0F, $B8, $C9            // POPCNT ECX,  ECX
+  {$ELSE}
+    POPCNT  ECX,  ECX
+  {$ENDIF}
+
+    CMP     ECX,  32
+    CMOVAE  EDX,  dword ptr [Value + 4]
+    JAE     @DepositHigh
+
+  @Shift:
+    PUSH    EBX
+
+    MOV     EBX,  dword ptr [Value + 4]
+    SHRD    EDX,  EBX,  CL
+
+    POP     EBX
+
+  @DepositHigh:
+    DB  $C4, $E2, $6B, $F5, $55, $0C  // PDEP   EDX,  EDX,  dword ptr [EBP + 12 {Mask + 4}]
+{$ENDIF}
+end;
+
+{$ENDIF}
+
+//==============================================================================
+
+var
+  Var_ParallelBitsDeposit_8: Function(Value, Mask: UInt8): UInt8; register;
+  Var_ParallelBitsDeposit_16: Function(Value, Mask: UInt16): UInt16; register;
+  Var_ParallelBitsDeposit_32: Function(Value, Mask: UInt32): UInt32; register;
+  Var_ParallelBitsDeposit_64: Function(Value, Mask: UInt64): UInt64; register;
+
+//------------------------------------------------------------------------------
+
+Function ParallelBitsDeposit(Value, Mask: UInt8): UInt8;
+begin
+Result := Var_ParallelBitsDeposit_8(Value,Mask);
+end;
+
+//------------------------------------------------------------------------------
+
+Function ParallelBitsDeposit(Value, Mask: UInt16): UInt16;
+begin
+Result := Var_ParallelBitsDeposit_16(Value,Mask);
+end;
+
+//------------------------------------------------------------------------------
+
+Function ParallelBitsDeposit(Value, Mask: UInt32): UInt32;
+begin
+Result := Var_ParallelBitsDeposit_32(Value,Mask);
+end;
+
+//------------------------------------------------------------------------------
+
+Function ParallelBitsDeposit(Value, Mask: UInt64): UInt64;
+begin
+Result := Var_ParallelBitsDeposit_64(Value,Mask);
+end;
+
+{------------------------------------------------------------------------------}
+{==============================================================================}
 {                              Unit initialization                             }
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-procedure LoadDefault;
+procedure LoadDefaultFunctions;
 begin
 // PopCount
 Var_PopCount_8 := Fce_PopCount_8_Pas;
 Var_PopCount_16 := Fce_PopCount_16_Pas;
 Var_PopCount_32 := Fce_PopCount_32_Pas;
 Var_PopCount_64 := Fce_PopCount_64_Pas;
+// LZCount
+Var_LZCount_8 := Fce_LZCount_8_Pas;
+Var_LZCount_16 := Fce_LZCount_16_Pas;
+Var_LZCount_32 := Fce_LZCount_32_Pas;
+Var_LZCount_64 := Fce_LZCount_64_Pas;
+// TZCount
+Var_TZCount_8 := Fce_TZCount_8_Pas;
+Var_TZCount_16 := Fce_TZCount_16_Pas;
+Var_TZCount_32 := Fce_TZCount_32_Pas;
+Var_TZCount_64 := Fce_TZCount_64_Pas;
+// ExtractBits
+Var_ExtractBits_8 := Fce_ExtractBits_8_Pas;
+Var_ExtractBits_16 := Fce_ExtractBits_16_Pas;
+Var_ExtractBits_32 := Fce_ExtractBits_32_Pas;
+Var_ExtractBits_64 := Fce_ExtractBits_64_Pas;
+// ParallelBitsExtract
+Var_ParallelBitsExtract_8 := Fce_ParallelBitsExtract_8_Pas;
+Var_ParallelBitsExtract_16 := Fce_ParallelBitsExtract_16_Pas;
+Var_ParallelBitsExtract_32 := Fce_ParallelBitsExtract_32_Pas;
+Var_ParallelBitsExtract_64 := Fce_ParallelBitsExtract_64_Pas;
+// ParallelBitsDeposit
+Var_ParallelBitsDeposit_8 := Fce_ParallelBitsDeposit_8_Pas;
+Var_ParallelBitsDeposit_16 := Fce_ParallelBitsDeposit_16_Pas;
+Var_ParallelBitsDeposit_32 := Fce_ParallelBitsDeposit_32_Pas;
+Var_ParallelBitsDeposit_64 := Fce_ParallelBitsDeposit_64_Pas;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure Initialize;
 begin
-LoadDefault;
+LoadDefaultFunctions;
 {$IF Defined(AllowASMExtensions) and not Defined(PurePascal)}
   with TSimpleCPUID.Create do
   try
-    // PopCount
     If Info.SupportedExtensions.POPCNT then
       begin
+        // PopCount
         Var_PopCount_8 := Fce_PopCount_8_Asm;
         Var_PopCount_16 := Fce_PopCount_16_Asm;
         Var_PopCount_32 := Fce_PopCount_32_Asm;
         Var_PopCount_64 := Fce_PopCount_64_Asm;
+      end;
+    If Info.ExtendedProcessorFeatures.LZCNT then
+      begin
+        // LZCount
+        Var_LZCount_8 := Fce_LZCount_8_Asm;
+        Var_LZCount_16 := Fce_LZCount_16_Asm;
+        Var_LZCount_32 := Fce_LZCount_32_Asm;
+        Var_LZCount_64 := Fce_LZCount_64_Asm;
+      end;
+    If Info.ProcessorFeatures.BMI1 then
+      begin
+        // TZCount
+        Var_TZCount_8 := Fce_TZCount_8_Asm;
+        Var_TZCount_16 := Fce_TZCount_16_Asm;
+        Var_TZCount_32 := Fce_TZCount_32_Asm;
+        Var_TZCount_64 := Fce_TZCount_64_Asm;
+        // ExtractBits
+        Var_ExtractBits_8 := Fce_ExtractBits_8_Asm;
+        Var_ExtractBits_16 := Fce_ExtractBits_16_Asm;
+        Var_ExtractBits_32 := Fce_ExtractBits_32_Asm;
+        Var_ExtractBits_64 := Fce_ExtractBits_64_Asm;
+      end;
+    If Info.ProcessorFeatures.BMI2 then
+      begin
+        // ParallelBitsExtract
+        Var_ParallelBitsExtract_8 := Fce_ParallelBitsExtract_8_Asm;
+        Var_ParallelBitsExtract_16 := Fce_ParallelBitsExtract_16_Asm;
+        Var_ParallelBitsExtract_32 := Fce_ParallelBitsExtract_32_Asm;
+      {$IFNDEF x64}
+        If Info.SupportedExtensions.POPCNT then
+      {$ENDIF}
+          Var_ParallelBitsExtract_64 := Fce_ParallelBitsExtract_64_Asm;
+        // ParallelBitsDeposit
+        Var_ParallelBitsDeposit_8 := Fce_ParallelBitsDeposit_8_Asm;
+        Var_ParallelBitsDeposit_16 := Fce_ParallelBitsDeposit_16_Asm;
+        Var_ParallelBitsDeposit_32 := Fce_ParallelBitsDeposit_32_Asm;
+      {$IFNDEF x64}
+        If Info.SupportedExtensions.POPCNT and Info.ProcessorFeatures.CMOV then
+      {$ENDIF}
+          Var_ParallelBitsDeposit_64 := Fce_ParallelBitsDeposit_64_Asm;
       end;
   finally
     Free;
   end;
 {$IFEND}
 end;
+
+//------------------------------------------------------------------------------
 
 initialization
   Initialize;
