@@ -9,9 +9,9 @@
 
   BitOps - Binary operations
 
-  ©František Milt 2017-05-31
+  ©František Milt 2017-06-05
 
-  Version 1.6
+  Version 1.6.1
 
   Dependencies:
     AuxTypes    - github.com/ncs-sniper/Lib.AuxTypes
@@ -47,21 +47,6 @@ unit BitOps;
   {$MODE Delphi}
   {$IFNDEF PurePascal}
     {$ASMMODE Intel}
-  {$ENDIF}
-{$ELSE}
-  {$IFNDEF x64}
-    {
-      ASM_MachineCode
-
-      When defined, some ASM instructions are inserted into byte stream directly
-      as a machine code. It is there because not all compilers supports, and
-      therefore can compile, such instructions.
-      As I am not able to tell which 32bit delphi compilers do support them,
-      I am assuming none of them do. I am also assuming that all 64bit delphi
-      compilers and current FPCs are supporting the instructions.
-      Has no meaning when PurePascal is defined.
-    }
-    {$DEFINE ASM_MachineCode}
   {$ENDIF}
 {$ENDIF}
 
@@ -614,6 +599,26 @@ uses
 {$IF Defined(AllowASMExtensions) and not Defined(PurePascal)}
   , SimpleCPUID
 {$IFEND};
+
+{$IFNDEF FPC}
+const   
+  FPC_VERSION = 0;
+{$ENDIF}
+
+{$IF (not Defined(FPC) and not Defined(x64)) or (FPC_VERSION < 3)}
+  {
+    ASM_MachineCode
+
+    When defined, some ASM instructions are inserted into byte stream directly
+    as a machine code. It is there because not all compilers supports, and
+    therefore can compile, such instructions.
+    As I am not able to tell which 32bit delphi compilers do support them,
+    I am assuming none of them do. I am also assuming that all 64bit delphi
+    compilers and current FPCs are supporting the instructions.
+    Has no meaning when PurePascal is defined.
+  }
+  {$DEFINE ASM_MachineCode}
+{$IFEND}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
