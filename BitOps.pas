@@ -72,8 +72,8 @@ unit BitOps;
 
   Currently used extensions:
 
-    CMOV      - ParallelBitsDeposit(CMOVcc)[32b,v64]
-    POPCNT    - PopCount, ParallelBitsExtract[32b,v64], ParallelBitsDeposit[32b,v64]
+    CMOV      - ParallelBitsDeposit(CMOVcc)[32b,p64]
+    POPCNT    - PopCount, ParallelBitsExtract[32b,p64], ParallelBitsDeposit[32b,p64]
     LZCNT     - LZCount
     BMI1      - TZCount(TZCNT), ExtractBits(BEXTR)
     BMI2      - ParallelBitsExtract(PEXT), ParallelBitsDeposit(PDEP)
