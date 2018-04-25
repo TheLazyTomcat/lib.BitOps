@@ -48,6 +48,7 @@ unit BitOps;
   {$IFNDEF PurePascal}
     {$ASMMODE Intel}
   {$ENDIF}
+  {$DEFINE FPC_DisableWarns}
 {$ENDIF}
 
 {$IFOPT Q+}
@@ -600,8 +601,14 @@ uses
   , SimpleCPUID
 {$IFEND};
 
+{$IFDEF FPC_DisableWarns}
+  {$WARN 4055 OFF} // Conversion between ordinals and pointers is not portable
+  {$WARN 4056 OFF} // Conversion between ordinals and pointers is not portable
+  {$WARN 5058 OFF} // Variable "$1" does not seem to be initialized
+{$ENDIF}
+
 {$IFNDEF FPC}
-const   
+const
   FPC_VERSION = 0;
 {$ENDIF}
 
@@ -1376,28 +1383,28 @@ end;
 
 Function RCL(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8;
 begin
-Result := RCLCarry(Value,Shift,{%H-}CF);
+Result := RCLCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCL(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16;
 begin
-Result := RCLCarry(Value,Shift,{%H-}CF);
+Result := RCLCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCL(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32;
 begin
-Result := RCLCarry(Value,Shift,{%H-}CF);
+Result := RCLCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCL(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64;
 begin
-Result := RCLCarry(Value,Shift,{%H-}CF);
+Result := RCLCarry(Value,Shift,CF);
 end;
 
 //==============================================================================
@@ -1690,28 +1697,28 @@ end;
 
 Function RCR(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8;
 begin
-Result := RCRCarry(Value,Shift,{%H-}CF);
+Result := RCRCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCR(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16;
 begin
-Result := RCRCarry(Value,Shift,{%H-}CF);
+Result := RCRCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCR(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32;
 begin
-Result := RCRCarry(Value,Shift,{%H-}CF);
+Result := RCRCarry(Value,Shift,CF);
 end;
 
 //------------------------------------------------------------------------------
 
 Function RCR(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64;
 begin
-Result := RCRCarry(Value,Shift,{%H-}CF);
+Result := RCRCarry(Value,Shift,CF);
 end;
 
 //==============================================================================
@@ -2190,9 +2197,9 @@ case Size of
 else
   For i := 0 to Pred(Size div 2) do
     begin
-      {%H-}ByteBuff := {%H-}PByte({%H-}PtrUInt(Addr(Buffer)) + i)^;
-      {%H-}PByte({%H-}PtrUInt(Addr(Buffer)) + i)^ := {%H-}PByte({%H-}PtrUInt(Addr(Buffer)) + (Size - i - 1))^;
-      {%H-}PByte({%H-}PtrUInt(Addr(Buffer)) + (Size - i - 1))^ := ByteBuff;
+      ByteBuff := PByte(PtrUInt(Addr(Buffer)) + i)^;
+      PByte(PtrUInt(Addr(Buffer)) + i)^ := PByte(PtrUInt(Addr(Buffer)) + (Size - i - 1))^;
+      PByte(PtrUInt(Addr(Buffer)) + (Size - i - 1))^ := ByteBuff;
     end;
 end;
 end;
