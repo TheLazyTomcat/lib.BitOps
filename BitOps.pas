@@ -31,6 +31,8 @@ unit BitOps;
   {$DEFINE 32bit}
 {$IFEND}
 
+{$DEFINE PurePascal}
+
 {$IF defined(CPUX86_64) or defined(CPUX64)}
   {$DEFINE x64}
 {$ELSEIF defined(CPU386)}
@@ -49,6 +51,7 @@ unit BitOps;
     {$ASMMODE Intel}
   {$ENDIF}
   {$DEFINE FPC_DisableWarns}
+  {$MACRO ON}
 {$ENDIF}
 
 {$IFOPT Q+}
@@ -602,9 +605,10 @@ uses
 {$IFEND};
 
 {$IFDEF FPC_DisableWarns}
-  {$WARN 4055 OFF} // Conversion between ordinals and pointers is not portable
-  {$WARN 4056 OFF} // Conversion between ordinals and pointers is not portable
-  {$WARN 5058 OFF} // Variable "$1" does not seem to be initialized
+  {$DEFINE FPCDWM}
+  {$DEFINE W4055:={$WARN 4055 OFF}} // Conversion between ordinals and pointers is not portable
+  {$DEFINE W4056:={$WARN 4056 OFF}} // Conversion between ordinals and pointers is not portable
+  {$DEFINE W5058:={$WARN 5058 OFF}} // Variable "$1" does not seem to be initialized
 {$ENDIF}
 
 {$IFNDEF FPC}
@@ -1381,31 +1385,39 @@ end;
 
 //==============================================================================
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCL(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8;
 begin
 Result := RCLCarry(Value,Shift,CF);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCL(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16;
 begin
 Result := RCLCarry(Value,Shift,CF);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
-
+ 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCL(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32;
 begin
 Result := RCLCarry(Value,Shift,CF);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
-
+ 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCL(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64;
 begin
 Result := RCLCarry(Value,Shift,CF);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //==============================================================================
 
@@ -1695,31 +1707,39 @@ end;
 
 //==============================================================================
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCR(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8;
 begin
 Result := RCRCarry(Value,Shift,CF);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCR(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16;
 begin
 Result := RCRCarry(Value,Shift,CF);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCR(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32;
 begin
 Result := RCRCarry(Value,Shift,CF);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
+{$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCR(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64;
 begin
 Result := RCRCarry(Value,Shift,CF);
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //==============================================================================
 
@@ -2197,9 +2217,11 @@ case Size of
 else
   For i := 0 to Pred(Size div 2) do
     begin
+    {$IFDEF FPCDWM}{$PUSH}W4055 W4056{$ENDIF}
       ByteBuff := PByte(PtrUInt(Addr(Buffer)) + i)^;
       PByte(PtrUInt(Addr(Buffer)) + i)^ := PByte(PtrUInt(Addr(Buffer)) + (Size - i - 1))^;
       PByte(PtrUInt(Addr(Buffer)) + (Size - i - 1))^ := ByteBuff;
+    {$IFDEF FPCDWM}{$POP}{$ENDIF}
     end;
 end;
 end;
