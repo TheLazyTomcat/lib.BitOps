@@ -31,8 +31,6 @@ unit BitOps;
   {$DEFINE 32bit}
 {$IFEND}
 
-{$DEFINE PurePascal}
-
 {$IF defined(CPUX86_64) or defined(CPUX64)}
   {$DEFINE x64}
 {$ELSEIF defined(CPU386)}
