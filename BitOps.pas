@@ -9,9 +9,9 @@
 
   BitOps - Binary operations
 
-  ©František Milt 2017-06-05
+  ©František Milt 2018-10-21
 
-  Version 1.6.1
+  Version 1.6.2
 
   Dependencies:
     AuxTypes    - github.com/ncs-sniper/Lib.AuxTypes
@@ -45,11 +45,19 @@ unit BitOps;
 
 {$IFDEF FPC}
   {$MODE Delphi}
+  {$INLINE ON}
+  {$DEFINE CanInline}  
   {$IFNDEF PurePascal}
     {$ASMMODE Intel}
   {$ENDIF}
   {$DEFINE FPC_DisableWarns}
   {$MACRO ON}
+{$ELSE}
+  {$IF CompilerVersion >= 17 then}  // Delphi 2005+
+    {$DEFINE CanInline}
+  {$ELSE}
+    {$UNDEF CanInline}
+  {$IFEND}
 {$ENDIF}
 
 {$IFOPT Q+}
@@ -114,33 +122,33 @@ const
     ZeroBitChar:  '0';
     SplitChar:    ' ');
 
-Function NumberToBitStr(Number: UInt8; BitStringFormat: TBitStringFormat): String; overload;
-Function NumberToBitStr(Number: UInt16; BitStringFormat: TBitStringFormat): String; overload;
-Function NumberToBitStr(Number: UInt32; BitStringFormat: TBitStringFormat): String; overload;
-Function NumberToBitStr(Number: UInt64; BitStringFormat: TBitStringFormat): String; overload;
+Function NumberToBitStr(Number: UInt8; BitStringFormat: TBitStringFormat): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function NumberToBitStr(Number: UInt16; BitStringFormat: TBitStringFormat): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function NumberToBitStr(Number: UInt32; BitStringFormat: TBitStringFormat): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function NumberToBitStr(Number: UInt64; BitStringFormat: TBitStringFormat): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
 
 Function NumberToBitStr(Number: UInt8; Split: TBitStringSplit): String; overload;
 Function NumberToBitStr(Number: UInt16; Split: TBitStringSplit): String; overload;
 Function NumberToBitStr(Number: UInt32; Split: TBitStringSplit): String; overload;
 Function NumberToBitStr(Number: UInt64; Split: TBitStringSplit): String; overload;
 
-Function NumberToBitStr(Number: UInt8): String; overload;
-Function NumberToBitStr(Number: UInt16): String; overload;
-Function NumberToBitStr(Number: UInt32): String; overload;
-Function NumberToBitStr(Number: UInt64): String; overload;
+Function NumberToBitStr(Number: UInt8): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function NumberToBitStr(Number: UInt16): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function NumberToBitStr(Number: UInt32): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function NumberToBitStr(Number: UInt64): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
 
 Function BitStrToNumber(const BitString: String; BitStringFormat: TBitStringFormat): UInt64; overload;
-Function BitStrToNumber(const BitString: String): UInt64; overload;
+Function BitStrToNumber(const BitString: String): UInt64; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 Function TryBitStrToNumber(const BitString: String; out Value: UInt8; BitStringFormat: TBitStringFormat): Boolean; overload;
 Function TryBitStrToNumber(const BitString: String; out Value: UInt16; BitStringFormat: TBitStringFormat): Boolean; overload;
 Function TryBitStrToNumber(const BitString: String; out Value: UInt32; BitStringFormat: TBitStringFormat): Boolean; overload;
 Function TryBitStrToNumber(const BitString: String; out Value: UInt64; BitStringFormat: TBitStringFormat): Boolean; overload;
 
-Function TryBitStrToNumber(const BitString: String; out Value: UInt8): Boolean; overload;
-Function TryBitStrToNumber(const BitString: String; out Value: UInt16): Boolean; overload;
-Function TryBitStrToNumber(const BitString: String; out Value: UInt32): Boolean; overload;
-Function TryBitStrToNumber(const BitString: String; out Value: UInt64): Boolean; overload;
+Function TryBitStrToNumber(const BitString: String; out Value: UInt8): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function TryBitStrToNumber(const BitString: String; out Value: UInt16): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function TryBitStrToNumber(const BitString: String; out Value: UInt32): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function TryBitStrToNumber(const BitString: String; out Value: UInt64): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 Function BitStrToNumberDef(const BitString: String; Default: UInt64; BitStringFormat: TBitStringFormat): UInt64; overload;
 Function BitStrToNumberDef(const BitString: String; Default: UInt64): UInt64; overload;
@@ -156,10 +164,10 @@ Function ROL(Value: UInt16; Shift: UInt8): UInt16; overload;
 Function ROL(Value: UInt32; Shift: UInt8): UInt32; overload;
 Function ROL(Value: UInt64; Shift: UInt8): UInt64; overload;
 
-procedure ROLValue(var Value: UInt8; Shift: UInt8); overload;
-procedure ROLValue(var Value: UInt16; Shift: UInt8); overload;
-procedure ROLValue(var Value: UInt32; Shift: UInt8); overload;
-procedure ROLValue(var Value: UInt64; Shift: UInt8); overload;
+procedure ROLValue(var Value: UInt8; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure ROLValue(var Value: UInt16; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure ROLValue(var Value: UInt32; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure ROLValue(var Value: UInt64; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -172,10 +180,10 @@ Function ROR(Value: UInt16; Shift: UInt8): UInt16; overload;
 Function ROR(Value: UInt32; Shift: UInt8): UInt32; overload;
 Function ROR(Value: UInt64; Shift: UInt8): UInt64; overload;
 
-procedure RORValue(var Value: UInt8; Shift: UInt8); overload;
-procedure RORValue(var Value: UInt16; Shift: UInt8); overload;
-procedure RORValue(var Value: UInt32; Shift: UInt8); overload;
-procedure RORValue(var Value: UInt64; Shift: UInt8); overload;
+procedure RORValue(var Value: UInt8; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RORValue(var Value: UInt16; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RORValue(var Value: UInt32; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RORValue(var Value: UInt64; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -188,20 +196,20 @@ Function RCLCarry(Value: UInt16; Shift: UInt8; var CF: ByteBool): UInt16; overlo
 Function RCLCarry(Value: UInt32; Shift: UInt8; var CF: ByteBool): UInt32; overload;
 Function RCLCarry(Value: UInt64; Shift: UInt8; var CF: ByteBool): UInt64; overload;
 
-Function RCL(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8; overload;
-Function RCL(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16; overload;
-Function RCL(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32; overload;
-Function RCL(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64; overload;
+Function RCL(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function RCL(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function RCL(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function RCL(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
-procedure RCLValueCarry(var Value: UInt8; Shift: UInt8; var CF: ByteBool); overload;
-procedure RCLValueCarry(var Value: UInt16; Shift: UInt8; var CF: ByteBool); overload;
-procedure RCLValueCarry(var Value: UInt32; Shift: UInt8; var CF: ByteBool); overload;
-procedure RCLValueCarry(var Value: UInt64; Shift: UInt8; var CF: ByteBool); overload;
+procedure RCLValueCarry(var Value: UInt8; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RCLValueCarry(var Value: UInt16; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RCLValueCarry(var Value: UInt32; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RCLValueCarry(var Value: UInt64; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
-procedure RCLValue(var Value: UInt8; Shift: UInt8; CF: ByteBool = False); overload;
-procedure RCLValue(var Value: UInt16; Shift: UInt8; CF: ByteBool = False); overload;
-procedure RCLValue(var Value: UInt32; Shift: UInt8; CF: ByteBool = False); overload;
-procedure RCLValue(var Value: UInt64; Shift: UInt8; CF: ByteBool = False); overload;
+procedure RCLValue(var Value: UInt8; Shift: UInt8; CF: ByteBool = False); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RCLValue(var Value: UInt16; Shift: UInt8; CF: ByteBool = False); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RCLValue(var Value: UInt32; Shift: UInt8; CF: ByteBool = False); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RCLValue(var Value: UInt64; Shift: UInt8; CF: ByteBool = False); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -214,20 +222,20 @@ Function RCRCarry(Value: UInt16; Shift: UInt8; var CF: ByteBool): UInt16; overlo
 Function RCRCarry(Value: UInt32; Shift: UInt8; var CF: ByteBool): UInt32; overload;
 Function RCRCarry(Value: UInt64; Shift: UInt8; var CF: ByteBool): UInt64; overload;
 
-Function RCR(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8; overload;
-Function RCR(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16; overload;
-Function RCR(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32; overload;
-Function RCR(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64; overload;
+Function RCR(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function RCR(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function RCR(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function RCR(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
-procedure RCRValueCarry(var Value: UInt8; Shift: UInt8; var CF: ByteBool); overload;
-procedure RCRValueCarry(var Value: UInt16; Shift: UInt8; var CF: ByteBool); overload;
-procedure RCRValueCarry(var Value: UInt32; Shift: UInt8; var CF: ByteBool); overload;
-procedure RCRValueCarry(var Value: UInt64; Shift: UInt8; var CF: ByteBool); overload;
+procedure RCRValueCarry(var Value: UInt8; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RCRValueCarry(var Value: UInt16; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RCRValueCarry(var Value: UInt32; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RCRValueCarry(var Value: UInt64; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
-procedure RCRValue(var Value: UInt8; Shift: UInt8; CF: ByteBool = False); overload;
-procedure RCRValue(var Value: UInt16; Shift: UInt8; CF: ByteBool = False); overload;
-procedure RCRValue(var Value: UInt32; Shift: UInt8; CF: ByteBool = False); overload;
-procedure RCRValue(var Value: UInt64; Shift: UInt8; CF: ByteBool = False); overload;
+procedure RCRValue(var Value: UInt8; Shift: UInt8; CF: ByteBool = False); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RCRValue(var Value: UInt16; Shift: UInt8; CF: ByteBool = False); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RCRValue(var Value: UInt32; Shift: UInt8; CF: ByteBool = False); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure RCRValue(var Value: UInt64; Shift: UInt8; CF: ByteBool = False); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -235,15 +243,15 @@ procedure RCRValue(var Value: UInt64; Shift: UInt8; CF: ByteBool = False); overl
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function SAL(Value: UInt8; Shift: UInt8): UInt8; overload;
-Function SAL(Value: UInt16; Shift: UInt8): UInt16; overload;
-Function SAL(Value: UInt32; Shift: UInt8): UInt32; overload;
-Function SAL(Value: UInt64; Shift: UInt8): UInt64; overload;
+Function SAL(Value: UInt8; Shift: UInt8): UInt8; overload;{$IF Defined(CanInline) and Defined(PurePascal)} inline; {$IFEND}
+Function SAL(Value: UInt16; Shift: UInt8): UInt16; overload;{$IF Defined(CanInline) and Defined(PurePascal)} inline; {$IFEND}
+Function SAL(Value: UInt32; Shift: UInt8): UInt32; overload;{$IF Defined(CanInline) and Defined(PurePascal)} inline; {$IFEND}
+Function SAL(Value: UInt64; Shift: UInt8): UInt64; overload;{$IF Defined(CanInline) and Defined(PurePascal)} inline; {$IFEND}
 
-procedure SALValue(var Value: UInt8; Shift: UInt8); overload;
-procedure SALValue(var Value: UInt16; Shift: UInt8); overload;
-procedure SALValue(var Value: UInt32; Shift: UInt8); overload;
-procedure SALValue(var Value: UInt64; Shift: UInt8); overload;
+procedure SALValue(var Value: UInt8; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SALValue(var Value: UInt16; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SALValue(var Value: UInt32; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SALValue(var Value: UInt64; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -256,10 +264,10 @@ Function SAR(Value: UInt16; Shift: UInt8): UInt16; overload;
 Function SAR(Value: UInt32; Shift: UInt8): UInt32; overload;
 Function SAR(Value: UInt64; Shift: UInt8): UInt64; overload;
 
-procedure SARValue(var Value: UInt8; Shift: UInt8); overload;
-procedure SARValue(var Value: UInt16; Shift: UInt8); overload;
-procedure SARValue(var Value: UInt32; Shift: UInt8); overload;
-procedure SARValue(var Value: UInt64; Shift: UInt8); overload;
+procedure SARValue(var Value: UInt8; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SARValue(var Value: UInt16; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SARValue(var Value: UInt32; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SARValue(var Value: UInt64; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -267,13 +275,13 @@ procedure SARValue(var Value: UInt64; Shift: UInt8); overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function EndianSwap(Value: UInt16): UInt16; overload;
+Function EndianSwap(Value: UInt16): UInt16; overload;{$IF Defined(CanInline) and Defined(PurePascal)} inline; {$IFEND}
 Function EndianSwap(Value: UInt32): UInt32; overload;
 Function EndianSwap(Value: UInt64): UInt64; overload;
 
-procedure EndianSwapValue(var Value: UInt16); overload;
-procedure EndianSwapValue(var Value: UInt32); overload;
-procedure EndianSwapValue(var Value: UInt64); overload;
+procedure EndianSwapValue(var Value: UInt16); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure EndianSwapValue(var Value: UInt32); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure EndianSwapValue(var Value: UInt64); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 procedure EndianSwap(var Buffer; Size: TMemSize); overload;
 
@@ -283,10 +291,10 @@ procedure EndianSwap(var Buffer; Size: TMemSize); overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BT(Value: UInt8; Bit: UInt8): ByteBool; overload;
-Function BT(Value: UInt16; Bit: UInt8): ByteBool; overload;
-Function BT(Value: UInt32; Bit: UInt8): ByteBool; overload;
-Function BT(Value: UInt64; Bit: UInt8): ByteBool; overload;
+Function BT(Value: UInt8; Bit: UInt8): ByteBool; overload;{$IF Defined(CanInline) and Defined(PurePascal)} inline; {$IFEND}
+Function BT(Value: UInt16; Bit: UInt8): ByteBool; overload;{$IF Defined(CanInline) and Defined(PurePascal)} inline; {$IFEND}
+Function BT(Value: UInt32; Bit: UInt8): ByteBool; overload;{$IF Defined(CanInline) and Defined(PurePascal)} inline; {$IFEND}
+Function BT(Value: UInt64; Bit: UInt8): ByteBool; overload;{$IF Defined(CanInline) and Defined(PurePascal)} inline; {$IFEND}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -327,10 +335,10 @@ Function BTC(var Value: UInt64; Bit: UInt8): ByteBool; overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function BitSetTo(var Value: UInt8; Bit: UInt8; NewValue: ByteBool): ByteBool; overload;
-Function BitSetTo(var Value: UInt16; Bit: UInt8; NewValue: ByteBool): ByteBool; overload;
-Function BitSetTo(var Value: UInt32; Bit: UInt8; NewValue: ByteBool): ByteBool; overload;
-Function BitSetTo(var Value: UInt64; Bit: UInt8; NewValue: ByteBool): ByteBool; overload;
+Function BitSetTo(var Value: UInt8; Bit: UInt8; NewValue: ByteBool): ByteBool; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function BitSetTo(var Value: UInt16; Bit: UInt8; NewValue: ByteBool): ByteBool; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function BitSetTo(var Value: UInt32; Bit: UInt8; NewValue: ByteBool): ByteBool; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function BitSetTo(var Value: UInt64; Bit: UInt8; NewValue: ByteBool): ByteBool; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -360,10 +368,10 @@ Function BSR(Value: UInt64): Int32; overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function PopCount(Value: UInt8): Int32; overload;
-Function PopCount(Value: UInt16): Int32; overload;
-Function PopCount(Value: UInt32): Int32; overload;
-Function PopCount(Value: UInt64): Int32; overload;
+Function PopCount(Value: UInt8): Int32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function PopCount(Value: UInt16): Int32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function PopCount(Value: UInt32): Int32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function PopCount(Value: UInt64): Int32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -371,14 +379,14 @@ Function PopCount(Value: UInt64): Int32; overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function GetHighNibble(Value: UInt8): TNibble;
-Function GetLowNibble(Value: UInt8): TNibble;
+Function GetHighNibble(Value: UInt8): TNibble;{$IFDEF CanInline} inline; {$ENDIF}
+Function GetLowNibble(Value: UInt8): TNibble;{$IFDEF CanInline} inline; {$ENDIF}
 
-Function SetHighNibble(Value: UInt8; SetTo: TNibble): UInt8;
-Function SetLowNibble(Value: UInt8; SetTo: TNibble): UInt8;
+Function SetHighNibble(Value: UInt8; SetTo: TNibble): UInt8;{$IFDEF CanInline} inline; {$ENDIF}
+Function SetLowNibble(Value: UInt8; SetTo: TNibble): UInt8;{$IFDEF CanInline} inline; {$ENDIF}
 
-procedure SetHighNibbleValue(var Value: UInt8; SetTo: TNibble);
-procedure SetLowNibbleValue(var Value: UInt8; SetTo: TNibble);
+procedure SetHighNibbleValue(var Value: UInt8; SetTo: TNibble);{$IFDEF CanInline} inline; {$ENDIF}
+procedure SetLowNibbleValue(var Value: UInt8; SetTo: TNibble);{$IFDEF CanInline} inline; {$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -403,15 +411,15 @@ Function GetFlagState(Value,FlagBitmask: UInt64; ExactMatch: Boolean = False): B
   parameter parsing).
 }
 
-Function SetFlag(Value,FlagBitmask: UInt8): UInt8; overload;
-Function SetFlag(Value,FlagBitmask: UInt16): UInt16; overload;
-Function SetFlag(Value,FlagBitmask: UInt32): UInt32; overload;
-Function SetFlag(Value,FlagBitmask: UInt64): UInt64; overload;
+Function SetFlag(Value,FlagBitmask: UInt8): UInt8; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function SetFlag(Value,FlagBitmask: UInt16): UInt16; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function SetFlag(Value,FlagBitmask: UInt32): UInt32; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function SetFlag(Value,FlagBitmask: UInt64): UInt64; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
-procedure SetFlagValue(var Value: UInt8; FlagBitmask: UInt8); overload;
-procedure SetFlagValue(var Value: UInt16; FlagBitmask: UInt16); overload;
-procedure SetFlagValue(var Value: UInt32; FlagBitmask: UInt32); overload;
-procedure SetFlagValue(var Value: UInt64; FlagBitmask: UInt64); overload;
+procedure SetFlagValue(var Value: UInt8; FlagBitmask: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SetFlagValue(var Value: UInt16; FlagBitmask: UInt16); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SetFlagValue(var Value: UInt32; FlagBitmask: UInt32); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SetFlagValue(var Value: UInt64; FlagBitmask: UInt64); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 Function SetFlags_8(Value: UInt8; Flags: array of UInt8): UInt8;
 Function SetFlags_16(Value: UInt16; Flags: array of UInt16): UInt16;
@@ -445,15 +453,15 @@ procedure SetFlagsValue(var Value: UInt64; Flags: array of UInt64); overload;
   parameter parsing).
 }
 
-Function ResetFlag(Value,FlagBitmask: UInt8): UInt8; overload;
-Function ResetFlag(Value,FlagBitmask: UInt16): UInt16; overload;
-Function ResetFlag(Value,FlagBitmask: UInt32): UInt32; overload;
-Function ResetFlag(Value,FlagBitmask: UInt64): UInt64; overload;
+Function ResetFlag(Value,FlagBitmask: UInt8): UInt8; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function ResetFlag(Value,FlagBitmask: UInt16): UInt16; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function ResetFlag(Value,FlagBitmask: UInt32): UInt32; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function ResetFlag(Value,FlagBitmask: UInt64): UInt64; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
-procedure ResetFlagValue(var Value: UInt8; FlagBitmask: UInt8); overload;
-procedure ResetFlagValue(var Value: UInt16; FlagBitmask: UInt16); overload;
-procedure ResetFlagValue(var Value: UInt32; FlagBitmask: UInt32); overload;
-procedure ResetFlagValue(var Value: UInt64; FlagBitmask: UInt64); overload;
+procedure ResetFlagValue(var Value: UInt8; FlagBitmask: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure ResetFlagValue(var Value: UInt16; FlagBitmask: UInt16); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure ResetFlagValue(var Value: UInt32; FlagBitmask: UInt32); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure ResetFlagValue(var Value: UInt64; FlagBitmask: UInt64); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 Function ResetFlags_8(Value: UInt8; Flags: array of UInt8): UInt8;
 Function ResetFlags_16(Value: UInt16; Flags: array of UInt16): UInt16;
@@ -486,10 +494,10 @@ Function SetFlagState(Value,FlagBitmask: UInt16; NewState: Boolean): UInt16; ove
 Function SetFlagState(Value,FlagBitmask: UInt32; NewState: Boolean): UInt32; overload;
 Function SetFlagState(Value,FlagBitmask: UInt64; NewState: Boolean): UInt64; overload;
 
-procedure SetFlagStateValue(var Value: UInt8; FlagBitmask: UInt8; NewState: Boolean); overload;
-procedure SetFlagStateValue(var Value: UInt16; FlagBitmask: UInt16; NewState: Boolean); overload;
-procedure SetFlagStateValue(var Value: UInt32; FlagBitmask: UInt32; NewState: Boolean); overload;
-procedure SetFlagStateValue(var Value: UInt64; FlagBitmask: UInt64; NewState: Boolean); overload;
+procedure SetFlagStateValue(var Value: UInt8; FlagBitmask: UInt8; NewState: Boolean); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SetFlagStateValue(var Value: UInt16; FlagBitmask: UInt16; NewState: Boolean); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SetFlagStateValue(var Value: UInt32; FlagBitmask: UInt32; NewState: Boolean); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SetFlagStateValue(var Value: UInt64; FlagBitmask: UInt64; NewState: Boolean); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -518,10 +526,10 @@ Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Integer): UInt16; overloa
 Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Integer): UInt32; overload;
 Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Integer): UInt64; overload;
 
-procedure SetBitsValue(var Value: UInt8; NewBits: UInt8; FromBit,ToBit: Integer); overload;
-procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Integer); overload;
-procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Integer); overload;
-procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Integer); overload;
+procedure SetBitsValue(var Value: UInt8; NewBits: UInt8; FromBit,ToBit: Integer); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Integer); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Integer); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Integer); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -534,10 +542,10 @@ Function ReverseBits(Value: UInt16): UInt16; overload;
 Function ReverseBits(Value: UInt32): UInt32; overload;
 Function ReverseBits(Value: UInt64): UInt64; overload;
 
-procedure ReverseBitsValue(var Value: UInt8); overload;
-procedure ReverseBitsValue(var Value: UInt16); overload;
-procedure ReverseBitsValue(var Value: UInt32); overload;
-procedure ReverseBitsValue(var Value: UInt64); overload;
+procedure ReverseBitsValue(var Value: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure ReverseBitsValue(var Value: UInt16); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure ReverseBitsValue(var Value: UInt32); overload;{$IFDEF CanInline} inline; {$ENDIF}
+procedure ReverseBitsValue(var Value: UInt64); overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -545,10 +553,10 @@ procedure ReverseBitsValue(var Value: UInt64); overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function LZCount(Value: UInt8): Int32; overload;
-Function LZCount(Value: UInt16): Int32; overload;
-Function LZCount(Value: UInt32): Int32; overload;
-Function LZCount(Value: UInt64): Int32; overload;
+Function LZCount(Value: UInt8): Int32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function LZCount(Value: UInt16): Int32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function LZCount(Value: UInt32): Int32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function LZCount(Value: UInt64): Int32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -556,10 +564,10 @@ Function LZCount(Value: UInt64): Int32; overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function TZCount(Value: UInt8): Int32; overload;
-Function TZCount(Value: UInt16): Int32; overload;
-Function TZCount(Value: UInt32): Int32; overload;
-Function TZCount(Value: UInt64): Int32; overload;
+Function TZCount(Value: UInt8): Int32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function TZCount(Value: UInt16): Int32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function TZCount(Value: UInt32): Int32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function TZCount(Value: UInt64): Int32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -567,10 +575,10 @@ Function TZCount(Value: UInt64): Int32; overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function ExtractBits(Value: UInt8; Start, Length: UInt8): UInt8; overload;
-Function ExtractBits(Value: UInt16; Start, Length: UInt8): UInt16; overload;
-Function ExtractBits(Value: UInt32; Start, Length: UInt8): UInt32; overload;
-Function ExtractBits(Value: UInt64; Start, Length: UInt8): UInt64; overload;
+Function ExtractBits(Value: UInt8; Start, Length: UInt8): UInt8; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function ExtractBits(Value: UInt16; Start, Length: UInt8): UInt16; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function ExtractBits(Value: UInt32; Start, Length: UInt8): UInt32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function ExtractBits(Value: UInt64; Start, Length: UInt8): UInt64; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -578,10 +586,10 @@ Function ExtractBits(Value: UInt64; Start, Length: UInt8): UInt64; overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function ParallelBitsExtract(Value, Mask: UInt8): UInt8; overload;
-Function ParallelBitsExtract(Value, Mask: UInt16): UInt16; overload;
-Function ParallelBitsExtract(Value, Mask: UInt32): UInt32; overload;
-Function ParallelBitsExtract(Value, Mask: UInt64): UInt64; overload;
+Function ParallelBitsExtract(Value, Mask: UInt8): UInt8; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function ParallelBitsExtract(Value, Mask: UInt16): UInt16; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function ParallelBitsExtract(Value, Mask: UInt32): UInt32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function ParallelBitsExtract(Value, Mask: UInt64): UInt64; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -589,10 +597,10 @@ Function ParallelBitsExtract(Value, Mask: UInt64): UInt64; overload;
 {==============================================================================}
 {------------------------------------------------------------------------------}
 
-Function ParallelBitsDeposit(Value, Mask: UInt8): UInt8; overload;
-Function ParallelBitsDeposit(Value, Mask: UInt16): UInt16; overload;
-Function ParallelBitsDeposit(Value, Mask: UInt32): UInt32; overload;
-Function ParallelBitsDeposit(Value, Mask: UInt64): UInt64; overload;
+Function ParallelBitsDeposit(Value, Mask: UInt8): UInt8; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function ParallelBitsDeposit(Value, Mask: UInt16): UInt16; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function ParallelBitsDeposit(Value, Mask: UInt32): UInt32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
+Function ParallelBitsDeposit(Value, Mask: UInt64): UInt64; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
 
 implementation
 
@@ -2042,7 +2050,7 @@ end;
 
 procedure SARValue(var Value: UInt8; Shift: UInt8);
 begin
-Value := SAL(Value,Shift);
+Value := SAR(Value,Shift);
 end;
 
 //------------------------------------------------------------------------------
