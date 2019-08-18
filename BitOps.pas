@@ -9,16 +9,27 @@
 
   BitOps - Binary operations
 
-  ©František Milt 2018-10-21
-
   Version 1.6.2
 
-  Dependencies:
-    AuxTypes    - github.com/ncs-sniper/Lib.AuxTypes
-  * SimpleCPUID - github.com/ncs-sniper/Lib.SimpleCPUID
+  Last changed 2019-08-19 
 
-  SimpleCPUID is required only when AllowASMExtensions symbol is defined and
-  PurePascal symbol is not defined.
+  ©2014-2019 František Milt
+
+  Contacts:
+    František Milt: frantisek.milt@gmail.com
+
+  Support:
+    If you find this code useful, please consider supporting its author(s) by
+    making a small donation using the following link(s):
+
+      https://www.paypal.me/FMilt    
+
+  Dependencies:
+    AuxTypes    - github.com/TheLazyTomcat/Lib.AuxTypes
+  * SimpleCPUID - github.com/TheLazyTomcat/Lib.SimpleCPUID
+
+    SimpleCPUID is required only when AllowASMExtensions symbol is defined and
+    PurePascal symbol is not defined.
 
 ===============================================================================}
 unit BitOps;
