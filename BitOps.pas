@@ -11,7 +11,7 @@
 
   Version 1.6.2 (2018-10-22)
 
-  Last change 2019-08-19
+  Last change 2019-09-20
 
   ©2014-2019 František Milt
 
@@ -113,7 +113,13 @@ unit BitOps;
 interface
 
 uses
+  SysUtils,
   AuxTypes;
+
+type
+  EBOException = class(Exception);
+
+  EBOInvalidCharacter = class(EBOException);
 
 {------------------------------------------------------------------------------}
 {==============================================================================}
@@ -620,11 +626,10 @@ Function ParallelBitsDeposit(Value, Mask: UInt64): UInt64; overload;{$IF Defined
 
 implementation
 
-uses
-  SysUtils
 {$IF Defined(AllowASMExtensions) and not Defined(PurePascal)}
-  , SimpleCPUID
-{$IFEND};
+uses
+  SimpleCPUID;
+{$IFEND}
 
 {$IFDEF FPC_DisableWarns}
   {$DEFINE FPCDWM}
@@ -798,7 +803,7 @@ For i := 1 to Length(BitString) do
         If BitString[i] = BitStringFormat.SetBitChar then
           Result := Result or 1
         else If BitString[i] <> BitStringFormat.ZeroBitChar then
-          raise Exception.CreateFmt('BitStrToNumber: Unknown character (#%d) in bitstring.',[Ord(BitString[i])]);
+          raise EBOInvalidCharacter.CreateFmt('BitStrToNumber: Unknown character (#%d) in bitstring.',[Ord(BitString[i])]);
       end
     else Continue{For i};
   end;
