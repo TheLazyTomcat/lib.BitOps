@@ -680,6 +680,14 @@ Function DataToHexStr(const Buffer; Size: TMemSize): String; overload;{$IFDEF In
 Function DataToHexStr(Ptr: Pointer; Size: TMemSize): String; overload;{$IFDEF Inline} inline; {$ENDIF}
 Function DataToHexStr(Arr: array of UInt8): String; overload;{$IFDEF Inline} inline; {$ENDIF}
 
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): TMemSize; overload;
+Function HexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize; HexStringFormat: THexStringFormat): TMemSize; overload;
+Function HexStrToData(const Str: String; HexStringFormat: THexStringFormat): TArrayOfBytes; overload;
+
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; Split: THexStringSplit): TMemSize; overload;
+Function HexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize; Split: THexStringSplit): TMemSize; overload;
+Function HexStrToData(const Str: String; Split: THexStringSplit): TArrayOfBytes; overload;
+
 Function HexStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;
 Function HexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize): TMemSize; overload;
 Function HexStrToData(const Str: String): TArrayOfBytes; overload;
@@ -688,6 +696,13 @@ Function HexStrToData(const Str: String): TArrayOfBytes; overload;
 {-------------------------------------------------------------------------------
 ================================================================================
                              Binary data comparison                                                            
+================================================================================
+-------------------------------------------------------------------------------}
+{$message 'add'}
+
+{-------------------------------------------------------------------------------
+================================================================================
+                                   Bit parity                                                                                                                              
 ================================================================================
 -------------------------------------------------------------------------------}
 {$message 'add'}
@@ -1104,7 +1119,7 @@ Result := UInt8((Value shl Shift) or (Value shr (8 - Shift)));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ROL(Value: UInt16; Shift: UInt8): UInt16;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -1121,7 +1136,7 @@ Result := UInt16((Value shl Shift) or (Value shr (16 - Shift)));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ROL(Value: UInt32; Shift: UInt8): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -1138,7 +1153,7 @@ Result := UInt32((Value shl Shift) or (Value shr (32 - Shift)));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ROL(Value: UInt64; Shift: UInt8): UInt64;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -1197,21 +1212,21 @@ begin
 Value := ROL(Value,Shift);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ROLValue(var Value: UInt16; Shift: UInt8);
 begin
 Value := ROL(Value,Shift);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ROLValue(var Value: UInt32; Shift: UInt8);
 begin
 Value := ROL(Value,Shift);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ROLValue(var Value: UInt64; Shift: UInt8);
 begin
@@ -1239,7 +1254,7 @@ Result := UInt8((Value shr Shift) or (Value shl (8 - Shift)));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ROR(Value: UInt16; Shift: UInt8): UInt16;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -1256,7 +1271,7 @@ Result := UInt16((Value shr Shift) or (Value shl (16 - Shift)));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ROR(Value: UInt32; Shift: UInt8): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -1273,7 +1288,7 @@ Result := UInt32((Value shr Shift) or (Value shl (32 - Shift)));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ROR(Value: UInt64; Shift: UInt8): UInt64;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -1332,21 +1347,21 @@ begin
 Value := ROR(Value,Shift);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RORValue(var Value: UInt16; Shift: UInt8);
 begin
 Value := ROR(Value,Shift);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RORValue(var Value: UInt32; Shift: UInt8);
 begin
 Value := ROR(Value,Shift);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RORValue(var Value: UInt64; Shift: UInt8);
 begin
@@ -1391,7 +1406,7 @@ For i := 1 to Shift do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function RCLCarry(Value: UInt16; Shift: UInt8; var CF: ByteBool): UInt16;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -1425,7 +1440,7 @@ For i := 1 to Shift do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function RCLCarry(Value: UInt32; Shift: UInt8; var CF: ByteBool): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -1459,7 +1474,7 @@ For i := 1 to Shift do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function RCLCarry(Value: UInt64; Shift: UInt8; var CF: ByteBool): UInt64;{$IFNDEF PurePascal}register; assembler;
 {$IFDEF x64}
@@ -1594,7 +1609,7 @@ Result := RCLCarry(Value,Shift,CF);
 end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 {$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCL(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16;
@@ -1603,7 +1618,7 @@ Result := RCLCarry(Value,Shift,CF);
 end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  
 {$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCL(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32;
@@ -1612,7 +1627,7 @@ Result := RCLCarry(Value,Shift,CF);
 end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  
 {$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCL(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64;
@@ -1628,21 +1643,21 @@ begin
 Value := RCLCarry(Value,Shift,CF);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RCLValueCarry(var Value: UInt16; Shift: UInt8; var CF: ByteBool);
 begin
 Value := RCLCarry(Value,Shift,CF);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RCLValueCarry(var Value: UInt32; Shift: UInt8; var CF: ByteBool);
 begin
 Value := RCLCarry(Value,Shift,CF);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RCLValueCarry(var Value: UInt64; Shift: UInt8; var CF: ByteBool);
 begin
@@ -1656,21 +1671,21 @@ begin
 Value := RCL(Value,Shift,CF);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RCLValue(var Value: UInt16; Shift: UInt8; CF: ByteBool = False);
 begin
 Value := RCL(Value,Shift,CF);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RCLValue(var Value: UInt32; Shift: UInt8; CF: ByteBool = False);
 begin
 Value := RCL(Value,Shift,CF);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RCLValue(var Value: UInt64; Shift: UInt8; CF: ByteBool = False);
 begin
@@ -1715,7 +1730,7 @@ For i := 1 to Shift do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function RCRCarry(Value: UInt16; Shift: UInt8; var CF: ByteBool): UInt16;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -1749,7 +1764,7 @@ For i := 1 to Shift do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function RCRCarry(Value: UInt32; Shift: UInt8; var CF: ByteBool): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -1783,7 +1798,7 @@ For i := 1 to Shift do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function RCRCarry(Value: UInt64; Shift: UInt8; var CF: ByteBool): UInt64;{$IFNDEF PurePascal}register; assembler;
 {$IFDEF x64}
@@ -1916,7 +1931,7 @@ Result := RCRCarry(Value,Shift,CF);
 end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 {$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCR(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16;
@@ -1925,7 +1940,7 @@ Result := RCRCarry(Value,Shift,CF);
 end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 {$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCR(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32;
@@ -1934,7 +1949,7 @@ Result := RCRCarry(Value,Shift,CF);
 end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 {$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCR(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64;
@@ -1950,21 +1965,21 @@ begin
 Value := RCRCarry(Value,Shift,CF);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RCRValueCarry(var Value: UInt16; Shift: UInt8; var CF: ByteBool);
 begin
 Value := RCRCarry(Value,Shift,CF);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RCRValueCarry(var Value: UInt32; Shift: UInt8; var CF: ByteBool);
 begin
 Value := RCRCarry(Value,Shift,CF);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RCRValueCarry(var Value: UInt64; Shift: UInt8; var CF: ByteBool);
 begin
@@ -1978,21 +1993,21 @@ begin
 Value := RCR(Value,Shift,CF);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RCRValue(var Value: UInt16; Shift: UInt8; CF: ByteBool = False);
 begin
 Value := RCR(Value,Shift,CF);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RCRValue(var Value: UInt32; Shift: UInt8; CF: ByteBool = False);
 begin
 Value := RCR(Value,Shift,CF);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure RCRValue(var Value: UInt64; Shift: UInt8; CF: ByteBool = False);
 begin
@@ -2019,7 +2034,7 @@ Result := UInt8(Value shl Shift);
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SAL(Value: UInt16; Shift: UInt8): UInt16;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2035,7 +2050,7 @@ Result := UInt16(Value shl Shift);
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SAL(Value: UInt32; Shift: UInt8): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2051,7 +2066,7 @@ Result := UInt32(Value shl Shift);
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SAL(Value: UInt64; Shift: UInt8): UInt64;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2101,21 +2116,21 @@ begin
 Value := SAL(Value,Shift);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SALValue(var Value: UInt16; Shift: UInt8);
 begin
 Value := SAL(Value,Shift);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SALValue(var Value: UInt32; Shift: UInt8);
 begin
 Value := SAL(Value,Shift);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SALValue(var Value: UInt64; Shift: UInt8);
 begin
@@ -2146,7 +2161,7 @@ else
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SAR(Value: UInt16; Shift: UInt8): UInt16;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2166,7 +2181,7 @@ else
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SAR(Value: UInt32; Shift: UInt8): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2186,7 +2201,7 @@ else
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SAR(Value: UInt64; Shift: UInt8): UInt64;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2249,21 +2264,21 @@ begin
 Value := SAR(Value,Shift);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SARValue(var Value: UInt16; Shift: UInt8);
 begin
 Value := SAR(Value,Shift);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SARValue(var Value: UInt32; Shift: UInt8);
 begin
 Value := SAR(Value,Shift);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SARValue(var Value: UInt64; Shift: UInt8);
 begin
@@ -2289,7 +2304,7 @@ Result := UInt16((Value shl 8) or (Value shr 8));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function EndianSwap(Value: UInt32): UInt32;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2305,7 +2320,7 @@ Result := UInt32(((Value and $000000FF) shl 24) or ((Value and $0000FF00) shl 8)
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function EndianSwap(Value: UInt64): UInt64;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2333,14 +2348,14 @@ begin
 Value := EndianSwap(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure EndianSwapValue(var Value: UInt32);
 begin
 Value := EndianSwap(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure EndianSwapValue(var Value: UInt64);
 begin
@@ -2457,7 +2472,7 @@ Result := ((Value shr Bit) and 1) <> 0;
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BT(Value: UInt16; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2478,7 +2493,7 @@ Result := ((Value shr Bit) and 1) <> 0;
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BT(Value: UInt32; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2499,7 +2514,7 @@ Result := ((Value shr Bit) and 1) <> 0;
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BT(Value: UInt64; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2564,7 +2579,7 @@ Value := UInt8(Value or (UInt8(1) shl Bit));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BTS(var Value: UInt16; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2589,7 +2604,7 @@ Value := UInt16(Value or (UInt16(1) shl Bit));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BTS(var Value: UInt32; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2614,7 +2629,7 @@ Value := UInt32(Value or (UInt32(1) shl Bit));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BTS(var Value: UInt64; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2682,7 +2697,7 @@ Value := UInt8(Value and not(UInt8(1) shl Bit));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BTR(var Value: UInt16; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2707,7 +2722,7 @@ Value := UInt16(Value and not(UInt16(1) shl Bit));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BTR(var Value: UInt32; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2732,7 +2747,7 @@ Value := UInt32(Value and not(UInt32(1) shl Bit));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BTR(var Value: UInt64; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2800,7 +2815,7 @@ Value := UInt8(Value xor (UInt8(1) shl Bit));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BTC(var Value: UInt16; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2825,7 +2840,7 @@ Value := UInt16(Value xor (UInt16(1) shl Bit));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BTC(var Value: UInt32; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2850,7 +2865,7 @@ Value := UInt32(Value xor (UInt32(1) shl Bit));
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BTC(var Value: UInt64; Bit: UInt8): ByteBool;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2895,7 +2910,7 @@ If NewValue then Result := BTS(Value,Bit)
   else Result := BTR(Value,Bit);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BitSetTo(var Value: UInt16; Bit: UInt8; NewValue: ByteBool): ByteBool;
 begin
@@ -2903,7 +2918,7 @@ If NewValue then Result := BTS(Value,Bit)
   else Result := BTR(Value,Bit);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BitSetTo(var Value: UInt32; Bit: UInt8; NewValue: ByteBool): ByteBool;
 begin
@@ -2911,7 +2926,7 @@ If NewValue then Result := BTS(Value,Bit)
   else Result := BTR(Value,Bit);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BitSetTo(var Value: UInt64; Bit: UInt8; NewValue: ByteBool): ByteBool;
 begin
@@ -2958,7 +2973,7 @@ For i := 0 to 7 do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BSF(Value: UInt16): Int32;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -2991,7 +3006,7 @@ For i := 0 to 15 do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BSF(Value: UInt32): Int32;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -3022,7 +3037,7 @@ For i := 0 to 31 do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BSF(Value: UInt64): Int32;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -3105,7 +3120,7 @@ For i := 7 downto 0 do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BSR(Value: UInt16): Int32;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -3138,7 +3153,7 @@ For i := 15 downto 0 do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BSR(Value: UInt32): Int32;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -3169,7 +3184,7 @@ For i := 31 downto 0 do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BSR(Value: UInt64): Int32;{$IFNDEF PurePascal}register; assembler;
 asm
@@ -3228,6 +3243,8 @@ const
     3,4,4,5,4,5,5,6,4,5,5,6,5,6,6,7,4,5,5,6,5,6,6,7,5,6,6,7,6,7,7,8);
 {$ENDIF}
 
+//------------------------------------------------------------------------------
+
 Function Fce_PopCount_8_Pas(Value: UInt8): Int32; register;
 {$IFDEF UseLookupTable}
 begin
@@ -3246,7 +3263,7 @@ For i := 1 to 8 do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_PopCount_16_Pas(Value: UInt16): Int32; register;
 {$IFDEF UseLookupTable}
@@ -3266,7 +3283,7 @@ For i := 1 to 16 do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_PopCount_32_Pas(Value: UInt32): Int32; register;
 {$IFDEF UseLookupTable}
@@ -3287,7 +3304,7 @@ For i := 1 to 32 do
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_PopCount_64_Pas(Value: UInt64): Int32; register;
 {$IFDEF UseLookupTable}
@@ -3332,7 +3349,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_PopCount_16_Asm(Value: UInt16): Int32; register; assembler;
 asm
@@ -3348,7 +3365,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_PopCount_32_Asm(Value: UInt32): Int32; register; assembler;
 asm
@@ -3362,7 +3379,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_PopCount_64_Asm(Value: UInt64): Int32; register; assembler;
 asm
@@ -3404,21 +3421,21 @@ begin
 Result := Var_PopCount_8(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function PopCount(Value: UInt16): Int32;
 begin
 Result := Var_PopCount_16(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function PopCount(Value: UInt32): Int32;
 begin
 Result := Var_PopCount_32(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function PopCount(Value: UInt64): Int32;
 begin
@@ -3485,7 +3502,7 @@ else
   Result := (Value and FlagBitmask) <> 0;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function GetFlagState(Value,FlagBitmask: UInt16; ExactMatch: Boolean = False): Boolean;
 begin
@@ -3495,7 +3512,7 @@ else
   Result := (Value and FlagBitmask) <> 0;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function GetFlagState(Value,FlagBitmask: UInt32; ExactMatch: Boolean = False): Boolean;
 begin
@@ -3505,7 +3522,7 @@ else
   Result := (Value and FlagBitmask) <> 0;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function GetFlagState(Value,FlagBitmask: UInt64; ExactMatch: Boolean = False): Boolean;
 begin
@@ -3526,21 +3543,21 @@ begin
 Result := Value or FlagBitmask;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetFlag(Value,FlagBitmask: UInt16): UInt16;
 begin
 Result := Value or FlagBitmask;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetFlag(Value,FlagBitmask: UInt32): UInt32;
 begin
 Result := Value or FlagBitmask;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetFlag(Value,FlagBitmask: UInt64): UInt64;
 begin
@@ -3554,21 +3571,21 @@ begin
 Value := SetFlag(Value,FlagBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetFlagValue(var Value: UInt16; FlagBitmask: UInt16);
 begin
 Value := SetFlag(Value,FlagBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetFlagValue(var Value: UInt32; FlagBitmask: UInt32);
 begin
 Value := SetFlag(Value,FlagBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetFlagValue(var Value: UInt64; FlagBitmask: UInt64);
 begin
@@ -3588,7 +3605,7 @@ For i := Low(Flags) to High(flags) do
 Result := SetFlag(Value,TempBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetFlags_16(Value: UInt16; Flags: array of UInt16): UInt16;
 var
@@ -3601,7 +3618,7 @@ For i := Low(Flags) to High(flags) do
 Result := SetFlag(Value,TempBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetFlags_32(Value: UInt32; Flags: array of UInt32): UInt32;
 var
@@ -3614,7 +3631,7 @@ For i := Low(Flags) to High(flags) do
 Result := SetFlag(Value,TempBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetFlags_64(Value: UInt64; Flags: array of UInt64): UInt64;
 var
@@ -3634,21 +3651,21 @@ begin
 Result := SetFlags_8(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetFlags(Value: UInt16; Flags: array of UInt16): UInt16;
 begin
 Result := SetFlags_16(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetFlags(Value: UInt32; Flags: array of UInt32): UInt32;
 begin
 Result := SetFlags_32(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetFlags(Value: UInt64; Flags: array of UInt64): UInt64;
 begin
@@ -3662,21 +3679,21 @@ begin
 Value := SetFlags_8(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetFlagsValue_16(var Value: UInt16; Flags: array of UInt16);
 begin
 Value := SetFlags_16(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetFlagsValue_32(var Value: UInt32; Flags: array of UInt32);
 begin
 Value := SetFlags_32(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetFlagsValue_64(var Value: UInt64; Flags: array of UInt64);
 begin
@@ -3690,21 +3707,21 @@ begin
 SetFlagsValue_8(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetFlagsValue(var Value: UInt16; Flags: array of UInt16);
 begin
 SetFlagsValue_16(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetFlagsValue(var Value: UInt32; Flags: array of UInt32);
 begin
 SetFlagsValue_32(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetFlagsValue(var Value: UInt64; Flags: array of UInt64);
 begin
@@ -3722,21 +3739,21 @@ begin
 Result := Value and not FlagBitmask;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ResetFlag(Value,FlagBitmask: UInt16): UInt16;
 begin
 Result := Value and not FlagBitmask;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ResetFlag(Value,FlagBitmask: UInt32): UInt32;
 begin
 Result := Value and not FlagBitmask;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ResetFlag(Value,FlagBitmask: UInt64): UInt64;
 begin
@@ -3750,21 +3767,21 @@ begin
 Value := ResetFlag(Value,FlagBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ResetFlagValue(var Value: UInt16; FlagBitmask: UInt16);
 begin
 Value := ResetFlag(Value,FlagBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ResetFlagValue(var Value: UInt32; FlagBitmask: UInt32);
 begin
 Value := ResetFlag(Value,FlagBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ResetFlagValue(var Value: UInt64; FlagBitmask: UInt64);
 begin
@@ -3784,7 +3801,7 @@ For i := Low(Flags) to High(flags) do
 Result := ResetFlag(Value,TempBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ResetFlags_16(Value: UInt16; Flags: array of UInt16): UInt16;
 var
@@ -3797,7 +3814,7 @@ For i := Low(Flags) to High(flags) do
 Result := ResetFlag(Value,TempBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ResetFlags_32(Value: UInt32; Flags: array of UInt32): UInt32;
 var
@@ -3810,7 +3827,7 @@ For i := Low(Flags) to High(flags) do
 Result := ResetFlag(Value,TempBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ResetFlags_64(Value: UInt64; Flags: array of UInt64): UInt64;
 var
@@ -3830,20 +3847,20 @@ begin
 Result := ResetFlags_8(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ResetFlags(Value: UInt16; Flags: array of UInt16): UInt16;
 begin
 Result := ResetFlags_16(Value,Flags);
 end;
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ResetFlags(Value: UInt32; Flags: array of UInt32): UInt32;
 begin
 Result := ResetFlags_32(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ResetFlags(Value: UInt64; Flags: array of UInt64): UInt64;
 begin
@@ -3857,21 +3874,21 @@ begin
 Value := ResetFlags_8(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ResetFlagsValue_16(var Value: UInt16; Flags: array of UInt16);
 begin
 Value := ResetFlags_16(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ResetFlagsValue_32(var Value: UInt32; Flags: array of UInt32);
 begin
 Value := ResetFlags_32(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ResetFlagsValue_64(var Value: UInt64; Flags: array of UInt64);
 begin
@@ -3885,21 +3902,21 @@ begin
 ResetFlagsValue_8(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ResetFlagsValue(var Value: UInt16; Flags: array of UInt16);
 begin
 ResetFlagsValue_16(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ResetFlagsValue(var Value: UInt32; Flags: array of UInt32);
 begin
 ResetFlagsValue_32(Value,Flags);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ResetFlagsValue(var Value: UInt64; Flags: array of UInt64);
 begin
@@ -3920,7 +3937,7 @@ else
   Result := ResetFlag(Value,FlagBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetFlagState(Value,FlagBitmask: UInt16; NewState: Boolean): UInt16;
 begin
@@ -3930,7 +3947,7 @@ else
   Result := ResetFlag(Value,FlagBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetFlagState(Value,FlagBitmask: UInt32; NewState: Boolean): UInt32;
 begin
@@ -3940,7 +3957,7 @@ else
   Result := ResetFlag(Value,FlagBitmask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetFlagState(Value,FlagBitmask: UInt64; NewState: Boolean): UInt64;
 begin
@@ -3957,21 +3974,21 @@ begin
 Value := SetFlagState(Value,FlagBitmask,NewState);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetFlagStateValue(var Value: UInt16; FlagBitmask: UInt16; NewState: Boolean);
 begin
 Value := SetFlagState(Value,FlagBitmask,NewState);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetFlagStateValue(var Value: UInt32; FlagBitmask: UInt32; NewState: Boolean);
 begin
 Value := SetFlagState(Value,FlagBitmask,NewState);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetFlagStateValue(var Value: UInt64; FlagBitmask: UInt64; NewState: Boolean);
 begin
@@ -3991,7 +4008,7 @@ If ShiftDown then
   Result := Result shr (FromBit and 7);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function GetBits(Value: UInt16; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt16;
 begin
@@ -4000,7 +4017,7 @@ If ShiftDown then
   Result := Result shr (FromBit and 15);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function GetBits(Value: UInt32; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt32;
 begin
@@ -4009,7 +4026,7 @@ If ShiftDown then
   Result := Result shr (FromBit and 31);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt64;
 begin
@@ -4032,7 +4049,7 @@ Mask := UInt8(($FF shl (FromBit and 7)) and ($FF shr (7 - (ToBit and 7))));
 Result := (Value and not Mask) or (NewBits and Mask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Integer): UInt16;
 var
@@ -4042,7 +4059,7 @@ Mask := UInt16(($FFFF shl (FromBit and 15)) and ($FFFF shr (15 - (ToBit and 15))
 Result := (Value and not Mask) or (NewBits and Mask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Integer): UInt32;
 var
@@ -4052,7 +4069,7 @@ Mask := UInt32(($FFFFFFFF shl (FromBit and 31)) and ($FFFFFFFF shr (31 - (ToBit 
 Result := (Value and not Mask) or (NewBits and Mask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Integer): UInt64;
 var
@@ -4069,21 +4086,21 @@ begin
 Value := SetBits(Value,NewBits,FromBit,ToBit);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Integer);
 begin
 Value := SetBits(Value,NewBits,FromBit,ToBit);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Integer);
 begin
 Value := SetBits(Value,NewBits,FromBit,ToBit);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Integer);
 begin
@@ -4115,12 +4132,14 @@ const
     $07, $87, $47, $C7, $27, $A7, $67, $E7, $17, $97, $57, $D7, $37, $B7, $77, $F7,
     $0F, $8F, $4F, $CF, $2F, $AF, $6F, $EF, $1F, $9F, $5F, $DF, $3F, $BF, $7F, $FF);
 
+//------------------------------------------------------------------------------
+
 Function ReverseBits(Value: UInt8): UInt8;
 begin
 Result := UInt8(RevBitsTable[UInt8(Value)]);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ReverseBits(Value: UInt16): UInt16;
 begin
@@ -4128,7 +4147,7 @@ Result := UInt16((UInt16(RevBitsTable[UInt8(Value)]) shl 8) or
                   UInt16(RevBitsTable[UInt8(Value shr 8)]));
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ReverseBits(Value: UInt32): UInt32;
 begin
@@ -4138,7 +4157,7 @@ Result := UInt32((UInt32(RevBitsTable[UInt8(Value)]) shl 24) or
                   UInt32(RevBitsTable[UInt8(Value shr 24)]));
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ReverseBits(Value: UInt64): UInt64;
 begin
@@ -4153,21 +4172,21 @@ begin
 Value := ReverseBits(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ReverseBitsValue(var Value: UInt16);
 begin
 Value := ReverseBits(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ReverseBitsValue(var Value: UInt32);
 begin
 Value := ReverseBits(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ReverseBitsValue(var Value: UInt64);
 begin
@@ -4193,7 +4212,7 @@ For i := 0 to 7 do
     end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_LZCount_16_Pas(Value: UInt16): Int32; register;
 var
@@ -4208,7 +4227,7 @@ For i := 0 to 15 do
     end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_LZCount_32_Pas(Value: UInt32): Int32; register;
 var
@@ -4223,7 +4242,7 @@ For i := 0 to 31 do
     end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_LZCount_64_Pas(Value: UInt64): Int32; register;
 var
@@ -4257,7 +4276,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_LZCount_16_Asm(Value: UInt16): Int32; register; assembler;
 asm
@@ -4273,7 +4292,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_LZCount_32_Asm(Value: UInt32): Int32; register; assembler;
 asm
@@ -4287,7 +4306,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_LZCount_64_Asm(Value: UInt64): Int32; register; assembler;
 asm
@@ -4340,21 +4359,21 @@ begin
 Result := Var_LZCount_8(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function LZCount(Value: UInt16): Int32;
 begin
 Result := Var_LZCount_16(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function LZCount(Value: UInt32): Int32;
 begin
 Result := Var_LZCount_32(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function LZCount(Value: UInt64): Int32;
 begin
@@ -4380,7 +4399,7 @@ For i := 0 to 7 do
     end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_TZCount_16_Pas(Value: UInt16): Int32; register;
 var
@@ -4395,7 +4414,7 @@ For i := 0 to 15 do
     end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_TZCount_32_Pas(Value: UInt32): Int32; register;
 var
@@ -4410,7 +4429,7 @@ For i := 0 to 31 do
     end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_TZCount_64_Pas(Value: UInt64): Int32; register;
 var
@@ -4444,7 +4463,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_TZCount_16_Asm(Value: UInt16): Int32; register; assembler;
 asm
@@ -4460,7 +4479,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_TZCount_32_Asm(Value: UInt32): Int32; register; assembler;
 asm
@@ -4474,7 +4493,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_TZCount_64_Asm(Value: UInt64): Int32; register; assembler;
 asm
@@ -4527,21 +4546,21 @@ begin
 Result := Var_TZCount_8(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function TZCount(Value: UInt16): Int32;
 begin
 Result := Var_TZCount_16(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function TZCount(Value: UInt32): Int32;
 begin
 Result := Var_TZCount_32(Value);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function TZCount(Value: UInt64): Int32;
 begin
@@ -4568,7 +4587,7 @@ If Start <= 7 then
 else Result := 0;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ExtractBits_16_Pas(Value: UInt16; Start, Length: UInt8): UInt16; register;
 begin
@@ -4582,7 +4601,7 @@ If Start <= 15 then
 else Result := 0;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ExtractBits_32_Pas(Value: UInt32; Start, Length: UInt8): UInt32; register;
 begin
@@ -4596,7 +4615,7 @@ If Start <= 31 then
 else Result := 0;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ExtractBits_64_Pas(Value: UInt64; Start, Length: UInt8): UInt64; register;
 begin
@@ -4639,7 +4658,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ExtractBits_16_Asm(Value: UInt16; Start, Length: UInt8): UInt16; register; assembler;
 asm
@@ -4664,7 +4683,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ExtractBits_32_Asm(Value: UInt32; Start, Length: UInt8): UInt32; register; assembler;
 asm
@@ -4688,7 +4707,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ExtractBits_64_Asm(Value: UInt64; Start, Length: UInt8): UInt64; register; assembler;
 asm
@@ -4801,21 +4820,21 @@ begin
 Result := Var_ExtractBits_8(Value,Start,Length);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ExtractBits(Value: UInt16; Start, Length: UInt8): UInt16;
 begin
 Result := Var_ExtractBits_16(Value,Start,Length);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ExtractBits(Value: UInt32; Start, Length: UInt8): UInt32;
 begin
 Result := Var_ExtractBits_32(Value,Start,Length);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ExtractBits(Value: UInt64; Start, Length: UInt8): UInt64;
 begin
@@ -4838,7 +4857,7 @@ For i := 7 downto 0 do
     Result := UInt8(Result shl 1) or UInt8((Value shr i) and 1);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ParallelBitsExtract_16_Pas(Value, Mask: UInt16): UInt16; register;
 var
@@ -4850,7 +4869,7 @@ For i := 15 downto 0 do
     Result := UInt16(Result shl 1) or UInt16((Value shr i) and 1);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ParallelBitsExtract_32_Pas(Value, Mask: UInt32): UInt32; register;
 var
@@ -4862,7 +4881,7 @@ For i := 31 downto 0 do
     Result := UInt32(Result shl 1) or UInt32((Value shr i) and 1);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ParallelBitsExtract_64_Pas(Value, Mask: UInt64): UInt64; register;
 var
@@ -4897,7 +4916,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ParallelBitsExtract_16_Asm(Value, Mask: UInt16): UInt16; register; assembler;
 asm
@@ -4918,7 +4937,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ParallelBitsExtract_32_Asm(Value, Mask: UInt32): UInt32; register; assembler;
 asm
@@ -4933,7 +4952,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ParallelBitsExtract_64_Asm(Value, Mask: UInt64): UInt64; register; assembler;
 asm
@@ -5000,21 +5019,21 @@ begin
 Result := Var_ParallelBitsExtract_8(Value,Mask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ParallelBitsExtract(Value, Mask: UInt16): UInt16;
 begin
 Result := Var_ParallelBitsExtract_16(Value,Mask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ParallelBitsExtract(Value, Mask: UInt32): UInt32;
 begin
 Result := Var_ParallelBitsExtract_32(Value,Mask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ParallelBitsExtract(Value, Mask: UInt64): UInt64;
 begin
@@ -5042,7 +5061,7 @@ For i := 0 to 7 do
   end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ParallelBitsDeposit_16_Pas(Value, Mask: UInt16): UInt16; register;
 var
@@ -5059,7 +5078,7 @@ For i := 0 to 15 do
   end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ParallelBitsDeposit_32_Pas(Value, Mask: UInt32): UInt32; register;
 var
@@ -5076,7 +5095,7 @@ For i := 0 to 31 do
   end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ParallelBitsDeposit_64_Pas(Value, Mask: UInt64): UInt64; register;
 var
@@ -5116,7 +5135,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ParallelBitsDeposit_16_Asm(Value, Mask: UInt16): UInt16; register; assembler;
 asm
@@ -5137,7 +5156,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ParallelBitsDeposit_32_Asm(Value, Mask: UInt32): UInt32; register; assembler;
 asm
@@ -5152,7 +5171,7 @@ asm
 {$ENDIF}
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function Fce_ParallelBitsDeposit_64_Asm(Value, Mask: UInt64): UInt64; register; assembler;
 asm
@@ -5212,21 +5231,21 @@ begin
 Result := Var_ParallelBitsDeposit_8(Value,Mask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ParallelBitsDeposit(Value, Mask: UInt16): UInt16;
 begin
 Result := Var_ParallelBitsDeposit_16(Value,Mask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ParallelBitsDeposit(Value, Mask: UInt32): UInt32;
 begin
 Result := Var_ParallelBitsDeposit_32(Value,Mask);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function ParallelBitsDeposit(Value, Mask: UInt64): UInt64;
 begin
