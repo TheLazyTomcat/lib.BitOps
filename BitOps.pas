@@ -173,6 +173,7 @@ Function NumberToBitStr(Number: UInt32): String; overload;{$IF Defined(CanInline
 Function NumberToBitStr(Number: UInt64): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
 
 Function BitStrToNumber(const BitString: String; BitStringFormat: TBitStringFormat): UInt64; overload;
+Function BitStrToNumber(const BitString: String; Split: TBitStringSplit): UInt64; overload;
 Function BitStrToNumber(const BitString: String): UInt64; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 Function TryBitStrToNumber(const BitString: String; out Value: UInt8; BitStringFormat: TBitStringFormat): Boolean; overload;
@@ -180,12 +181,18 @@ Function TryBitStrToNumber(const BitString: String; out Value: UInt16; BitString
 Function TryBitStrToNumber(const BitString: String; out Value: UInt32; BitStringFormat: TBitStringFormat): Boolean; overload;
 Function TryBitStrToNumber(const BitString: String; out Value: UInt64; BitStringFormat: TBitStringFormat): Boolean; overload;
 
+Function TryBitStrToNumber(const BitString: String; out Value: UInt8; Split: TBitStringSplit): Boolean; overload;
+Function TryBitStrToNumber(const BitString: String; out Value: UInt16; Split: TBitStringSplit): Boolean; overload;
+Function TryBitStrToNumber(const BitString: String; out Value: UInt32; Split: TBitStringSplit): Boolean; overload;
+Function TryBitStrToNumber(const BitString: String; out Value: UInt64; Split: TBitStringSplit): Boolean; overload;
+
 Function TryBitStrToNumber(const BitString: String; out Value: UInt8): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
 Function TryBitStrToNumber(const BitString: String; out Value: UInt16): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
 Function TryBitStrToNumber(const BitString: String; out Value: UInt32): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
 Function TryBitStrToNumber(const BitString: String; out Value: UInt64): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 Function BitStrToNumberDef(const BitString: String; Default: UInt64; BitStringFormat: TBitStringFormat): UInt64; overload;
+Function BitStrToNumberDef(const BitString: String; Default: UInt64; Split: TBitStringSplit): UInt64; overload;
 Function BitStrToNumberDef(const BitString: String; Default: UInt64): UInt64; overload;
 
 {-------------------------------------------------------------------------------
@@ -639,6 +646,54 @@ Function ParallelBitsDeposit(Value, Mask: UInt64): UInt64; overload;{$IF Defined
 
 {-------------------------------------------------------------------------------
 ================================================================================
+                     General data <-> Hex string conversions
+================================================================================
+-------------------------------------------------------------------------------}
+
+type
+  THexStringSplit = (hssNone,hssNibble,hssByte,hssWord,hssLong,hssQuad,hssOcta);
+
+  THexStringFormat = record
+    Split:      THexStringSplit;
+    SplitChar:  Char;
+    UpperCase:  Boolean;
+  end;
+
+const
+  DefHexStringFormat: THexStringFormat = (
+    Split:      hssNone;
+    SplitChar:  ' ';
+    UpperCase:  True);
+
+type
+  TArrayOfBytes = packed array of UInt8;
+(*
+Function DataToHexStr(const Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): String; overload;
+Function DataToHexStr(Ptr: Pointer; Size: TMemSize; HexStringFormat: THexStringFormat): String; overload;
+Function DataToHexStr(Arr: array of UInt8; HexStringFormat: THexStringFormat): String; overload;
+
+Function DataToHexStr(const Buffer; Size: TMemSize; Split: THexStringSplit): String; overload;
+Function DataToHexStr(Ptr: Pointer; Size: TMemSize; Split: THexStringSplit): String; overload;
+Function DataToHexStr(Arr: array of UInt8; Split: THexStringSplit): String; overload;
+
+Function DataToHexStr(const Buffer; Size: TMemSize): String; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function DataToHexStr(Ptr: Pointer; Size: TMemSize): String; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function DataToHexStr(Arr: array of UInt8): String; overload;{$IFDEF Inline} inline; {$ENDIF}
+
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;
+Function HexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize): TMemSize; overload;
+Function HexStrToData(const Str: String): TArrayOfBytes; overload;
+*)
+{$message 'implement'}
+{-------------------------------------------------------------------------------
+================================================================================
+                             Binary data comparison                                                            
+================================================================================
+-------------------------------------------------------------------------------}
+{$message 'add'}
+
+{-------------------------------------------------------------------------------
+================================================================================
                             Unit implementation info
 ================================================================================
 -------------------------------------------------------------------------------}
@@ -747,21 +802,21 @@ begin
 Result := NumberToBitString(Number,8,BitStringFormat);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToBitStr(Number: UInt16; BitStringFormat: TBitStringFormat): String;
 begin
 Result := NumberToBitString(Number,16,BitStringFormat);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToBitStr(Number: UInt32; BitStringFormat: TBitStringFormat): String;
 begin
 Result := NumberToBitString(Number,32,BitStringFormat);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToBitStr(Number: UInt64; BitStringFormat: TBitStringFormat): String;
 begin
@@ -779,7 +834,7 @@ Format.Split := Split;
 Result := NumberToBitStr(Number,Format);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToBitStr(Number: UInt16; Split: TBitStringSplit): String;
 var
@@ -790,7 +845,7 @@ Format.Split := Split;
 Result := NumberToBitStr(Number,Format);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToBitStr(Number: UInt32; Split: TBitStringSplit): String;
 var
@@ -801,7 +856,7 @@ Format.Split := Split;
 Result := NumberToBitStr(Number,Format);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToBitStr(Number: UInt64; Split: TBitStringSplit): String;
 var
@@ -819,21 +874,21 @@ begin
 Result := NumberToBitString(Number,8,DefBitStringFormat);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToBitStr(Number: UInt16): String;
 begin
 Result := NumberToBitString(Number,16,DefBitStringFormat);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToBitStr(Number: UInt32): String;
 begin
 Result := NumberToBitString(Number,32,DefBitStringFormat);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToBitStr(Number: UInt64): String;
 begin
@@ -863,6 +918,17 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function BitStrToNumber(const BitString: String; Split: TBitStringSplit): UInt64;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;
+Result := BitStrToNumber(BitString,Format);
+end;
+
+//------------------------------------------------------------------------------
+
 Function BitStrToNumber(const BitString: String): UInt64;
 begin
 Result := BitStrToNumber(BitString,DefBitStringFormat);
@@ -880,7 +946,7 @@ except
 end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function TryBitStrToNumber(const BitString: String; out Value: UInt16; BitStringFormat: TBitStringFormat): Boolean;
 begin
@@ -892,7 +958,7 @@ except
 end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function TryBitStrToNumber(const BitString: String; out Value: UInt32; BitStringFormat: TBitStringFormat): Boolean;
 begin
@@ -904,7 +970,7 @@ except
 end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function TryBitStrToNumber(const BitString: String; out Value: UInt64; BitStringFormat: TBitStringFormat): Boolean;
 begin
@@ -918,26 +984,71 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function TryBitStrToNumber(const BitString: String; out Value: UInt8; Split: TBitStringSplit): Boolean;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;
+Result := TryBitStrToNumber(BitString,Value,Format);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToNumber(const BitString: String; out Value: UInt16; Split: TBitStringSplit): Boolean;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;
+Result := TryBitStrToNumber(BitString,Value,Format);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToNumber(const BitString: String; out Value: UInt32; Split: TBitStringSplit): Boolean;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;
+Result := TryBitStrToNumber(BitString,Value,Format);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToNumber(const BitString: String; out Value: UInt64; Split: TBitStringSplit): Boolean;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;
+Result := TryBitStrToNumber(BitString,Value,Format);
+end;
+
+
+//------------------------------------------------------------------------------
+
 Function TryBitStrToNumber(const BitString: String; out Value: UInt8): Boolean;
 begin
 Result := TryBitStrToNumber(BitString,Value,DefBitStringFormat);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function TryBitStrToNumber(const BitString: String; out Value: UInt16): Boolean;
 begin
 Result := TryBitStrToNumber(BitString,Value,DefBitStringFormat);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function TryBitStrToNumber(const BitString: String; out Value: UInt32): Boolean;
 begin
 Result := TryBitStrToNumber(BitString,Value,DefBitStringFormat);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function TryBitStrToNumber(const BitString: String; out Value: UInt64): Boolean;
 begin
@@ -949,6 +1060,18 @@ end;
 Function BitStrToNumberDef(const BitString: String; Default: UInt64; BitStringFormat: TBitStringFormat): UInt64;
 begin
 If not TryBitStrToNumber(BitString,Result,BitStringFormat) then
+  Result := Default;
+end;
+
+//------------------------------------------------------------------------------
+
+Function BitStrToNumberDef(const BitString: String; Default: UInt64; Split: TBitStringSplit): UInt64;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;  
+If not TryBitStrToNumber(BitString,Result,Format) then
   Result := Default;
 end;
 
