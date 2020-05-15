@@ -74,7 +74,7 @@ unit BitOps;
 {$IFDEF FPC}
   {$MODE Delphi}
   {$INLINE ON}
-  {$DEFINE CanInline}  
+  {$DEFINE CanInline}
   {$IFNDEF PurePascal}
     {$ASMMODE Intel}
   {$ENDIF}
@@ -172,9 +172,13 @@ Function NumberToBitStr(Number: UInt16): String; overload;{$IF Defined(CanInline
 Function NumberToBitStr(Number: UInt32): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
 Function NumberToBitStr(Number: UInt64): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
 
+//------------------------------------------------------------------------------
+
 Function BitStrToNumber(const BitString: String; BitStringFormat: TBitStringFormat): UInt64; overload;
 Function BitStrToNumber(const BitString: String; Split: TBitStringSplit): UInt64; overload;
 Function BitStrToNumber(const BitString: String): UInt64; overload;{$IFDEF CanInline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
 
 Function TryBitStrToNumber(const BitString: String; out Value: UInt8; BitStringFormat: TBitStringFormat): Boolean; overload;
 Function TryBitStrToNumber(const BitString: String; out Value: UInt16; BitStringFormat: TBitStringFormat): Boolean; overload;
@@ -191,6 +195,8 @@ Function TryBitStrToNumber(const BitString: String; out Value: UInt16): Boolean;
 Function TryBitStrToNumber(const BitString: String; out Value: UInt32): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
 Function TryBitStrToNumber(const BitString: String; out Value: UInt64): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
+//------------------------------------------------------------------------------
+
 Function BitStrToNumberDef(const BitString: String; Default: UInt64; BitStringFormat: TBitStringFormat): UInt64; overload;
 Function BitStrToNumberDef(const BitString: String; Default: UInt64; Split: TBitStringSplit): UInt64; overload;
 Function BitStrToNumberDef(const BitString: String; Default: UInt64): UInt64; overload;
@@ -205,6 +211,8 @@ Function ROL(Value: UInt8; Shift: UInt8): UInt8; overload;
 Function ROL(Value: UInt16; Shift: UInt8): UInt16; overload;
 Function ROL(Value: UInt32; Shift: UInt8): UInt32; overload;
 Function ROL(Value: UInt64; Shift: UInt8): UInt64; overload;
+
+//------------------------------------------------------------------------------
 
 procedure ROLValue(var Value: UInt8; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure ROLValue(var Value: UInt16; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
@@ -222,6 +230,8 @@ Function ROR(Value: UInt16; Shift: UInt8): UInt16; overload;
 Function ROR(Value: UInt32; Shift: UInt8): UInt32; overload;
 Function ROR(Value: UInt64; Shift: UInt8): UInt64; overload;
 
+//------------------------------------------------------------------------------
+
 procedure RORValue(var Value: UInt8; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure RORValue(var Value: UInt16; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure RORValue(var Value: UInt32; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
@@ -229,7 +239,7 @@ procedure RORValue(var Value: UInt64; Shift: UInt8); overload;{$IFDEF CanInline}
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                          Rotate left with carry (RCL)          
+                          Rotate left with carry (RCL)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -238,15 +248,21 @@ Function RCLCarry(Value: UInt16; Shift: UInt8; var CF: ByteBool): UInt16; overlo
 Function RCLCarry(Value: UInt32; Shift: UInt8; var CF: ByteBool): UInt32; overload;
 Function RCLCarry(Value: UInt64; Shift: UInt8; var CF: ByteBool): UInt64; overload;
 
+//------------------------------------------------------------------------------
+
 Function RCL(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8; overload;{$IFDEF CanInline} inline; {$ENDIF}
 Function RCL(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16; overload;{$IFDEF CanInline} inline; {$ENDIF}
 Function RCL(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32; overload;{$IFDEF CanInline} inline; {$ENDIF}
 Function RCL(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
+//------------------------------------------------------------------------------
+
 procedure RCLValueCarry(var Value: UInt8; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure RCLValueCarry(var Value: UInt16; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure RCLValueCarry(var Value: UInt32; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure RCLValueCarry(var Value: UInt64; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
 
 procedure RCLValue(var Value: UInt8; Shift: UInt8; CF: ByteBool = False); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure RCLValue(var Value: UInt16; Shift: UInt8; CF: ByteBool = False); overload;{$IFDEF CanInline} inline; {$ENDIF}
@@ -255,7 +271,7 @@ procedure RCLValue(var Value: UInt64; Shift: UInt8; CF: ByteBool = False); overl
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                         Rotate right with carry (RCR)          
+                         Rotate right with carry (RCR)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -264,15 +280,21 @@ Function RCRCarry(Value: UInt16; Shift: UInt8; var CF: ByteBool): UInt16; overlo
 Function RCRCarry(Value: UInt32; Shift: UInt8; var CF: ByteBool): UInt32; overload;
 Function RCRCarry(Value: UInt64; Shift: UInt8; var CF: ByteBool): UInt64; overload;
 
+//------------------------------------------------------------------------------
+
 Function RCR(Value: UInt8; Shift: UInt8; CF: ByteBool = False): UInt8; overload;{$IFDEF CanInline} inline; {$ENDIF}
 Function RCR(Value: UInt16; Shift: UInt8; CF: ByteBool = False): UInt16; overload;{$IFDEF CanInline} inline; {$ENDIF}
 Function RCR(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32; overload;{$IFDEF CanInline} inline; {$ENDIF}
 Function RCR(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
+//------------------------------------------------------------------------------
+
 procedure RCRValueCarry(var Value: UInt8; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure RCRValueCarry(var Value: UInt16; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure RCRValueCarry(var Value: UInt32; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure RCRValueCarry(var Value: UInt64; Shift: UInt8; var CF: ByteBool); overload;{$IFDEF CanInline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
 
 procedure RCRValue(var Value: UInt8; Shift: UInt8; CF: ByteBool = False); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure RCRValue(var Value: UInt16; Shift: UInt8; CF: ByteBool = False); overload;{$IFDEF CanInline} inline; {$ENDIF}
@@ -281,7 +303,7 @@ procedure RCRValue(var Value: UInt64; Shift: UInt8; CF: ByteBool = False); overl
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                          Arithmetic left shift (SAL)           
+                          Arithmetic left shift (SAL)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -290,6 +312,8 @@ Function SAL(Value: UInt16; Shift: UInt8): UInt16; overload;{$IF Defined(CanInli
 Function SAL(Value: UInt32; Shift: UInt8): UInt32; overload;{$IF Defined(CanInline) and Defined(PurePascal)} inline; {$IFEND}
 Function SAL(Value: UInt64; Shift: UInt8): UInt64; overload;{$IF Defined(CanInline) and Defined(PurePascal)} inline; {$IFEND}
 
+//------------------------------------------------------------------------------
+
 procedure SALValue(var Value: UInt8; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure SALValue(var Value: UInt16; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure SALValue(var Value: UInt32; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
@@ -297,7 +321,7 @@ procedure SALValue(var Value: UInt64; Shift: UInt8); overload;{$IFDEF CanInline}
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                          Arithmetic right shift (SAR)          
+                          Arithmetic right shift (SAR)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -306,6 +330,8 @@ Function SAR(Value: UInt16; Shift: UInt8): UInt16; overload;
 Function SAR(Value: UInt32; Shift: UInt8): UInt32; overload;
 Function SAR(Value: UInt64; Shift: UInt8): UInt64; overload;
 
+//------------------------------------------------------------------------------
+
 procedure SARValue(var Value: UInt8; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure SARValue(var Value: UInt16; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure SARValue(var Value: UInt32; Shift: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
@@ -313,7 +339,7 @@ procedure SARValue(var Value: UInt64; Shift: UInt8); overload;{$IFDEF CanInline}
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                 Endianity swap                 
+                                 Endianity swap
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -321,15 +347,19 @@ Function EndianSwap(Value: UInt16): UInt16; overload;{$IF Defined(CanInline) and
 Function EndianSwap(Value: UInt32): UInt32; overload;
 Function EndianSwap(Value: UInt64): UInt64; overload;
 
+//------------------------------------------------------------------------------
+
 procedure EndianSwapValue(var Value: UInt16); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure EndianSwapValue(var Value: UInt32); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure EndianSwapValue(var Value: UInt64); overload;{$IFDEF CanInline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
 
 procedure EndianSwap(var Buffer; Size: TMemSize); overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                  Bit test (BT)                 
+                                  Bit test (BT)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -340,7 +370,7 @@ Function BT(Value: UInt64; Bit: UInt8): ByteBool; overload;{$IF Defined(CanInlin
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                             Bit test and set (BTS)             
+                             Bit test and set (BTS)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -351,7 +381,7 @@ Function BTS(var Value: UInt64; Bit: UInt8): ByteBool; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                            Bit test and reset (BTR)            
+                            Bit test and reset (BTR)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -362,7 +392,7 @@ Function BTR(var Value: UInt64; Bit: UInt8): ByteBool; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                          Bit test and complement (BTC)         
+                          Bit test and complement (BTC)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -373,7 +403,7 @@ Function BTC(var Value: UInt64; Bit: UInt8): ByteBool; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                       Bit test and set to a given value        
+                       Bit test and set to a given value
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -384,7 +414,7 @@ Function BitSetTo(var Value: UInt64; Bit: UInt8; NewValue: ByteBool): ByteBool; 
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                             Bit scan forward (BSF)             
+                             Bit scan forward (BSF)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -395,7 +425,7 @@ Function BSF(Value: UInt64): Int32; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                             Bit scan reversed (BSR)            
+                             Bit scan reversed (BSR)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -406,7 +436,7 @@ Function BSR(Value: UInt64): Int32; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                Population count                
+                                Population count
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -417,7 +447,7 @@ Function PopCount(Value: UInt64): Int32; overload;{$IF Defined(CanInline) and De
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                               Nibble manipulation              
+                               Nibble manipulation
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -432,7 +462,7 @@ procedure SetLowNibbleValue(var Value: UInt8; SetTo: TNibble);{$IFDEF CanInline}
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                 Get flag state                 
+                                 Get flag state
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -443,7 +473,7 @@ Function GetFlagState(Value,FlagBitmask: UInt64; ExactMatch: Boolean = False): B
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                    Set flag                    
+                                    Set flag
 ================================================================================
 -------------------------------------------------------------------------------}
 {
@@ -458,25 +488,35 @@ Function SetFlag(Value,FlagBitmask: UInt16): UInt16; overload;{$IFDEF CanInline}
 Function SetFlag(Value,FlagBitmask: UInt32): UInt32; overload;{$IFDEF CanInline} inline; {$ENDIF}
 Function SetFlag(Value,FlagBitmask: UInt64): UInt64; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
+//------------------------------------------------------------------------------
+
 procedure SetFlagValue(var Value: UInt8; FlagBitmask: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure SetFlagValue(var Value: UInt16; FlagBitmask: UInt16); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure SetFlagValue(var Value: UInt32; FlagBitmask: UInt32); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure SetFlagValue(var Value: UInt64; FlagBitmask: UInt64); overload;{$IFDEF CanInline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
 
 Function SetFlags_8(Value: UInt8; Flags: array of UInt8): UInt8;
 Function SetFlags_16(Value: UInt16; Flags: array of UInt16): UInt16;
 Function SetFlags_32(Value: UInt32; Flags: array of UInt32): UInt32;
 Function SetFlags_64(Value: UInt64; Flags: array of UInt64): UInt64;
 
+//------------------------------------------------------------------------------
+
 Function SetFlags(Value: UInt8; Flags: array of UInt8): UInt8; overload;
 Function SetFlags(Value: UInt16; Flags: array of UInt16): UInt16; overload;
 Function SetFlags(Value: UInt32; Flags: array of UInt32): UInt32; overload;
 Function SetFlags(Value: UInt64; Flags: array of UInt64): UInt64; overload;
 
+//------------------------------------------------------------------------------
+
 procedure SetFlagsValue_8(var Value: UInt8; Flags: array of UInt8);
 procedure SetFlagsValue_16(var Value: UInt16; Flags: array of UInt16);
 procedure SetFlagsValue_32(var Value: UInt32; Flags: array of UInt32);
 procedure SetFlagsValue_64(var Value: UInt64; Flags: array of UInt64);
+
+//------------------------------------------------------------------------------
 
 procedure SetFlagsValue(var Value: UInt8; Flags: array of UInt8); overload;
 procedure SetFlagsValue(var Value: UInt16; Flags: array of UInt16); overload;
@@ -485,7 +525,7 @@ procedure SetFlagsValue(var Value: UInt64; Flags: array of UInt64); overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                   Reset flag                   
+                                   Reset flag
 ================================================================================
 -------------------------------------------------------------------------------}
 {
@@ -500,25 +540,35 @@ Function ResetFlag(Value,FlagBitmask: UInt16): UInt16; overload;{$IFDEF CanInlin
 Function ResetFlag(Value,FlagBitmask: UInt32): UInt32; overload;{$IFDEF CanInline} inline; {$ENDIF}
 Function ResetFlag(Value,FlagBitmask: UInt64): UInt64; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
+//------------------------------------------------------------------------------
+
 procedure ResetFlagValue(var Value: UInt8; FlagBitmask: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure ResetFlagValue(var Value: UInt16; FlagBitmask: UInt16); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure ResetFlagValue(var Value: UInt32; FlagBitmask: UInt32); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure ResetFlagValue(var Value: UInt64; FlagBitmask: UInt64); overload;{$IFDEF CanInline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
 
 Function ResetFlags_8(Value: UInt8; Flags: array of UInt8): UInt8;
 Function ResetFlags_16(Value: UInt16; Flags: array of UInt16): UInt16;
 Function ResetFlags_32(Value: UInt32; Flags: array of UInt32): UInt32;
 Function ResetFlags_64(Value: UInt64; Flags: array of UInt64): UInt64;
 
+//------------------------------------------------------------------------------
+
 Function ResetFlags(Value: UInt8; Flags: array of UInt8): UInt8; overload;
 Function ResetFlags(Value: UInt16; Flags: array of UInt16): UInt16; overload;
 Function ResetFlags(Value: UInt32; Flags: array of UInt32): UInt32; overload;
 Function ResetFlags(Value: UInt64; Flags: array of UInt64): UInt64; overload;
 
+//------------------------------------------------------------------------------
+
 procedure ResetFlagsValue_8(var Value: UInt8; Flags: array of UInt8);
 procedure ResetFlagsValue_16(var Value: UInt16; Flags: array of UInt16);
 procedure ResetFlagsValue_32(var Value: UInt32; Flags: array of UInt32);
 procedure ResetFlagsValue_64(var Value: UInt64; Flags: array of UInt64);
+
+//------------------------------------------------------------------------------
 
 procedure ResetFlagsValue(var Value: UInt8; Flags: array of UInt8); overload;
 procedure ResetFlagsValue(var Value: UInt16; Flags: array of UInt16); overload;
@@ -527,7 +577,7 @@ procedure ResetFlagsValue(var Value: UInt64; Flags: array of UInt64); overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                 Set flag state                 
+                                 Set flag state
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -536,6 +586,8 @@ Function SetFlagState(Value,FlagBitmask: UInt16; NewState: Boolean): UInt16; ove
 Function SetFlagState(Value,FlagBitmask: UInt32; NewState: Boolean): UInt32; overload;
 Function SetFlagState(Value,FlagBitmask: UInt64; NewState: Boolean): UInt64; overload;
 
+//------------------------------------------------------------------------------
+
 procedure SetFlagStateValue(var Value: UInt8; FlagBitmask: UInt8; NewState: Boolean); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure SetFlagStateValue(var Value: UInt16; FlagBitmask: UInt16; NewState: Boolean); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure SetFlagStateValue(var Value: UInt32; FlagBitmask: UInt32; NewState: Boolean); overload;{$IFDEF CanInline} inline; {$ENDIF}
@@ -543,7 +595,7 @@ procedure SetFlagStateValue(var Value: UInt64; FlagBitmask: UInt64; NewState: Bo
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                    Get bits                    
+                                    Get bits
 ================================================================================
 -------------------------------------------------------------------------------}
 {
@@ -556,7 +608,7 @@ Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = Tru
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                    Set bits                    
+                                    Set bits
 ================================================================================
 -------------------------------------------------------------------------------}
 {
@@ -568,6 +620,8 @@ Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Integer): UInt16; overloa
 Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Integer): UInt32; overload;
 Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Integer): UInt64; overload;
 
+//------------------------------------------------------------------------------
+
 procedure SetBitsValue(var Value: UInt8; NewBits: UInt8; FromBit,ToBit: Integer); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Integer); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Integer); overload;{$IFDEF CanInline} inline; {$ENDIF}
@@ -575,7 +629,7 @@ procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Intege
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                  Reverse bits                  
+                                  Reverse bits
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -584,6 +638,8 @@ Function ReverseBits(Value: UInt16): UInt16; overload;
 Function ReverseBits(Value: UInt32): UInt32; overload;
 Function ReverseBits(Value: UInt64): UInt64; overload;
 
+//------------------------------------------------------------------------------
+
 procedure ReverseBitsValue(var Value: UInt8); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure ReverseBitsValue(var Value: UInt16); overload;{$IFDEF CanInline} inline; {$ENDIF}
 procedure ReverseBitsValue(var Value: UInt32); overload;{$IFDEF CanInline} inline; {$ENDIF}
@@ -591,7 +647,7 @@ procedure ReverseBitsValue(var Value: UInt64); overload;{$IFDEF CanInline} inlin
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                               Leading zero count               
+                               Leading zero count
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -602,7 +658,7 @@ Function LZCount(Value: UInt64): Int32; overload;{$IF Defined(CanInline) and Def
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                              Trailing zero count               
+                              Trailing zero count
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -613,7 +669,7 @@ Function TZCount(Value: UInt64): Int32; overload;{$IF Defined(CanInline) and Def
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                  Extract bits                  
+                                  Extract bits
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -624,7 +680,7 @@ Function ExtractBits(Value: UInt64; Start, Length: UInt8): UInt64; overload;{$IF
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                              Parallel bits extract             
+                              Parallel bits extract
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -635,7 +691,7 @@ Function ParallelBitsExtract(Value, Mask: UInt64): UInt64; overload;{$IF Defined
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                              Parallel bits deposit             
+                              Parallel bits deposit
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -680,6 +736,8 @@ Function DataToHexStr(const Buffer; Size: TMemSize): String; overload;{$IFDEF In
 Function DataToHexStr(Ptr: Pointer; Size: TMemSize): String; overload;{$IFDEF Inline} inline; {$ENDIF}
 Function DataToHexStr(Arr: array of UInt8): String; overload;{$IFDEF Inline} inline; {$ENDIF}
 
+//------------------------------------------------------------------------------
+
 Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): TMemSize; overload;
 Function HexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize; HexStringFormat: THexStringFormat): TMemSize; overload;
 Function HexStrToData(const Str: String; HexStringFormat: THexStringFormat): TArrayOfBytes; overload;
@@ -691,21 +749,56 @@ Function HexStrToData(const Str: String; Split: THexStringSplit): TArrayOfBytes;
 Function HexStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;
 Function HexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize): TMemSize; overload;
 Function HexStrToData(const Str: String): TArrayOfBytes; overload;
+
+//------------------------------------------------------------------------------
+
+Function TryHexStrToData(const Str: String; out Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): Boolean; overload;
+Function TryHexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize; HexStringFormat: THexStringFormat): Boolean; overload;
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; HexStringFormat: THexStringFormat): Boolean; overload;
+
+Function TryHexStrToData(const Str: String; out Buffer; Size: TMemSize; Split: THexStringSplit): Boolean; overload;
+Function TryHexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize; Split: THexStringSplit): Boolean; overload;
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; HSplit: THexStringSplit): Boolean; overload;
+
+Function TryHexStrToData(const Str: String; out Buffer; Size: TMemSize): Boolean; overload;
+Function TryHexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize): Boolean; overload;
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; overload;
+
 *)
 {$message 'implement'}
 {-------------------------------------------------------------------------------
 ================================================================================
-                             Binary data comparison                                                            
+                             Binary data comparison
 ================================================================================
 -------------------------------------------------------------------------------}
 {$message 'add'}
+//Function CompareData(const A; SizeA: TMemSize; const B; SizeB: TMemSize; AllowSizeDiff: Boolean = True): Integer; overload;
+//Function CompareData(A: Pointer; SizeA: TMemSize; B: Pointer; SizeB: TMemSize; AllowSizeDiff: Boolean = True): Integer; overload;
+//Function CompareData(A,B: array of UInt8; AllowSizeDiff: Boolean = True): Integer; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                   Bit parity                                                                                                                              
+                              Binary data equality
 ================================================================================
 -------------------------------------------------------------------------------}
-{$message 'add'}
+
+//Function SameData(const A; SizeA: TMemSize; const B; SizeB: TMemSize): Boolean; overload;
+//Function SameData(A: Pointer; SizeA: TMemSize; B: Pointer; SizeB: TMemSize): Boolean; overload;
+//Function SameData(A,B: array of UInt8): Boolean; overload;
+
+{-------------------------------------------------------------------------------
+================================================================================
+                                   Bit parity
+================================================================================
+-------------------------------------------------------------------------------}
+{
+  Bit parity returns true when the number contain an even number or zero set
+  bits, false otherwise.
+}
+Function BitParity(Value: UInt8): Boolean; overload;
+Function BitParity(Value: UInt16): Boolean; overload;
+Function BitParity(Value: UInt32): Boolean; overload;
+Function BitParity(Value: UInt64): Boolean; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -782,7 +875,7 @@ const
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                   Integer number <-> Bit string conversions    
+                   Integer number <-> Bit string conversions
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -1085,7 +1178,7 @@ var
   Format: TBitStringFormat;
 begin
 Format := DefBitStringFormat;
-Format.Split := Split;  
+Format.Split := Split;
 If not TryBitStrToNumber(BitString,Result,Format) then
   Result := Default;
 end;
@@ -1100,7 +1193,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                               Rotate left (ROL)                
+                               Rotate left (ROL)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -1235,7 +1328,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                               Rotate right (ROR)               
+                               Rotate right (ROR)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -1370,7 +1463,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                          Rotate left with carry (RCL)          
+                          Rotate left with carry (RCL)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -1619,7 +1712,7 @@ end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- 
+
 {$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCL(Value: UInt32; Shift: UInt8; CF: ByteBool = False): UInt32;
 begin
@@ -1628,7 +1721,7 @@ end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- 
+
 {$IFDEF FPCDWM}{$PUSH}W5058{$ENDIF}
 Function RCL(Value: UInt64; Shift: UInt8; CF: ByteBool = False): UInt64;
 begin
@@ -1694,7 +1787,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                         Rotate right with carry (RCR)          
+                         Rotate right with carry (RCR)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -2016,7 +2109,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                          Arithmetic left shift (SAL)           
+                          Arithmetic left shift (SAL)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -2139,7 +2232,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                          Arithmetic right shift (SAR)          
+                          Arithmetic right shift (SAR)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -2287,7 +2380,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                 Endianity swap                 
+                                 Endianity swap
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -2446,7 +2539,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                  Bit test (BT)                 
+                                  Bit test (BT)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -2546,7 +2639,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                             Bit test and set (BTS)             
+                             Bit test and set (BTS)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -2664,7 +2757,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                            Bit test and reset (BTR)            
+                            Bit test and reset (BTR)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -2782,7 +2875,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                          Bit test and complement (BTC)         
+                          Bit test and complement (BTC)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -2900,7 +2993,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                       Bit test and set to a given value        
+                       Bit test and set to a given value
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -2936,7 +3029,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                             Bit scan forward (BSF)             
+                             Bit scan forward (BSF)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -3083,7 +3176,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                             Bit scan reversed (BSR)            
+                             Bit scan reversed (BSR)
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -3226,7 +3319,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                Population count                
+                                Population count
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -3444,7 +3537,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                               Nibble manipulation              
+                               Nibble manipulation
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -3490,7 +3583,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                 Get flag state                 
+                                 Get flag state
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -3534,7 +3627,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                    Set flag                    
+                                    Set flag
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -3730,7 +3823,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                   Reset flag                   
+                                   Reset flag
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -3925,7 +4018,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                 Set flag state                 
+                                 Set flag state
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -3997,7 +4090,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                    Get bits                    
+                                    Get bits
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -4037,7 +4130,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                    Set bits                    
+                                    Set bits
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -4109,7 +4202,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                  Reverse bits                  
+                                  Reverse bits
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -4195,7 +4288,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                               Leading zero count               
+                               Leading zero count
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -4382,7 +4475,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                              Trailing zero count               
+                              Trailing zero count
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -4569,7 +4662,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                  Extract bits                  
+                                  Extract bits
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -4843,7 +4936,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                              Parallel bits extract             
+                              Parallel bits extract
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -5042,7 +5135,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                              Parallel bits deposit             
+                              Parallel bits deposit
 ================================================================================
 -------------------------------------------------------------------------------}
 
@@ -5254,6 +5347,56 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
+                                   Bit parity
+================================================================================
+-------------------------------------------------------------------------------}
+
+Function BitParity(Value: UInt8): Boolean;
+begin
+Value := Value xor (Value shr 4);
+Value := Value xor (Value shr 2);
+Value := Value xor (Value shr 1);
+Result := (Value and 1) = 0;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitParity(Value: UInt16): Boolean;
+begin
+Value := Value xor (Value shr 8);
+Value := Value xor (Value shr 4);
+Value := Value xor (Value shr 2);
+Value := Value xor (Value shr 1);
+Result := (Value and 1) = 0;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitParity(Value: UInt32): Boolean;
+begin
+Value := Value xor (Value shr 16);
+Value := Value xor (Value shr 8);
+Value := Value xor (Value shr 4);
+Value := Value xor (Value shr 2);
+Value := Value xor (Value shr 1);
+Result := (Value and 1) = 0;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitParity(Value: UInt64): Boolean;
+begin
+Value := Value xor (Value shr 32);
+Value := Value xor (Value shr 16);
+Value := Value xor (Value shr 8);
+Value := Value xor (Value shr 4);
+Value := Value xor (Value shr 2);
+Value := Value xor (Value shr 1);
+Result := (Value and 1) = 0;
+end;
+
+{-------------------------------------------------------------------------------
+================================================================================
                             Unit implementation info
 ================================================================================
 -------------------------------------------------------------------------------}
@@ -5384,7 +5527,7 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                               Unit initialization                             
+                               Unit initialization
 ================================================================================
 -------------------------------------------------------------------------------}
 
