@@ -781,10 +781,14 @@ Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; ov
                               Binary data equality
 ================================================================================
 -------------------------------------------------------------------------------}
-
-//Function SameData(const A; SizeA: TMemSize; const B; SizeB: TMemSize): Boolean; overload;
-//Function SameData(A: Pointer; SizeA: TMemSize; B: Pointer; SizeB: TMemSize): Boolean; overload;
-//Function SameData(A,B: array of UInt8): Boolean; overload;
+{
+  If the two data samples differ in size, SameData will return false,
+  irrespective of actual content.
+  If both data have zero size, it will return true.
+}
+Function SameData(const A; SizeA: TMemSize; const B; SizeB: TMemSize): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
+Function SameData(A: Pointer; SizeA: TMemSize; B: Pointer; SizeB: TMemSize): Boolean; overload;
+Function SameData(A,B: array of UInt8): Boolean; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -5343,6 +5347,86 @@ end;
 Function ParallelBitsDeposit(Value, Mask: UInt64): UInt64;
 begin
 Result := Var_ParallelBitsDeposit_64(Value,Mask);
+end;
+
+{-------------------------------------------------------------------------------
+================================================================================
+                              Binary data equality
+================================================================================
+-------------------------------------------------------------------------------}
+
+Function SameData(const A; SizeA: TMemSize; const B; SizeB: TMemSize): Boolean;
+begin
+Result := SameData(@A,SizeA,@B,SizeB);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SameData(A: Pointer; SizeA: TMemSize; B: Pointer; SizeB: TMemSize): Boolean;
+const
+  SD_BYTE_COEF = {$IFDEF 64bit}SizeOf(UInt64){$ELSE}SizeOf(UInt32){$ENDIF};
+var
+  i:  TMemSize;
+begin
+If SizeA = SizeB then
+  begin
+    Result := True;
+    // test on Q/DWords
+    If SizeA >= (16 * SD_BYTE_COEF) then
+      begin
+        For i := 1 to (SizeA div SD_BYTE_COEF) do
+          begin
+          {$IFDEF 64bit}
+            If PUInt64(A)^ <> PUInt64(B)^ then
+          {$ELSE}
+            If PUInt32(A)^ <> PUInt32(B)^ then
+          {$ENDIF}
+              begin
+                Result := False;
+                Exit;
+              end;
+            A := Pointer(PtrUInt(A) + SD_BYTE_COEF);
+            B := Pointer(PtrUInt(B) + SD_BYTE_COEF);
+          end;
+        SizeA := SizeA mod SD_BYTE_COEF;
+      end;
+    // test remaining bytes  
+    For i := 1 to SizeA do  // when size is zero, this will execute no cycle
+      begin
+        If PByte(A)^ <> PByte(B)^ then
+          begin
+            Result := False;
+            Exit;
+          end;
+        Inc(PByte(A));
+        Inc(PByte(B));
+      end;
+  end
+else Result := False;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SameData(A,B: array of UInt8): Boolean;
+var
+  i:  Integer;
+begin
+{
+  Let's not assume the bytes are packed in the memory and compare individual
+  array entries separately.
+}
+If Length(A) = Length(B) then
+  begin
+    Result := True;
+    If Length(A) > 0 then
+      For i := Low(A) to High(A) do
+        If A[i] <> B[i] then
+          begin
+            Result := False;
+            Break{For i};
+          end;
+  end
+else Result := False;
 end;
 
 {-------------------------------------------------------------------------------
