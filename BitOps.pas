@@ -9,9 +9,9 @@
 
   BitOps - Binary operations
 
-  Version 1.7 (2020-03-08)
+  Version 1.8 (2020-05-16)
 
-  Last change 2020-03-08
+  Last change 2020-05-16
 
   ©2014-2020 František Milt
 
@@ -132,7 +132,11 @@ type
   EBOException = class(Exception);
 
   EBOUnknownFunction  = class(EBOException);
-  EBOInvalidCharacter = class(EBOException);
+
+  EBOConversionError  = class(EBOException);
+  EBOInvalidCharacter = class(EBOConversionError);
+  EBOBufferTooSmall   = class(EBOConversionError);
+  EBOSizeMismatch     = class(EBOConversionError);
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -156,6 +160,8 @@ const
     SetBitChar:   '1';
     ZeroBitChar:  '0';
     SplitChar:    ' ');
+
+//------------------------------------------------------------------------------
 
 Function NumberToBitStr(Number: UInt8; BitStringFormat: TBitStringFormat): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
 Function NumberToBitStr(Number: UInt16; BitStringFormat: TBitStringFormat): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline; {$IFEND}
@@ -707,7 +713,8 @@ Function ParallelBitsDeposit(Value, Mask: UInt64): UInt64; overload;{$IF Defined
 -------------------------------------------------------------------------------}
 
 type
-  THexStringSplit = (hssNone,hssNibble,hssByte,hssWord,hssLong,hssQuad,hssOcta);
+  THexStringSplit = (hssNone,hssNibble,hssByte,hssWord,hss24bits,hssLong,
+                     hssQuad,hss80bits,hssOcta);
 
   THexStringFormat = record
     Split:      THexStringSplit;
@@ -723,58 +730,65 @@ const
 
 type
   TArrayOfBytes = packed array of UInt8;
-(*
+
+//------------------------------------------------------------------------------
+
 Function DataToHexStr(const Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): String; overload;
-Function DataToHexStr(Ptr: Pointer; Size: TMemSize; HexStringFormat: THexStringFormat): String; overload;
 Function DataToHexStr(Arr: array of UInt8; HexStringFormat: THexStringFormat): String; overload;
 
 Function DataToHexStr(const Buffer; Size: TMemSize; Split: THexStringSplit): String; overload;
-Function DataToHexStr(Ptr: Pointer; Size: TMemSize; Split: THexStringSplit): String; overload;
 Function DataToHexStr(Arr: array of UInt8; Split: THexStringSplit): String; overload;
 
 Function DataToHexStr(const Buffer; Size: TMemSize): String; overload;{$IFDEF Inline} inline; {$ENDIF}
-Function DataToHexStr(Ptr: Pointer; Size: TMemSize): String; overload;{$IFDEF Inline} inline; {$ENDIF}
 Function DataToHexStr(Arr: array of UInt8): String; overload;{$IFDEF Inline} inline; {$ENDIF}
 
 //------------------------------------------------------------------------------
 
 Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): TMemSize; overload;
-Function HexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize; HexStringFormat: THexStringFormat): TMemSize; overload;
 Function HexStrToData(const Str: String; HexStringFormat: THexStringFormat): TArrayOfBytes; overload;
 
 Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; Split: THexStringSplit): TMemSize; overload;
-Function HexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize; Split: THexStringSplit): TMemSize; overload;
 Function HexStrToData(const Str: String; Split: THexStringSplit): TArrayOfBytes; overload;
 
-Function HexStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;
-Function HexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize): TMemSize; overload;
-Function HexStrToData(const Str: String): TArrayOfBytes; overload;
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function HexStrToData(const Str: String): TArrayOfBytes; overload;{$IFDEF Inline} inline; {$ENDIF}
 
 //------------------------------------------------------------------------------
 
-Function TryHexStrToData(const Str: String; out Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): Boolean; overload;
-Function TryHexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize; HexStringFormat: THexStringFormat): Boolean; overload;
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; HexStringFormat: THexStringFormat): Boolean; overload;
 Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; HexStringFormat: THexStringFormat): Boolean; overload;
 
-Function TryHexStrToData(const Str: String; out Buffer; Size: TMemSize; Split: THexStringSplit): Boolean; overload;
-Function TryHexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize; Split: THexStringSplit): Boolean; overload;
-Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; HSplit: THexStringSplit): Boolean; overload;
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; Split: THexStringSplit): Boolean; overload;
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; Split: THexStringSplit): Boolean; overload;
 
-Function TryHexStrToData(const Str: String; out Buffer; Size: TMemSize): Boolean; overload;
-Function TryHexStrToData(const Str: String; Ptr: Pointer; Size: TMemSize): Boolean; overload;
-Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; overload;
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
 
-*)
-{$message 'implement'}
 {-------------------------------------------------------------------------------
 ================================================================================
                              Binary data comparison
 ================================================================================
 -------------------------------------------------------------------------------}
-{$message 'add'}
-//Function CompareData(const A; SizeA: TMemSize; const B; SizeB: TMemSize; AllowSizeDiff: Boolean = True): Integer; overload;
-//Function CompareData(A: Pointer; SizeA: TMemSize; B: Pointer; SizeB: TMemSize; AllowSizeDiff: Boolean = True): Integer; overload;
-//Function CompareData(A,B: array of UInt8; AllowSizeDiff: Boolean = True): Integer; overload;
+{
+  If the two data samples differ in size, and AllowSizeDiff is set to true,
+  then CompareData will return negative number when sample A is shorter than
+  sample B, positive number otherwise, irrespective of actual data. If the
+  AllowSizeDiff parameter is set to false, the function will raise an exception
+  of type EBOSizeMismatch.
+
+  If the samples hawe equal size, the data are compared byte-by-byte. The bytes
+  are not summed or processed in any way, they are merely compared. When first
+  two differing bytes are encountered, they are compared, result is set
+  accordingly and traversing is immediately terminated.
+  If the byte in first sample is smaller than byte in the second sample, then
+  result will be set to a negative number, otherwise it will be set to a
+  positive number.
+
+  If both the data have the same size and contains the same bytestream, then
+  CompareData returns zero.
+}
+Function CompareData(const A; SizeA: TMemSize; const B; SizeB: TMemSize; AllowSizeDiff: Boolean = True): Integer; overload;
+Function CompareData(A,B: array of UInt8; AllowSizeDiff: Boolean = True): Integer; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -786,8 +800,7 @@ Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; ov
   irrespective of actual content.
   If both data have zero size, it will return true.
 }
-Function SameData(const A; SizeA: TMemSize; const B; SizeB: TMemSize): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
-Function SameData(A: Pointer; SizeA: TMemSize; B: Pointer; SizeB: TMemSize): Boolean; overload;
+Function SameData(const A; SizeA: TMemSize; const B; SizeB: TMemSize): Boolean; overload;
 Function SameData(A,B: array of UInt8): Boolean; overload;
 
 {-------------------------------------------------------------------------------
@@ -5351,55 +5364,450 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
+                     General data <-> Hex string conversions
+================================================================================
+-------------------------------------------------------------------------------}
+{-------------------------------------------------------------------------------
+    General data <-> Hex string conversions - auxiliary functions
+-------------------------------------------------------------------------------}
+
+Function DataToHexStr_SplitBytes(Split: THexStringSplit): Integer;
+begin
+case Split of
+  hssNibble:  Result := 1;
+  hssByte:    Result := 2;
+  hssWord:    Result := 4;
+  hss24bits:  Result := 6;
+  hssLong:    Result := 8;
+  hssQuad:    Result := 16;
+  hss80bits:  Result := 20;
+  hssOcta:    Result := 32;
+else
+ {hssNone}
+  Result := 0;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function DataToHexStr(const Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): String;
+var
+  SplitCnt:   Integer;
+  i:          TMemSize;
+  ResPos:     Integer;
+  DataResPos: TMemSize;
+  TempStr:    String;
+  BuffPtr:    PByte;
+
+  procedure PutChar(NewChar: Char);
+  begin
+    If (SplitCnt > 0) and (DataResPos > 0) and ((DataResPos mod TMemSize(SplitCnt)) = 0) then
+      Inc(ResPos);
+    Result[ResPos] := NewChar;
+    Inc(ResPos);
+    Inc(DataResPos)
+  end;
+  
+begin
+If Size <> 0 then
+  begin
+    SplitCnt := DataToHexStr_SplitBytes(HexStringFormat.Split);
+    If SplitCnt > 0 then
+      Result := StringOfChar(HexStringFormat.SplitChar,(UInt64(Size) * 2) +
+                             (Pred(UInt64(Size) * 2) div TMemSize(SplitCnt)))
+    else
+      SetLength(Result,Size * 2);
+    ResPos := 1;
+    DataResPos := 0;
+    BuffPtr := @Buffer;
+    For i := 0 to Pred(Size) do
+      begin
+        If HexStringFormat.UpperCase then
+          TempStr := AnsiUpperCase(IntToHex(BuffPtr^,2))
+        else
+          TempStr := AnsiLowerCase(IntToHex(BuffPtr^,2));
+        If Length(TempStr) = 2 then
+          begin
+            PutChar(TempStr[1]);
+            PutChar(TempStr[2]);
+          end
+        else raise EBOConversionError.CreateFmt('DataToHexStr: Invalid string length (%d).',[Length(TempStr)]);
+        Inc(BuffPtr);
+      end;
+  end
+else Result := '';
+end;
+ 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function DataToHexStr(Arr: array of UInt8; HexStringFormat: THexStringFormat): String;
+var
+  SplitCnt:   Integer;
+  i:          Integer;  
+  ResPos:     Integer;
+  DataResPos: TMemSize;
+  TempStr:    String;
+
+  procedure PutChar(NewChar: Char);
+  begin
+    If (SplitCnt > 0) then
+      If(DataResPos > 0) and ((DataResPos mod TMemSize(SplitCnt)) = 0) then
+        Inc(ResPos);
+    Result[ResPos] := NewChar;
+    Inc(ResPos);
+    Inc(DataResPos)
+  end;
+  
+begin
+If Length(Arr) <> 0 then
+  begin
+    SplitCnt := DataToHexStr_SplitBytes(HexStringFormat.Split);
+    If SplitCnt > 0 then
+      Result := StringOfChar(HexStringFormat.SplitChar,(Length(Arr) * 2) +
+                            (Pred(Length(Arr) * 2) div SplitCnt))
+    else
+      SetLength(Result,Length(Arr) * 2);
+    ResPos := 1;
+    DataResPos := 0;
+    For i := Low(Arr) to High(Arr) do
+      begin
+        If HexStringFormat.UpperCase then
+          TempStr := AnsiUpperCase(IntToHex(Arr[i],2))
+        else
+          TempStr := AnsiLowerCase(IntToHex(Arr[i],2));
+        If Length(TempStr) = 2 then
+          begin
+            PutChar(TempStr[1]);
+            PutChar(TempStr[2]);
+          end
+        else raise EBOConversionError.CreateFmt('DataToHexStr: Invalid string length (%d).',[Length(TempStr)]);
+      end;
+  end
+else Result := '';
+end;
+
+//------------------------------------------------------------------------------
+
+Function DataToHexStr(const Buffer; Size: TMemSize; Split: THexStringSplit): String;
+var
+  Format: THexStringFormat;
+begin
+Format := DefHexStringFormat;
+Format.Split := Split;
+Result := DataToHexStr(Buffer,Size,Format);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function DataToHexStr(Arr: array of UInt8; Split: THexStringSplit): String;
+var
+  Format: THexStringFormat;
+begin
+Format := DefHexStringFormat;
+Format.Split := Split;
+Result := DataToHexStr(Arr,Format);
+end;
+
+//------------------------------------------------------------------------------
+
+Function DataToHexStr(const Buffer; Size: TMemSize): String;
+begin
+Result := DataToHexStr(Buffer,Size,DefHexStringFormat);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function DataToHexStr(Arr: array of UInt8): String; overload;{$IFDEF Inline} inline; {$ENDIF}
+begin
+Result := DataToHexStr(Arr,DefHexStringFormat);
+end;
+
+//==============================================================================
+
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): TMemSize;
+var
+  i,Cntr:   Integer;
+  BuffPtr:  PByte;
+  StrBuff:  String;
+
+  Function CharInSet(C: Char; S: TSysCharSet): Boolean;
+  begin
+  {$IF SizeOf(Char) <> 1}
+    If Ord(C) > 255 then
+      Result := False
+    else
+  {$IFEND}
+      Result := AnsiChar(C) in S;
+  end;
+
+begin
+If Length(Str) > 0 then
+  begin
+    If Size <> 0 then
+      begin
+        Cntr := 2;
+        BuffPtr := @Buffer;
+        StrBuff := '$  ';  // two spaces
+        Result := 0;
+        For i := 1 to Length(Str) do
+          begin
+            If Str[i] = HexStringFormat.SplitChar then
+              Continue
+            else If CharInSet(Str[i],['0'..'9','a'..'f','A'..'F']) then
+              begin
+                StrBuff[Cntr] := Str[i];
+                Inc(Cntr);
+                If Cntr > 3 then
+                  begin
+                    Cntr := 2;                  
+                    BuffPtr^ := UInt8(StrToInt(StrBuff));
+                    Inc(BuffPtr);                    
+                    Inc(Result);
+                    If Result > Size then
+                      raise EBOBufferTooSmall.Create('HexStrToData: Buffer too small.');
+                  end;
+              end
+            else EBOInvalidCharacter.CreateFmt('HexStrToData: Invalid character (#%d).',[Ord(Str[i])]);
+          end;
+      end
+    else
+      begin
+        // only return required size, do not convert
+        Cntr := Length(Str);
+        For i := 1 to Length(Str) do
+          If Str[i] = HexStringFormat.SplitChar then
+            Dec(Cntr)
+          else If not CharInSet(Str[i],['0'..'9','a'..'f','A'..'F']) then
+            raise EBOInvalidCharacter.CreateFmt('HexStrToData: Invalid character (#%d).',[Ord(Str[i])]);
+        Result := TMemSize(Cntr div 2);
+      end;
+  end
+else Result := 0;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function HexStrToData(const Str: String; HexStringFormat: THexStringFormat): TArrayOfBytes;
+var
+  Len:    Integer;
+begin
+Len := HexStrToData(Str,nil^,0,HexStringFormat);
+SetLength(Result,Len);
+Len := HexStrToData(Str,Result[0],Length(Result),HexStringFormat);
+If Len <> Length(Result) then
+  SetLength(Result,Len);
+end;
+ 
+//------------------------------------------------------------------------------
+
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; Split: THexStringSplit): TMemSize;
+var
+  Format: THexStringFormat;
+begin
+Format := DefHexStringFormat;
+Format.Split := Split;
+Result := HexStrToData(Str,Buffer,Size,Format);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function HexStrToData(const Str: String; Split: THexStringSplit): TArrayOfBytes;
+var
+  Format: THexStringFormat;
+begin
+Format := DefHexStringFormat;
+Format.Split := Split;
+Result := HexStrToData(Str,Format);
+end;
+
+//------------------------------------------------------------------------------
+
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize;
+begin
+Result := HexStrToData(Str,Buffer,Size,DefHexStringFormat);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function HexStrToData(const Str: String): TArrayOfBytes;
+begin
+Result := HexStrToData(Str,DefHexStringFormat);
+end;
+
+//==============================================================================
+
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; HexStringFormat: THexStringFormat): Boolean;
+begin
+try
+  Size := HexStrToData(Str,Buffer,Size,HexStringFormat);
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; HexStringFormat: THexStringFormat): Boolean;
+begin
+try
+  Arr := HexStrToData(Str,HexStringFormat);
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; Split: THexStringSplit): Boolean;
+var
+  Format: THexStringFormat;
+begin
+Format := DefHexStringFormat;
+Format.Split := Split;
+Result := TryHexStrToData(Str,Buffer,Size,Format);
+end;
+ 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; Split: THexStringSplit): Boolean;
+var
+  Format: THexStringFormat;
+begin
+Format := DefHexStringFormat;
+Format.Split := Split;
+Result := TryHexStrToData(Str,Arr,Format);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean;
+begin
+Result := TryHexStrToData(Str,Buffer,Size,DefHexStringFormat);
+end;
+ 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean;
+begin
+Result := TryHexStrToData(Str,Arr,DefHexStringFormat);
+end;
+
+{-------------------------------------------------------------------------------
+================================================================================
+                             Binary data comparison
+================================================================================
+-------------------------------------------------------------------------------}
+
+Function CompareData(const A; SizeA: TMemSize; const B; SizeB: TMemSize; AllowSizeDiff: Boolean = True): Integer;
+var
+  i:    TMemSize;
+  PtrA: PByte;
+  PtrB: PByte;
+begin
+Result := 0;
+If (SizeA < SizeB) and AllowSizeDiff then
+  Result := -1
+else If (SizeA > SizeB) and AllowSizeDiff then
+  Result := +1
+else If SizeA = SizeB then
+  begin
+    PtrA := @A;
+    PtrB := @B;
+    For i := 1 to SizeA do  // when size is zero, this will execute no cycle
+      begin
+        If PtrA^ <> PtrB^ then
+          begin
+            If PtrA^ < PtrB^ then
+              Result := -1
+            else
+              Result := +1;
+            Exit;
+          end;
+        Inc(PtrA);
+        Inc(PtrB);
+      end;
+  end
+else raise EBOSizeMismatch.CreateFmt('CompareData: Mismatch in data sizes (%d,%d).',[SizeA,SizeB]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function CompareData(A,B: array of UInt8; AllowSizeDiff: Boolean = True): Integer;
+var
+  i:  Integer;
+begin
+Result := 0;
+If (Length(A) < Length(B)) and AllowSizeDiff then
+  Result := -1
+else If (Length(A) > Length(B)) and AllowSizeDiff then
+  Result := +1
+else If Length(A) = Length(B) then
+  begin
+    For i := Low(A) to High(A) do
+      If A[i] <> B[i] then
+        begin
+          If A[i] < B[i] then
+            Result := -1
+          else
+            Result := +1;
+          Exit;
+        end;
+  end
+else EBOSizeMismatch.CreateFmt('CompareData: Mismatch in data sizes (%d,%d).',[Length(A),Length(B)]);
+end;
+
+{-------------------------------------------------------------------------------
+================================================================================
                               Binary data equality
 ================================================================================
 -------------------------------------------------------------------------------}
 
 Function SameData(const A; SizeA: TMemSize; const B; SizeB: TMemSize): Boolean;
-begin
-Result := SameData(@A,SizeA,@B,SizeB);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function SameData(A: Pointer; SizeA: TMemSize; B: Pointer; SizeB: TMemSize): Boolean;
 const
   SD_BYTE_COEF = {$IFDEF 64bit}SizeOf(UInt64){$ELSE}SizeOf(UInt32){$ENDIF};
 var
-  i:  TMemSize;
+  i:    TMemSize;
+  PtrA: Pointer;
+  PtrB: Pointer;
 begin
 If SizeA = SizeB then
   begin
     Result := True;
-    // test on Q/DWords
+    PtrA := @A;
+    PtrB := @B;
+    // test on whole Q/DWords
     If SizeA >= (16 * SD_BYTE_COEF) then
       begin
         For i := 1 to (SizeA div SD_BYTE_COEF) do
           begin
           {$IFDEF 64bit}
-            If PUInt64(A)^ <> PUInt64(B)^ then
+            If PUInt64(PtrA)^ <> PUInt64(PtrB)^ then
           {$ELSE}
-            If PUInt32(A)^ <> PUInt32(B)^ then
+            If PUInt32(PtrA)^ <> PUInt32(PtrB)^ then
           {$ENDIF}
               begin
                 Result := False;
                 Exit;
               end;
-            A := Pointer(PtrUInt(A) + SD_BYTE_COEF);
-            B := Pointer(PtrUInt(B) + SD_BYTE_COEF);
+          {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+            PtrA := Pointer(PtrUInt(PtrA) + SD_BYTE_COEF);
+            PtrB := Pointer(PtrUInt(PtrB) + SD_BYTE_COEF);
+          {$IFDEF FPCDWM}{$POP}{$ENDIF}
           end;
         SizeA := SizeA mod SD_BYTE_COEF;
       end;
     // test remaining bytes  
     For i := 1 to SizeA do  // when size is zero, this will execute no cycle
       begin
-        If PByte(A)^ <> PByte(B)^ then
+        If PByte(PtrA)^ <> PByte(PtrB)^ then
           begin
             Result := False;
             Exit;
           end;
-        Inc(PByte(A));
-        Inc(PByte(B));
+        Inc(PByte(PtrA));
+        Inc(PByte(PtrB));
       end;
   end
 else Result := False;
