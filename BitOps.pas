@@ -11,7 +11,7 @@
 
   Version 1.8 (2020-05-16)
 
-  Last change 2020-05-16
+  Last change 2020-08-02
 
   ©2014-2020 František Milt
 
@@ -87,6 +87,7 @@ unit BitOps;
     {$UNDEF CanInline}
   {$IFEND}
 {$ENDIF}
+{$H+}
 
 {$IFOPT Q+}
   {$DEFINE OverflowChecks}
