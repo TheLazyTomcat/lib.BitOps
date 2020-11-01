@@ -9,9 +9,9 @@
 
   BitOps - Binary operations
 
-  Version 1.8 (2020-05-16)
+  Version 1.8.1 (2020-11-01)
 
-  Last change 2020-08-02
+  Last change 2020-11-01
 
   ©2014-2020 František Milt
 
@@ -748,8 +748,8 @@ Function DataToHexStr(Arr: array of UInt8): String; overload;{$IFDEF Inline} inl
 Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): TMemSize; overload;
 Function HexStrToData(const Str: String; HexStringFormat: THexStringFormat): TArrayOfBytes; overload;
 
-Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; Split: THexStringSplit): TMemSize; overload;
-Function HexStrToData(const Str: String; Split: THexStringSplit): TArrayOfBytes; overload;
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; SplitChar: Char): TMemSize; overload;
+Function HexStrToData(const Str: String; SplitChar: Char): TArrayOfBytes; overload;
 
 Function HexStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;{$IFDEF Inline} inline; {$ENDIF}
 Function HexStrToData(const Str: String): TArrayOfBytes; overload;{$IFDEF Inline} inline; {$ENDIF}
@@ -759,8 +759,8 @@ Function HexStrToData(const Str: String): TArrayOfBytes; overload;{$IFDEF Inline
 Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; HexStringFormat: THexStringFormat): Boolean; overload;
 Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; HexStringFormat: THexStringFormat): Boolean; overload;
 
-Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; Split: THexStringSplit): Boolean; overload;
-Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; Split: THexStringSplit): Boolean; overload;
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; SplitChar: Char): Boolean; overload;
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; SplitChar: Char): Boolean; overload;
 
 Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
 Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
@@ -770,26 +770,63 @@ Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; ov
                              Binary data comparison
 ================================================================================
 -------------------------------------------------------------------------------}
+
+type
+  TCompareMethod = (cmSizeData,cmDataSize,cmEqSizeData);
 {
-  If the two data samples differ in size, and AllowSizeDiff is set to true,
-  then CompareData will return negative number when sample A is shorter than
-  sample B, positive number otherwise, irrespective of actual data. If the
-  AllowSizeDiff parameter is set to false, the function will raise an exception
-  of type EBOSizeMismatch.
+  Following function are comparing data presented in two buffers or two arrays
+  of byte.
 
-  If the samples hawe equal size, the data are compared byte-by-byte. The bytes
-  are not summed or processed in any way, they are merely compared. When first
-  two differing bytes are encountered, they are compared, result is set
-  accordingly and traversing is immediately terminated.
-  If the byte in first sample is smaller than byte in the second sample, then
-  result will be set to a negative number, otherwise it will be set to a
-  positive number.
+  Behavior of these functions depends on how the parameter CompareMethod is set:
 
-  If both the data have the same size and contains the same bytestream, then
-  CompareData returns zero.
+    cmSizeData
+
+      The function first compares size of the buffers (length of arrays). When
+      they do not match, the function will return negative value when the first
+      size (length) is smaller than the second, or positive value when the first
+      size (length) is larger than the second.
+      When sizes (lengths) match, the buffers are scanned byte-by-byte (in case
+      of arrays item-by-item). If all bytes within both buffers (items in
+      arrays) match, then 0 (zero) is returned. When a differing bytes (items)
+      on corresponding locations are found, they are compared and the result
+      is set according to this comparison (negative value when byte/item in the
+      first buffer/array is smaller than in the second, positive value when
+      byte/item in the first buffer/array is larger than in the second).
+
+    cmDataSize
+
+      The function first compares bytes/items on corresponding places common to
+      both buffers/arrays. When a differing byte/item is found, the function
+      exists and returns a negative value when byte/item in first buffer/array
+      is smaller than in the second, or positive value when byte/item in the
+      first buffer/array is larger than in the second.
+      When no differing byte is found, then the function compares sizes/lengths
+      and returns value according to this comparison. Negative value when first
+      size/length is smaller than second, positive value when first size/length
+      is larger than the second. When the sizes/lengths are matching, the
+      function will return 0.
+
+    cmEqSizeData
+
+      If both sizes/length are the same, then bytes on corresponding locations
+      are compared. When all bytes/items are matching, a zero is returned. If
+      any differing bytes/items are found, they are compared and result is set
+      according to this comparison. Negative value is returned when byte/item
+      in first buffer/array is smaller than in the second, positive value when
+      byte/item in the first buffer/array is larger than in the second.
+      If the sizes/lengths do not match, the function will raise an EBOSizeMismatch
+      exception.
 }
-Function CompareData(const A; SizeA: TMemSize; const B; SizeB: TMemSize; AllowSizeDiff: Boolean = True): Integer; overload;
-Function CompareData(A,B: array of UInt8; AllowSizeDiff: Boolean = True): Integer; overload;
+Function CompareData(const A; SizeA: TMemSize; const B; SizeB: TMemSize; CompareMethod: TCompareMethod): Integer; overload;
+Function CompareData(A,B: array of UInt8; CompareMethod: TCompareMethod): Integer; overload;
+
+{
+  Following overloads are here only for the sake of backward compatibility.
+  They call main implementation with a parameter CompareMethod set to cmSizeData
+  when AllowSizeDiff is true, or cmEqSizeData when AllowSizeDiff is false);
+}
+Function CompareData(const A; SizeA: TMemSize; const B; SizeB: TMemSize; AllowSizeDiff: Boolean = True): Integer; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function CompareData(A,B: array of UInt8; AllowSizeDiff: Boolean = True): Integer; overload;{$IFDEF Inline} inline; {$ENDIF}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -800,6 +837,8 @@ Function CompareData(A,B: array of UInt8; AllowSizeDiff: Boolean = True): Intege
   If the two data samples differ in size, SameData will return false,
   irrespective of actual content.
   If both data have zero size, it will return true.
+  In other cases it will compare the buffer/array byte-by-byte and return true
+  only when all corresponding bytes within them are equal, false otherwise.
 }
 Function SameData(const A; SizeA: TMemSize; const B; SizeB: TMemSize): Boolean; overload;
 Function SameData(A,B: array of UInt8): Boolean; overload;
@@ -5372,7 +5411,7 @@ end;
     General data <-> Hex string conversions - auxiliary functions
 -------------------------------------------------------------------------------}
 
-Function DataToHexStr_SplitBytes(Split: THexStringSplit): Integer;
+Function DataToHexStr_SplitChars(Split: THexStringSplit): Integer;
 begin
 case Split of
   hssNibble:  Result := 1;
@@ -5389,36 +5428,39 @@ else
 end;
 end;
 
-//------------------------------------------------------------------------------
+{-------------------------------------------------------------------------------
+    General data <-> Hex string conversions - main implementation
+-------------------------------------------------------------------------------}
 
 Function DataToHexStr(const Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): String;
 var
   SplitCnt:   Integer;
   i:          TMemSize;
-  ResPos:     Integer;
+  CharResPos: Integer;
   DataResPos: TMemSize;
-  TempStr:    String;
   BuffPtr:    PByte;
+  TempStr:    String;
 
   procedure PutChar(NewChar: Char);
   begin
     If (SplitCnt > 0) and (DataResPos > 0) and ((DataResPos mod TMemSize(SplitCnt)) = 0) then
-      Inc(ResPos);
-    Result[ResPos] := NewChar;
-    Inc(ResPos);
+      Inc(CharResPos);
+    Result[CharResPos] := NewChar;
+    Inc(CharResPos);
     Inc(DataResPos)
   end;
   
 begin
 If Size <> 0 then
   begin
-    SplitCnt := DataToHexStr_SplitBytes(HexStringFormat.Split);
+    // preallocate resulting string and then just fill it
+    SplitCnt := DataToHexStr_SplitChars(HexStringFormat.Split);
     If SplitCnt > 0 then
       Result := StringOfChar(HexStringFormat.SplitChar,(UInt64(Size) * 2) +
-                             (Pred(UInt64(Size) * 2) div TMemSize(SplitCnt)))
+                             (Pred(UInt64(Size) * 2) div UInt64(SplitCnt)))
     else
       SetLength(Result,Size * 2);
-    ResPos := 1;
+    CharResPos := 1;
     DataResPos := 0;
     BuffPtr := @Buffer;
     For i := 0 to Pred(Size) do
@@ -5445,30 +5487,29 @@ Function DataToHexStr(Arr: array of UInt8; HexStringFormat: THexStringFormat): S
 var
   SplitCnt:   Integer;
   i:          Integer;  
-  ResPos:     Integer;
+  CharResPos:  Integer;
   DataResPos: TMemSize;
   TempStr:    String;
 
   procedure PutChar(NewChar: Char);
   begin
-    If (SplitCnt > 0) then
-      If(DataResPos > 0) and ((DataResPos mod TMemSize(SplitCnt)) = 0) then
-        Inc(ResPos);
-    Result[ResPos] := NewChar;
-    Inc(ResPos);
+    If (SplitCnt > 0) and (DataResPos > 0) and ((DataResPos mod TMemSize(SplitCnt)) = 0) then
+      Inc(CharResPos);
+    Result[CharResPos] := NewChar;
+    Inc(CharResPos);
     Inc(DataResPos)
   end;
   
 begin
 If Length(Arr) <> 0 then
   begin
-    SplitCnt := DataToHexStr_SplitBytes(HexStringFormat.Split);
+    SplitCnt := DataToHexStr_SplitChars(HexStringFormat.Split);
     If SplitCnt > 0 then
       Result := StringOfChar(HexStringFormat.SplitChar,(Length(Arr) * 2) +
-                            (Pred(Length(Arr) * 2) div SplitCnt))
+                             (Pred(Length(Arr) * 2) div SplitCnt))
     else
       SetLength(Result,Length(Arr) * 2);
-    ResPos := 1;
+    CharResPos := 1;
     DataResPos := 0;
     For i := Low(Arr) to High(Arr) do
       begin
@@ -5546,9 +5587,9 @@ If Length(Str) > 0 then
   begin
     If Size <> 0 then
       begin
-        Cntr := 2;
+        Cntr := 2;        // position in StrBuff just behind $
         BuffPtr := @Buffer;
-        StrBuff := '$  ';  // two spaces
+        StrBuff := '$  '; // two spaces
         Result := 0;
         For i := 1 to Length(Str) do
           begin
@@ -5560,12 +5601,13 @@ If Length(Str) > 0 then
                 Inc(Cntr);
                 If Cntr > 3 then
                   begin
-                    Cntr := 2;                  
-                    BuffPtr^ := UInt8(StrToInt(StrBuff));
+                    If Result < Size then
+                      BuffPtr^ := UInt8(StrToInt(StrBuff))
+                    else
+                      raise EBOBufferTooSmall.CreateFmt('HexStrToData: Buffer too small (%d).',[Size]);
+                    Cntr := 2;
                     Inc(BuffPtr);                    
                     Inc(Result);
-                    If Result > Size then
-                      raise EBOBufferTooSmall.Create('HexStrToData: Buffer too small.');
                   end;
               end
             else EBOInvalidCharacter.CreateFmt('HexStrToData: Invalid character (#%d).',[Ord(Str[i])]);
@@ -5590,34 +5632,37 @@ end;
 
 Function HexStrToData(const Str: String; HexStringFormat: THexStringFormat): TArrayOfBytes;
 var
-  Len:    Integer;
+  ByteCnt:  Integer;
 begin
-Len := HexStrToData(Str,nil^,0,HexStringFormat);
-SetLength(Result,Len);
-Len := HexStrToData(Str,Result[0],Length(Result),HexStringFormat);
-If Len <> Length(Result) then
-  SetLength(Result,Len);
+ByteCnt := HexStrToData(Str,nil^,0,HexStringFormat);
+SetLength(Result,ByteCnt);
+If ByteCnt > 0 then
+  begin
+    ByteCnt := HexStrToData(Str,Result[0],Length(Result),HexStringFormat);
+    If ByteCnt <> Length(Result) then
+      SetLength(Result,ByteCnt);
+  end;
 end;
  
 //------------------------------------------------------------------------------
 
-Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; Split: THexStringSplit): TMemSize;
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; SplitChar: Char): TMemSize;
 var
   Format: THexStringFormat;
 begin
 Format := DefHexStringFormat;
-Format.Split := Split;
+Format.SplitChar := SplitChar;
 Result := HexStrToData(Str,Buffer,Size,Format);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function HexStrToData(const Str: String; Split: THexStringSplit): TArrayOfBytes;
+Function HexStrToData(const Str: String; SplitChar: Char): TArrayOfBytes;
 var
   Format: THexStringFormat;
 begin
 Format := DefHexStringFormat;
-Format.Split := Split;
+Format.SplitChar := SplitChar;
 Result := HexStrToData(Str,Format);
 end;
 
@@ -5661,23 +5706,23 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; Split: THexStringSplit): Boolean;
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; SplitChar: Char): Boolean;
 var
   Format: THexStringFormat;
 begin
 Format := DefHexStringFormat;
-Format.Split := Split;
+Format.SplitChar := SplitChar;
 Result := TryHexStrToData(Str,Buffer,Size,Format);
 end;
  
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; Split: THexStringSplit): Boolean;
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; SplitChar: Char): Boolean;
 var
   Format: THexStringFormat;
 begin
 Format := DefHexStringFormat;
-Format.Split := Split;
+Format.SplitChar := SplitChar;
 Result := TryHexStrToData(Str,Arr,Format);
 end;
 
@@ -5700,23 +5745,46 @@ end;
                              Binary data comparison
 ================================================================================
 -------------------------------------------------------------------------------}
+{-------------------------------------------------------------------------------
+    Binary data comparison - auxiliary functions
+-------------------------------------------------------------------------------}
 
-Function CompareData(const A; SizeA: TMemSize; const B; SizeB: TMemSize; AllowSizeDiff: Boolean = True): Integer;
-var
-  i:    TMemSize;
-  PtrA: PByte;
-  PtrB: PByte;
+Function MemSizeMin(A,B: TMemSize): TMemSize;
 begin
-Result := 0;
-If (SizeA < SizeB) and AllowSizeDiff then
-  Result := -1
-else If (SizeA > SizeB) and AllowSizeDiff then
-  Result := +1
-else If SizeA = SizeB then
+If A < B then
+  Result := A
+else
+  Result := B;
+end;
+
+//------------------------------------------------------------------------------
+
+// to prevent linking of unit Math...
+Function Min(A,B: Integer): Integer;
+begin
+If A < B then
+  Result := A
+else
+  Result := B;
+end;
+
+{-------------------------------------------------------------------------------
+    Binary data comparison - main implementation
+-------------------------------------------------------------------------------}
+
+// cmSizeData, cmDataSize, cmEqSizeData
+Function CompareData(const A; SizeA: TMemSize; const B; SizeB: TMemSize; CompareMethod: TCompareMethod): Integer;
+
+  Function CompareBytes: Integer;
+  var
+    i:    TMemSize;
+    PtrA: PByte;
+    PtrB: PByte;
   begin
+    Result := 0;
     PtrA := @A;
     PtrB := @B;
-    For i := 1 to SizeA do  // when size is zero, this will execute no cycle
+    For i := 1 to MemSizeMin(SizeA,SizeB) do  // when either size is zero, this will execute no cycle
       begin
         If PtrA^ <> PtrB^ then
           begin
@@ -5729,24 +5797,50 @@ else If SizeA = SizeB then
         Inc(PtrA);
         Inc(PtrB);
       end;
-  end
-else raise EBOSizeMismatch.CreateFmt('CompareData: Mismatch in data sizes (%d,%d).',[SizeA,SizeB]);
+  end;
+
+  Function CompareSizes: Integer;
+  begin
+    If SizeA < SizeB then
+      Result := -1
+    else If SizeA > SizeB then
+      Result := +1
+    else
+      Result := 0;
+  end;
+
+begin
+case CompareMethod of
+  cmDataSize:   begin
+                  Result := CompareBytes;
+                  If Result = 0 then
+                    Result := CompareSizes;
+                end;
+  cmEqSizeData: If SizeA = SizeB then
+                  begin
+                    Result := CompareSizes;
+                    If Result = 0 then
+                      Result := CompareBytes;
+                  end
+                else raise EBOSizeMismatch.CreateFmt('CompareData: Mismatch in data sizes (%d,%d).',[SizeA,SizeB]);
+else
+ {cmSizeData}
+  Result := CompareSizes;
+  If Result = 0 then
+    Result := CompareBytes;
+end;
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function CompareData(A,B: array of UInt8; AllowSizeDiff: Boolean = True): Integer;
-var
-  i:  Integer;
-begin
-Result := 0;
-If (Length(A) < Length(B)) and AllowSizeDiff then
-  Result := -1
-else If (Length(A) > Length(B)) and AllowSizeDiff then
-  Result := +1
-else If Length(A) = Length(B) then
+Function CompareData(A,B: array of UInt8; CompareMethod: TCompareMethod): Integer;
+
+  Function CompareItems: Integer;
+  var
+    i:  Integer;
   begin
-    For i := Low(A) to High(A) do
+    Result := 0;
+    For i := 0 to Min(High(A),High(B)) do
       If A[i] <> B[i] then
         begin
           If A[i] < B[i] then
@@ -5755,8 +5849,58 @@ else If Length(A) = Length(B) then
             Result := +1;
           Exit;
         end;
-  end
-else EBOSizeMismatch.CreateFmt('CompareData: Mismatch in data sizes (%d,%d).',[Length(A),Length(B)]);
+  end;
+
+  Function CompareSizes: Integer;
+  begin
+    If Length(A) < Length(B) then
+      Result := -1
+    else If Length(A) > Length(B) then
+      Result := +1
+    else
+      Result := 0;
+  end;
+
+begin
+case CompareMethod of
+  cmDataSize:   begin
+                  Result := CompareItems;
+                  If Result = 0 then
+                    Result := CompareSizes;
+                end;
+  cmEqSizeData: If Length(A) = Length(B) then
+                  begin
+                    Result := CompareSizes;
+                    If Result = 0 then
+                      Result := CompareItems;
+                  end
+                else raise EBOSizeMismatch.CreateFmt('CompareData: Mismatch in data sizes (%d,%d).',[Length(A),Length(B)]);
+else
+ {cmSizeData}
+  Result := CompareSizes;
+  If Result = 0 then
+    Result := CompareItems;
+end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function CompareData(const A; SizeA: TMemSize; const B; SizeB: TMemSize; AllowSizeDiff: Boolean = True): Integer;
+begin
+If AllowSizeDiff then
+  Result := CompareData(A,SizeA,B,SizeB,cmSizeData)
+else
+  Result := CompareData(A,SizeA,B,SizeB,cmEqSizeData);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function CompareData(A,B: array of UInt8; AllowSizeDiff: Boolean = True): Integer;
+begin
+If AllowSizeDiff then
+  Result := CompareData(A,B,cmSizeData)
+else
+  Result := CompareData(A,B,cmEqSizeData);
 end;
 
 {-------------------------------------------------------------------------------
@@ -5811,31 +5955,52 @@ If SizeA = SizeB then
         Inc(PByte(PtrB));
       end;
   end
-else Result := False;
+else Result := False; // buffers differ in size
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function SameData(A,B: array of UInt8): Boolean;
 var
-  i:  Integer;
+  i:        Integer;
+  APacked:  Boolean;
+  BPacked:  Boolean;
 begin
-{
-  Let's not assume the bytes are packed in the memory and compare individual
-  array entries separately.
-}
+// Let's not assume the bytes are inherently packed in the memory...
 If Length(A) = Length(B) then
   begin
-    Result := True;
     If Length(A) > 0 then
-      For i := Low(A) to High(A) do
-        If A[i] <> B[i] then
+      begin
+       If Length(A) > 128 then
           begin
-            Result := False;
-            Break{For i};
+          {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+            APacked := PtrUInt(@A[1]) - PtrUInt(@A[0]) <= 1;
+            BPacked := PtrUInt(@B[1]) - PtrUInt(@B[0]) <= 1;
+          {$IFDEF FPCDWM}{$POP}{$ENDIF}
+          end
+        else
+          begin
+            APacked := False;
+            BPacked := False;
           end;
+        If APacked and BPacked then
+          // arrays are packed, compare them as buffers
+          Result := SameData(A[Low(A)],Length(A),B[Low(B)],Length(B))
+        else
+          begin
+            // array are not packed, compare item by item
+            Result := True;
+            For i := Low(A) to High(A) do
+              If A[i] <> B[i] then
+                begin
+                  Result := False;
+                  Break{For i};
+                end;
+          end;
+      end
+    else Result := True;  // both arrays are empty
   end
-else Result := False;
+else Result := False; // arrays differ in length
 end;
 
 {-------------------------------------------------------------------------------
