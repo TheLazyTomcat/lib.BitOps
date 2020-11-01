@@ -5745,37 +5745,19 @@ end;
                              Binary data comparison
 ================================================================================
 -------------------------------------------------------------------------------}
-{-------------------------------------------------------------------------------
-    Binary data comparison - auxiliary functions
--------------------------------------------------------------------------------}
 
-Function MemSizeMin(A,B: TMemSize): TMemSize;
-begin
-If A < B then
-  Result := A
-else
-  Result := B;
-end;
-
-//------------------------------------------------------------------------------
-
-// to prevent linking of unit Math...
-Function Min(A,B: Integer): Integer;
-begin
-If A < B then
-  Result := A
-else
-  Result := B;
-end;
-
-{-------------------------------------------------------------------------------
-    Binary data comparison - main implementation
--------------------------------------------------------------------------------}
-
-// cmSizeData, cmDataSize, cmEqSizeData
 Function CompareData(const A; SizeA: TMemSize; const B; SizeB: TMemSize; CompareMethod: TCompareMethod): Integer;
 
   Function CompareBytes: Integer;
+
+    Function MemSizeMin(A,B: TMemSize): TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+    begin
+      If A < B then
+        Result := A
+      else
+        Result := B;
+    end;
+
   var
     i:    TMemSize;
     PtrA: PByte;
@@ -5836,11 +5818,20 @@ end;
 Function CompareData(A,B: array of UInt8; CompareMethod: TCompareMethod): Integer;
 
   Function CompareItems: Integer;
+
+    Function IntegerMin(A,B: Integer): Integer;{$IFDEF CanInline} inline; {$ENDIF}
+    begin
+      If A < B then
+        Result := A
+      else
+        Result := B;
+    end;
+    
   var
     i:  Integer;
   begin
     Result := 0;
-    For i := 0 to Min(High(A),High(B)) do
+    For i := 0 to IntegerMin(High(A),High(B)) do
       If A[i] <> B[i] then
         begin
           If A[i] < B[i] then
