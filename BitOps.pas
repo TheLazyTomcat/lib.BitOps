@@ -11,7 +11,7 @@
 
   Version 1.8.1 (2020-11-01)
 
-  Last change 2020-11-01
+  Last change 2020-11-12
 
   ©2014-2020 František Milt
 
@@ -52,11 +52,11 @@ unit BitOps;
 {$ENDIF}
 
 {$IF defined(CPU64) or defined(CPU64BITS)}
-  {$DEFINE 64bit}
+  {$DEFINE CPU64bit}
 {$ELSEIF defined(CPU16)}
   {$MESSAGE FATAL '16bit CPU not supported'}
 {$ELSE}
-  {$DEFINE 32bit}
+  {$DEFINE CPU32bit}
 {$IFEND}
 
 {$IF defined(CPUX86_64) or defined(CPUX64)}
@@ -3459,7 +3459,7 @@ end;
 Function Fce_PopCount_64_Pas(Value: UInt64): Int32; register;
 {$IFDEF UseLookupTable}
 begin
-{$IFDEF 64bit}
+{$IFDEF CPU64bit}
 Result := PopCountTable[UInt8(Value)] + PopCountTable[UInt8(Value shr 8)] +
   PopCountTable[UInt8(Value shr 16)] + PopCountTable[UInt8(Value shr 24)] +
   PopCountTable[UInt8(Value shr 32)] + PopCountTable[UInt8(Value shr 40)] +
@@ -5902,7 +5902,7 @@ end;
 
 Function SameData(const A; SizeA: TMemSize; const B; SizeB: TMemSize): Boolean;
 const
-  SD_BYTE_COEF = {$IFDEF 64bit}SizeOf(UInt64){$ELSE}SizeOf(UInt32){$ENDIF};
+  SD_BYTE_COEF = {$IFDEF CPU64bit}SizeOf(UInt64){$ELSE}SizeOf(UInt32){$ENDIF};
 var
   i:    TMemSize;
   PtrA: Pointer;
@@ -5918,7 +5918,7 @@ If SizeA = SizeB then
       begin
         For i := 1 to (SizeA div SD_BYTE_COEF) do
           begin
-          {$IFDEF 64bit}
+          {$IFDEF CPU64bit}
             If PUInt64(PtrA)^ <> PUInt64(PtrB)^ then
           {$ELSE}
             If PUInt32(PtrA)^ <> PUInt32(PtrB)^ then
