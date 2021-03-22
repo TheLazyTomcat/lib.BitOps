@@ -10,13 +10,13 @@
   BitOps
 
     Set of functions providing some of the not-so-common bit-manipulating
-    operations.
+    operations and more.
 
-  Version 1.9 (2020-11-26)
+  Version 1.10 (2021-03-22)
 
-  Last change 2020-11-26
+  Last change 2021-03-22
 
-  ©2014-2020 František Milt
+  ©2014-2021 František Milt
 
   Contacts:
     František Milt: frantisek.milt@gmail.com
@@ -830,8 +830,8 @@ type
       according to this comparison. Negative value is returned when byte/item
       in first buffer/array is smaller than in the second, positive value when
       byte/item in the first buffer/array is larger than in the second.
-      If the sizes/lengths do not match, the function will raise an EBOSizeMismatch
-      exception.
+      If the sizes/lengths do not match, the function will raise an
+      EBOSizeMismatch exception.
 }
 Function CompareData(const A; SizeA: TMemSize; const B; SizeB: TMemSize; CompareMethod: TCompareMethod): Integer; overload;
 Function CompareData(A,B: array of UInt8; CompareMethod: TCompareMethod): Integer; overload;
@@ -872,6 +872,18 @@ Function BitParity(Value: UInt8): Boolean; overload;
 Function BitParity(Value: UInt16): Boolean; overload;
 Function BitParity(Value: UInt32): Boolean; overload;
 Function BitParity(Value: UInt64): Boolean; overload;
+
+{-------------------------------------------------------------------------------
+================================================================================
+                           Pointer arithmetic helpers                                                                                  
+================================================================================
+-------------------------------------------------------------------------------}
+
+Function PtrAdvance(Ptr: Pointer; Offset: PtrInt): Pointer; overload;
+Function PtrAdvance(Ptr: Pointer; Count: Integer; Stride: TMemSize): Pointer; overload;
+
+procedure PtrAdvanceVar(var Ptr: Pointer; Offset: PtrInt); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure PtrAdvanceVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -6161,6 +6173,46 @@ Value := Value xor (Value shr 4);
 Value := Value xor (Value shr 2);
 Value := Value xor (Value shr 1);
 Result := (Value and 1) = 0;
+end;
+
+{-------------------------------------------------------------------------------
+================================================================================
+                           Pointer arithmetic helpers
+================================================================================
+-------------------------------------------------------------------------------}
+
+{$IFDEF OverflowChecks}{$Q-}{$ENDIF}
+
+Function PtrAdvance(Ptr: Pointer; Offset: PtrInt): Pointer;
+begin
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+Result := Pointer(PtrUInt(Ptr) + PtrUInt(Offset));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function PtrAdvance(Ptr: Pointer; Count: Integer; Stride: TMemSize): Pointer;
+begin
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+Result := Pointer(PtrUInt(Ptr) + PtrUInt(PtrInt(Count) * PtrInt(Stride)));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+end;
+
+{$IFDEF OverflowChecks}{$Q+}{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+procedure PtrAdvanceVar(var Ptr: Pointer; Offset: PtrInt);
+begin
+Ptr := PtrAdvance(Ptr,Offset);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure PtrAdvanceVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize);
+begin
+Ptr := PtrAdvance(Ptr,Count,Stride);
 end;
 
 {-------------------------------------------------------------------------------
