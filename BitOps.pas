@@ -12,9 +12,9 @@
     Set of functions providing some of the not-so-common bit-manipulating
     operations and more.
 
-  Version 1.10 (2021-03-22)
+  Version 1.11 (2021-04-04)
 
-  Last change 2021-03-22
+  Last change 2021-04-04
 
   ©2014-2021 František Milt
 
@@ -887,6 +887,14 @@ procedure PtrAdvanceVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize); ove
 
 {-------------------------------------------------------------------------------
 ================================================================================
+                               Buffer shift down
+================================================================================
+-------------------------------------------------------------------------------}
+
+procedure BufferShiftDown(var Buffer; BufferSize: TMemSize; Shift: TMemSize);
+
+{-------------------------------------------------------------------------------
+================================================================================
                          Unit implementation management
 ================================================================================
 -------------------------------------------------------------------------------}
@@ -898,10 +906,10 @@ procedure PtrAdvanceVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize); ove
   according to active symbols - in most cases asm is used whenever symbol
   PurePascal is not defined.
 
-  But in some case, when PurePascal is not defined, it cannot be decided whether
-  the asm implementation can be used or not in advance - usually because the
-  asm version uses some CPU instruction extension that is not guaranteed to be
-  present on the executing machine.
+  But in some cases, when PurePascal is not defined, it cannot be decided
+  whether the asm implementation can be used or not in advance - usually because
+  the asm version uses some CPU instruction extension that is not guaranteed to
+  be present on the executing machine.
   These functions have both implementations (pascal and assembly) compiled, and
   which will be used is selected at unit initialization after checking CPU for
   required extensions.
@@ -6213,6 +6221,18 @@ end;
 procedure PtrAdvanceVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize);
 begin
 Ptr := PtrAdvance(Ptr,Count,Stride);
+end;
+
+{-------------------------------------------------------------------------------
+================================================================================
+                               Buffer shift down
+================================================================================
+-------------------------------------------------------------------------------}
+
+procedure BufferShiftDown(var Buffer; BufferSize: TMemSize; Shift: TMemSize);
+begin
+If (Shift > 0) and (Shift < BufferSize) then
+  Move(PtrAdvance(Addr(Buffer),Shift)^,Buffer,BufferSize - Shift);
 end;
 
 {-------------------------------------------------------------------------------
