@@ -10,11 +10,11 @@
   BitOps
 
     Set of functions providing some of the not-so-common bit-manipulating
-    operations and more.
+    operations and other binary utilities.
 
-  Version 1.11 (2021-04-04)
+  Version 1.12 (2021-04-12)
 
-  Last change 2021-04-04
+  Last change 2021-04-12
 
   ©2014-2021 František Milt
 
@@ -789,6 +789,8 @@ Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; ov
 
 type
   TCompareMethod = (cmSizeData,cmDataSize,cmEqSizeData);
+
+//------------------------------------------------------------------------------
 {
   Following function are comparing data presented in two buffers or two arrays
   of byte.
@@ -892,6 +894,36 @@ procedure PtrAdvanceVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize); ove
 -------------------------------------------------------------------------------}
 
 procedure BufferShiftDown(var Buffer; BufferSize: TMemSize; Shift: TMemSize);
+
+{-------------------------------------------------------------------------------
+================================================================================
+                            Memory address alignment
+================================================================================
+-------------------------------------------------------------------------------}
+
+type
+{
+  More alignments can be added later anywhere into the following enumeration,
+  so do not assume anything about the numerical value or position of any enum
+  value.
+}
+  TMemoryAlignment = (ma8bit,ma16bit,ma32bit,ma64bit,ma128bit,ma256bit,ma512bit,
+                      ma1byte,ma2byte,ma4byte,ma8byte,ma16byte,ma32byte,ma64byte);
+
+//------------------------------------------------------------------------------
+{
+  CheckAlignment returns true when the provided memory address is aligned
+  as indicated by Alignment parameter, false otherwise.
+}
+Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;
+
+{
+  Misalignment returns distance, in bytes, from the closest properly aligned
+  (defined by parameter Alignment) address that is not larger than the passed
+  address.
+  If the address is aligned, it will return zero.
+}
+Function Misalignment(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -6233,6 +6265,48 @@ procedure BufferShiftDown(var Buffer; BufferSize: TMemSize; Shift: TMemSize);
 begin
 If (Shift > 0) and (Shift < BufferSize) then
   Move(PtrAdvance(Addr(Buffer),Shift)^,Buffer,BufferSize - Shift);
+end;
+
+{-------------------------------------------------------------------------------
+================================================================================
+                            Memory address alignment
+================================================================================
+-------------------------------------------------------------------------------}
+
+Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;
+begin
+case Alignment of
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+  ma16bit,ma2byte:    Result := (PtrUInt(Address) and PtrUInt(1)) = 0;
+  ma32bit,ma4byte:    Result := (PtrUInt(Address) and PtrUInt(3)) = 0;
+  ma64bit,ma8byte:    Result := (PtrUInt(Address) and PtrUInt(7)) = 0;
+  ma128bit,ma16byte:  Result := (PtrUInt(Address) and PtrUInt(15)) = 0;
+  ma256bit,ma32byte:  Result := (PtrUInt(Address) and PtrUInt(31)) = 0;
+  ma512bit,ma64byte:  Result := (PtrUInt(Address) and PtrUInt(63)) = 0;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+else
+ {ma8bit,ma1byte}
+  Result := True;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function Misalignment(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;
+begin
+case Alignment of
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+  ma16bit,ma2byte:    Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(1)));
+  ma32bit,ma4byte:    Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(3)));
+  ma64bit,ma8byte:    Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(7)));
+  ma128bit,ma16byte:  Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(15)));
+  ma256bit,ma32byte:  Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(31)));
+  ma512bit,ma64byte:  Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(63)));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}  
+else
+ {ma8bit,ma1byte}
+  Result := 0;
+end;
 end;
 
 {-------------------------------------------------------------------------------
