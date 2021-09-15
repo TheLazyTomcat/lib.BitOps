@@ -12,9 +12,9 @@
     Set of functions providing some of the not-so-common bit-manipulating
     operations and other binary utilities.
 
-  Version 1.13 (2021-04-19)
+  Version 1.13.1 (2021-09-15)
 
-  Last change 2021-04-19
+  Last change 2021-09-15
 
   ©2014-2021 František Milt
 
@@ -945,6 +945,8 @@ Function Misalignment(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;
   These functions have both implementations (pascal and assembly) compiled, and
   which will be used is selected at unit initialization after checking CPU for
   required extensions.
+  Before unit initialization, all the functions are routed to default
+  implementation (pascal).
 
   When such function is called, the selected implementation is called via an
   internal global variable which holds pointer to the implementation. Within
@@ -2340,7 +2342,19 @@ asm
 end;
 {$ELSE}
 begin
-Result := UInt8(Value shl Shift);
+{
+  Typecasting of Shift to 8bit is here due to problems in FPC (PurePascal,
+  inlining active, O3 optimization). The error reported during compilation is...
+
+    Error: (8007) Asm: [shl mem16,reg16] invalid combination of opcode and operands
+
+  ...and is shown for second (16bit) overload of function SALValue on its only
+  implementation line.
+
+  It seems to manifests only for 16bit integers, but I have put it everywhere
+  as a precaution.
+}
+Result := UInt8(Value shl UInt8(Shift));
 end;
 {$ENDIF}
 
@@ -2357,7 +2371,7 @@ asm
 end;
 {$ELSE}
 begin
-Result := UInt16(Value shl Shift);
+Result := UInt16(Value shl UInt8(Shift));
 end;
 {$ENDIF}
 
@@ -2374,7 +2388,7 @@ asm
 end;
 {$ELSE}
 begin
-Result := UInt32(Value shl Shift);
+Result := UInt32(Value shl UInt8(Shift));
 end;
 {$ENDIF}
 
@@ -2418,7 +2432,7 @@ asm
 end;
 {$ELSE}
 begin
-Result := UInt64(Value shl Shift);
+Result := UInt64(Value shl UInt8(Shift));
 end;
 {$ENDIF}
 
@@ -3796,10 +3810,10 @@ end;
 //==============================================================================
 
 var
-  Var_PopCount_8: Function(Value: UInt8): Integer; register;
-  Var_PopCount_16: Function(Value: UInt16): Integer; register;
-  Var_PopCount_32: Function(Value: UInt32): Integer; register;
-  Var_PopCount_64: Function(Value: UInt64): Integer; register;
+  Var_PopCount_8: Function(Value: UInt8): Integer; register = Fce_PopCount_8_Pas;
+  Var_PopCount_16: Function(Value: UInt16): Integer; register = Fce_PopCount_16_Pas;
+  Var_PopCount_32: Function(Value: UInt32): Integer; register = Fce_PopCount_32_Pas;
+  Var_PopCount_64: Function(Value: UInt64): Integer; register = Fce_PopCount_64_Pas;
 
 //------------------------------------------------------------------------------
 
@@ -4734,10 +4748,10 @@ end;
 //==============================================================================
 
 var
-  Var_LZCount_8: Function(Value: UInt8): Integer; register;
-  Var_LZCount_16: Function(Value: UInt16): Integer; register;
-  Var_LZCount_32: Function(Value: UInt32): Integer; register;
-  Var_LZCount_64: Function(Value: UInt64): Integer; register;
+  Var_LZCount_8: Function(Value: UInt8): Integer; register = Fce_LZCount_8_Pas;
+  Var_LZCount_16: Function(Value: UInt16): Integer; register = Fce_LZCount_16_Pas;
+  Var_LZCount_32: Function(Value: UInt32): Integer; register = Fce_LZCount_32_Pas;
+  Var_LZCount_64: Function(Value: UInt64): Integer; register = Fce_LZCount_64_Pas;
 
 //------------------------------------------------------------------------------
 
@@ -4921,10 +4935,10 @@ end;
 //==============================================================================
 
 var
-  Var_TZCount_8: Function(Value: UInt8): Integer; register;
-  Var_TZCount_16: Function(Value: UInt16): Integer; register;
-  Var_TZCount_32: Function(Value: UInt32): Integer; register;
-  Var_TZCount_64: Function(Value: UInt64): Integer; register;
+  Var_TZCount_8: Function(Value: UInt8): Integer; register = Fce_TZCount_8_Pas;
+  Var_TZCount_16: Function(Value: UInt16): Integer; register = Fce_TZCount_16_Pas;
+  Var_TZCount_32: Function(Value: UInt32): Integer; register = Fce_TZCount_32_Pas;
+  Var_TZCount_64: Function(Value: UInt64): Integer; register = Fce_TZCount_64_Pas;
 
 //------------------------------------------------------------------------------
 
@@ -5195,10 +5209,10 @@ end;
 //==============================================================================
 
 var
-  Var_ExtractBits_8: Function(Value: UInt8; Start, Length: Integer): UInt8; register;
-  Var_ExtractBits_16: Function(Value: UInt16; Start, Length: Integer): UInt16; register;
-  Var_ExtractBits_32: Function(Value: UInt32; Start, Length: Integer): UInt32; register;
-  Var_ExtractBits_64: Function(Value: UInt64; Start, Length: Integer): UInt64; register;
+  Var_ExtractBits_8: Function(Value: UInt8; Start, Length: Integer): UInt8; register = Fce_ExtractBits_8_Pas;
+  Var_ExtractBits_16: Function(Value: UInt16; Start, Length: Integer): UInt16; register = Fce_ExtractBits_16_Pas;
+  Var_ExtractBits_32: Function(Value: UInt32; Start, Length: Integer): UInt32; register = Fce_ExtractBits_32_Pas;
+  Var_ExtractBits_64: Function(Value: UInt64; Start, Length: Integer): UInt64; register = Fce_ExtractBits_64_Pas;
 
 //------------------------------------------------------------------------------
 
@@ -5394,10 +5408,10 @@ end;
 //==============================================================================
 
 var
-  Var_ParallelBitsExtract_8: Function(Value, Mask: UInt8): UInt8; register;
-  Var_ParallelBitsExtract_16: Function(Value, Mask: UInt16): UInt16; register;
-  Var_ParallelBitsExtract_32: Function(Value, Mask: UInt32): UInt32; register;
-  Var_ParallelBitsExtract_64: Function(Value, Mask: UInt64): UInt64; register;
+  Var_ParallelBitsExtract_8: Function(Value, Mask: UInt8): UInt8; register = Fce_ParallelBitsExtract_8_Pas;
+  Var_ParallelBitsExtract_16: Function(Value, Mask: UInt16): UInt16; register = Fce_ParallelBitsExtract_16_Pas;
+  Var_ParallelBitsExtract_32: Function(Value, Mask: UInt32): UInt32; register = Fce_ParallelBitsExtract_32_Pas;
+  Var_ParallelBitsExtract_64: Function(Value, Mask: UInt64): UInt64; register = Fce_ParallelBitsExtract_64_Pas;
 
 //------------------------------------------------------------------------------
 
@@ -5606,10 +5620,10 @@ end;
 //==============================================================================
 
 var
-  Var_ParallelBitsDeposit_8: Function(Value, Mask: UInt8): UInt8; register;
-  Var_ParallelBitsDeposit_16: Function(Value, Mask: UInt16): UInt16; register;
-  Var_ParallelBitsDeposit_32: Function(Value, Mask: UInt32): UInt32; register;
-  Var_ParallelBitsDeposit_64: Function(Value, Mask: UInt64): UInt64; register;
+  Var_ParallelBitsDeposit_8: Function(Value, Mask: UInt8): UInt8; register = Fce_ParallelBitsDeposit_8_Pas;
+  Var_ParallelBitsDeposit_16: Function(Value, Mask: UInt16): UInt16; register = Fce_ParallelBitsDeposit_16_Pas;
+  Var_ParallelBitsDeposit_32: Function(Value, Mask: UInt32): UInt32; register = Fce_ParallelBitsDeposit_32_Pas;
+  Var_ParallelBitsDeposit_64: Function(Value, Mask: UInt64): UInt64; register = Fce_ParallelBitsDeposit_64_Pas;
 
 //------------------------------------------------------------------------------
 
