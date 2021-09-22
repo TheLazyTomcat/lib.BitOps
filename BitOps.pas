@@ -156,6 +156,14 @@ type
   EBOBufferTooSmall   = class(EBOConversionError);
   EBOSizeMismatch     = class(EBOConversionError);
 
+{===============================================================================
+--------------------------------------------------------------------------------
+
+                       Binary data <-> string conversions
+
+--------------------------------------------------------------------------------
+===============================================================================}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                    Integer number <-> Bit string conversions
@@ -224,6 +232,129 @@ Function TryBitStrToNumber(const BitString: String; out Value: UInt64): Boolean;
 Function BitStrToNumberDef(const BitString: String; Default: UInt64; BitStringFormat: TBitStringFormat): UInt64; overload;
 Function BitStrToNumberDef(const BitString: String; Default: UInt64; Split: TBitStringSplit): UInt64; overload;
 Function BitStrToNumberDef(const BitString: String; Default: UInt64): UInt64; overload;
+
+{-------------------------------------------------------------------------------
+================================================================================
+                     General data <-> Hex string conversions
+================================================================================
+-------------------------------------------------------------------------------}
+
+type
+  THexStringSplit = (hssNone,hssNibble,hssByte,hssWord,hss24bits,hssLong,
+                     hssQuad,hss80bits,hssOcta);
+
+  THexStringFormat = record
+    Split:      THexStringSplit;
+    SplitChar:  Char;
+    UpperCase:  Boolean;
+  end;
+
+const
+  DefHexStringFormat: THexStringFormat = (
+    Split:      hssNone;
+    SplitChar:  ' ';
+    UpperCase:  True);
+
+type
+  TArrayOfBytes = packed array of UInt8;
+
+//------------------------------------------------------------------------------
+
+Function DataToHexStr(const Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): String; overload;
+Function DataToHexStr(Arr: array of UInt8; HexStringFormat: THexStringFormat): String; overload;
+
+Function DataToHexStr(const Buffer; Size: TMemSize; Split: THexStringSplit): String; overload;
+Function DataToHexStr(Arr: array of UInt8; Split: THexStringSplit): String; overload;
+
+Function DataToHexStr(const Buffer; Size: TMemSize): String; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function DataToHexStr(Arr: array of UInt8): String; overload;{$IFDEF Inline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): TMemSize; overload;
+Function HexStrToData(const Str: String; HexStringFormat: THexStringFormat): TArrayOfBytes; overload;
+
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; SplitChar: Char): TMemSize; overload;
+Function HexStrToData(const Str: String; SplitChar: Char): TArrayOfBytes; overload;
+
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function HexStrToData(const Str: String): TArrayOfBytes; overload;{$IFDEF Inline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; HexStringFormat: THexStringFormat): Boolean; overload;
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; HexStringFormat: THexStringFormat): Boolean; overload;
+
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; SplitChar: Char): Boolean; overload;
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; SplitChar: Char): Boolean; overload;
+
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
+
+{-------------------------------------------------------------------------------
+================================================================================
+                     General data <-> Bit string conversions
+================================================================================
+-------------------------------------------------------------------------------}
+
+type
+  TBitStringOrder = (bsoLeftToRight,bsoRightToLeft);
+
+  TDataBitStringFormat = record
+    Split:            TBitStringSplit;
+    SplitChar:        Char;
+    BytesOrder:       TBitStringOrder;
+    BitsInByteOrder:  TBitStringOrder;
+  end;
+
+const
+  DefDataBitStringFormat: TDataBitStringFormat = (
+    Split:            bssNone;
+    SplitChar:        ' ';
+    BytesOrder:       bsoLeftToRight;
+    BitsInByteOrder:  bsoLeftToRight);
+
+//------------------------------------------------------------------------------
+
+Function DataToBitStr(const Buffer; Size: TMemSize; BitStringFormat: TDataBitStringFormat): String; overload;
+Function DataToBitStr(Arr: array of UInt8; BitStringFormat: TDataBitStringFormat): String; overload;
+
+Function DataToBitStr(const Buffer; Size: TMemSize; Split: TBitStringSplit): String; overload;
+Function DataToBitStr(Arr: array of UInt8; Split: TBitStringSplit): String; overload;
+
+Function DataToBitStr(const Buffer; Size: TMemSize): String; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function DataToBitStr(Arr: array of UInt8): String; overload;{$IFDEF Inline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function BitStrToData(const Str: String; out Buffer; Size: TMemSize; BitStringFormat: TDataBitStringFormat): TMemSize; overload;
+Function BitStrToData(const Str: String; BitStringFormat: TDataBitStringFormat): TArrayOfBytes; overload;
+
+Function BitStrToData(const Str: String; out Buffer; Size: TMemSize; SplitChar: Char): TMemSize; overload;
+Function BitStrToData(const Str: String; SplitChar: Char): TArrayOfBytes; overload;
+
+Function BitStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function BitStrToData(const Str: String): TArrayOfBytes; overload;{$IFDEF Inline} inline; {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize; BitStringFormat: TDataBitStringFormat): Boolean; overload;
+Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes; BitStringFormat: TDataBitStringFormat): Boolean; overload;
+
+Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize; SplitChar: Char): Boolean; overload;
+Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes; SplitChar: Char): Boolean; overload;
+
+Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
+
+
+{===============================================================================
+--------------------------------------------------------------------------------
+
+                             Bit-level manipulations
+
+--------------------------------------------------------------------------------
+===============================================================================}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -726,61 +857,103 @@ Function ParallelBitsDeposit(Value, Mask: UInt64): UInt64; overload;{$IF Defined
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                     General data <-> Hex string conversions
+                                   Bit parity
+================================================================================
+-------------------------------------------------------------------------------}
+{
+  Bit parity returns true when the number contains an even number or zero set
+  bits, false otherwise.
+}
+Function BitParity(Value: UInt8): Boolean; overload;
+Function BitParity(Value: UInt16): Boolean; overload;
+Function BitParity(Value: UInt32): Boolean; overload;
+Function BitParity(Value: UInt64): Boolean; overload;
+
+
+{===============================================================================
+--------------------------------------------------------------------------------
+
+                               Pointer operations
+
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+================================================================================
+                           Pointer arithmetic helpers
+================================================================================
+-------------------------------------------------------------------------------}
+
+Function PtrAdvance(Ptr: Pointer; Offset: PtrInt): Pointer; overload;
+Function PtrAdvance(Ptr: Pointer; Count: Integer; Stride: TMemSize): Pointer; overload;
+
+procedure PtrAdvanceVar(var Ptr: Pointer; Offset: PtrInt); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure PtrAdvanceVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+{-------------------------------------------------------------------------------
+================================================================================
+                            Memory address alignment
 ================================================================================
 -------------------------------------------------------------------------------}
 
 type
-  THexStringSplit = (hssNone,hssNibble,hssByte,hssWord,hss24bits,hssLong,
-                     hssQuad,hss80bits,hssOcta);
-
-  THexStringFormat = record
-    Split:      THexStringSplit;
-    SplitChar:  Char;
-    UpperCase:  Boolean;
-  end;
-
-const
-  DefHexStringFormat: THexStringFormat = (
-    Split:      hssNone;
-    SplitChar:  ' ';
-    UpperCase:  True);
-
-type
-  TArrayOfBytes = packed array of UInt8;
+{
+  More alignments can be added later anywhere into the following enumeration,
+  so do not assume anything about the numerical value or position of any enum
+  value.
+}
+  TMemoryAlignment = (ma8bit,ma16bit,ma32bit,ma64bit,ma128bit,ma256bit,ma512bit,ma1024bit,ma2048bit,
+                      ma1byte,ma2byte,ma4byte,ma8byte,ma16byte,ma32byte,ma64byte,ma128byte,ma256byte);
 
 //------------------------------------------------------------------------------
 
-Function DataToHexStr(const Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): String; overload;
-Function DataToHexStr(Arr: array of UInt8; HexStringFormat: THexStringFormat): String; overload;
-
-Function DataToHexStr(const Buffer; Size: TMemSize; Split: THexStringSplit): String; overload;
-Function DataToHexStr(Arr: array of UInt8; Split: THexStringSplit): String; overload;
-
-Function DataToHexStr(const Buffer; Size: TMemSize): String; overload;{$IFDEF Inline} inline; {$ENDIF}
-Function DataToHexStr(Arr: array of UInt8): String; overload;{$IFDEF Inline} inline; {$ENDIF}
+{
+  AlignmentBytes returns number of bytes corresponding to requested alignment.
+}
+Function AlignmentBytes(Alignment: TMemoryAlignment): TMemSize;
 
 //------------------------------------------------------------------------------
 
-Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): TMemSize; overload;
-Function HexStrToData(const Str: String; HexStringFormat: THexStringFormat): TArrayOfBytes; overload;
+{
+  CheckAlignment returns true when the provided memory address is aligned
+  as indicated by Alignment parameter, false otherwise.
+}
+Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; SplitChar: Char): TMemSize; overload;
-Function HexStrToData(const Str: String; SplitChar: Char): TArrayOfBytes; overload;
-
-Function HexStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;{$IFDEF Inline} inline; {$ENDIF}
-Function HexStrToData(const Str: String): TArrayOfBytes; overload;{$IFDEF Inline} inline; {$ENDIF}
+{
+  Misalignment returns distance, in bytes, from the closest properly aligned
+  (defined by parameter Alignment) address that is not larger than the passed
+  address.
+  If the address is aligned, it will return zero.
+}
+Function Misalignment(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
 
 //------------------------------------------------------------------------------
+{
+  AlignedMemory checks provided memory address for requested alignment. When
+  the address is properly aligned, it is returned and nothing more is done.
+  When is is not properly aligned, then this functions will return closest
+  properly aligned memory address that is not smaler than the provided address.
 
-Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; HexStringFormat: THexStringFormat): Boolean; overload;
-Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; HexStringFormat: THexStringFormat): Boolean; overload;
+    WARNING - this function does NOT do any (re)allocation, it merely returns
+              an aligned pointer closest to a given one.
+}
+Function AlignedMemory(Address: Pointer; Alignment: TMemoryAlignment): Pointer;{$IFDEF CanInline} inline;{$ENDIF}
 
-Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; SplitChar: Char): Boolean; overload;
-Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; SplitChar: Char): Boolean; overload;
+{
+  AlignMemory works the same as AlignedMemory, it just operates directly on a
+  passed variable.
+}
+procedure AlignMemory(var Address: Pointer; Alignment: TMemoryAlignment);{$IFDEF CanInline} inline;{$ENDIF}
 
-Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
-Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
+
+{===============================================================================
+--------------------------------------------------------------------------------
+
+                             Binary data operations
+
+--------------------------------------------------------------------------------
+===============================================================================}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -864,32 +1037,6 @@ Function SameData(A,B: array of UInt8): Boolean; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                                   Bit parity
-================================================================================
--------------------------------------------------------------------------------}
-{
-  Bit parity returns true when the number contains an even number or zero set
-  bits, false otherwise.
-}
-Function BitParity(Value: UInt8): Boolean; overload;
-Function BitParity(Value: UInt16): Boolean; overload;
-Function BitParity(Value: UInt32): Boolean; overload;
-Function BitParity(Value: UInt64): Boolean; overload;
-
-{-------------------------------------------------------------------------------
-================================================================================
-                           Pointer arithmetic helpers                                                                                  
-================================================================================
--------------------------------------------------------------------------------}
-
-Function PtrAdvance(Ptr: Pointer; Offset: PtrInt): Pointer; overload;
-Function PtrAdvance(Ptr: Pointer; Count: Integer; Stride: TMemSize): Pointer; overload;
-
-procedure PtrAdvanceVar(var Ptr: Pointer; Offset: PtrInt); overload;{$IFDEF CanInline} inline;{$ENDIF}
-procedure PtrAdvanceVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize); overload;{$IFDEF CanInline} inline;{$ENDIF}
-
-{-------------------------------------------------------------------------------
-================================================================================
                                Buffer shift down
 ================================================================================
 -------------------------------------------------------------------------------}
@@ -904,117 +1051,14 @@ procedure PtrAdvanceVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize); ove
 }
 procedure BufferShiftDown(var Buffer; BufferSize: TMemSize; Shift: TMemSize);
 
-{-------------------------------------------------------------------------------
-================================================================================
-                            Memory address alignment
-================================================================================
--------------------------------------------------------------------------------}
 
-type
-{
-  More alignments can be added later anywhere into the following enumeration,
-  so do not assume anything about the numerical value or position of any enum
-  value.
-}
-  TMemoryAlignment = (ma8bit,ma16bit,ma32bit,ma64bit,ma128bit,ma256bit,ma512bit,ma1024bit,ma2048bit,
-                      ma1byte,ma2byte,ma4byte,ma8byte,ma16byte,ma32byte,ma64byte,ma128byte,ma256byte);
+{===============================================================================
+--------------------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
+                                      UIM
 
-{
-  AlignmentBytes returns number of bytes corresponding to requested alignment.
-}
-Function AlignmentBytes(Alignment: TMemoryAlignment): TMemSize;
-
-//------------------------------------------------------------------------------
-
-{
-  CheckAlignment returns true when the provided memory address is aligned
-  as indicated by Alignment parameter, false otherwise.
-}
-Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
-
-{
-  Misalignment returns distance, in bytes, from the closest properly aligned
-  (defined by parameter Alignment) address that is not larger than the passed
-  address.
-  If the address is aligned, it will return zero.
-}
-Function Misalignment(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
-
-//------------------------------------------------------------------------------
-{
-  AlignedMemory checks provided memory address for requested alignment. When
-  the address is properly aligned, it is returned and nothing more is done.
-  When is is not properly aligned, then this functions will return closest
-  properly aligned memory address that is not smaler than the provided address.
-
-    WARNING - this function does NOT do any (re)allocation, it merely returns
-              an aligned pointer closest to a given one.
-}
-Function AlignedMemory(Address: Pointer; Alignment: TMemoryAlignment): Pointer;{$IFDEF CanInline} inline;{$ENDIF}
-
-{
-  AlignMemory works the same as AlignedMemory, it just operates directly on a
-  passed variable.
-}
-procedure AlignMemory(var Address: Pointer; Alignment: TMemoryAlignment);{$IFDEF CanInline} inline;{$ENDIF}
-
-{-------------------------------------------------------------------------------
-================================================================================
-                     General data <-> Bit string conversions
-================================================================================
--------------------------------------------------------------------------------}
-
-type
-  TBitStringOrder = (bsoLeftToRight,bsoRightToLeft);
-
-  TDataBitStringFormat = record
-    Split:            TBitStringSplit;
-    SplitChar:        Char;
-    BytesOrder:       TBitStringOrder;
-    BitsInByteOrder:  TBitStringOrder;
-  end;
-
-const
-  DefDataBitStringFormat: TDataBitStringFormat = (
-    Split:            bssNone;
-    SplitChar:        ' ';
-    BytesOrder:       bsoLeftToRight;
-    BitsInByteOrder:  bsoLeftToRight);
-
-//------------------------------------------------------------------------------
-
-Function DataToBitStr(const Buffer; Size: TMemSize; BitStringFormat: TDataBitStringFormat): String; overload;
-Function DataToBitStr(Arr: array of UInt8; BitStringFormat: TDataBitStringFormat): String; overload;
-
-Function DataToBitStr(const Buffer; Size: TMemSize; Split: TBitStringSplit): String; overload;
-Function DataToBitStr(Arr: array of UInt8; Split: TBitStringSplit): String; overload;
-
-Function DataToBitStr(const Buffer; Size: TMemSize): String; overload;{$IFDEF Inline} inline; {$ENDIF}
-Function DataToBitStr(Arr: array of UInt8): String; overload;{$IFDEF Inline} inline; {$ENDIF}
-
-//------------------------------------------------------------------------------
-
-Function BitStrToData(const Str: String; out Buffer; Size: TMemSize; BitStringFormat: TDataBitStringFormat): TMemSize; overload;
-Function BitStrToData(const Str: String; BitStringFormat: TDataBitStringFormat): TArrayOfBytes; overload;
-
-Function BitStrToData(const Str: String; out Buffer; Size: TMemSize; SplitChar: Char): TMemSize; overload;
-Function BitStrToData(const Str: String; SplitChar: Char): TArrayOfBytes; overload;
-
-Function BitStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;{$IFDEF Inline} inline; {$ENDIF}
-Function BitStrToData(const Str: String): TArrayOfBytes; overload;{$IFDEF Inline} inline; {$ENDIF}
-
-//------------------------------------------------------------------------------
-
-Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize; BitStringFormat: TDataBitStringFormat): Boolean; overload;
-Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes; BitStringFormat: TDataBitStringFormat): Boolean; overload;
-
-Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize; SplitChar: Char): Boolean; overload;
-Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes; SplitChar: Char): Boolean; overload;
-
-Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
-Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
+--------------------------------------------------------------------------------
+===============================================================================}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -1157,6 +1201,14 @@ else
 {$IFEND}
   Result := AnsiChar(C) in S;
 end;
+
+{===============================================================================
+--------------------------------------------------------------------------------
+
+                       Binary data <-> string conversions
+
+--------------------------------------------------------------------------------
+===============================================================================}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -1475,6 +1527,693 @@ begin
 If not TryBitStrToNumber(BitString,Result,DefBitStringFormat) then
   Result := Default;
 end;
+
+{-------------------------------------------------------------------------------
+================================================================================
+                     General data <-> Hex string conversions
+================================================================================
+-------------------------------------------------------------------------------}
+{-------------------------------------------------------------------------------
+    General data <-> Hex string conversions - auxiliary functions
+-------------------------------------------------------------------------------}
+
+Function DataToHexStr_SplitChars(Split: THexStringSplit): Integer;
+begin
+case Split of
+  hssNibble:  Result := 1;
+  hssByte:    Result := 2;
+  hssWord:    Result := 4;
+  hss24bits:  Result := 6;
+  hssLong:    Result := 8;
+  hssQuad:    Result := 16;
+  hss80bits:  Result := 20;
+  hssOcta:    Result := 32;
+else
+ {hssNone}
+  Result := 0;
+end;
+end;
+
+{-------------------------------------------------------------------------------
+    General data <-> Hex string conversions - main implementation
+-------------------------------------------------------------------------------}
+
+Function DataToHexStr(const Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): String;
+var
+  SplitCnt:   Integer;
+  i:          TMemSize;
+  CharResPos: Integer;
+  DataResPos: TMemSize;
+  BuffPtr:    PByte;
+  TempStr:    String;
+
+  procedure PutChar(NewChar: Char);
+  begin
+    If (SplitCnt > 0) and (DataResPos > 0) and ((DataResPos mod TMemSize(SplitCnt)) = 0) then
+      Inc(CharResPos);
+    Result[CharResPos] := NewChar;
+    Inc(CharResPos);
+    Inc(DataResPos)
+  end;
+  
+begin
+If Size <> 0 then
+  begin
+    // preallocate resulting string and then just fill it
+    SplitCnt := DataToHexStr_SplitChars(HexStringFormat.Split);
+    If SplitCnt > 0 then
+      Result := StringOfChar(HexStringFormat.SplitChar,(UInt64(Size) * 2) +
+                             (Pred(UInt64(Size) * 2) div UInt64(SplitCnt)))
+    else
+      SetLength(Result,Size * 2);
+    CharResPos := 1;
+    DataResPos := 0;
+    BuffPtr := @Buffer;
+    For i := 0 to Pred(Size) do
+      begin
+        If HexStringFormat.UpperCase then
+          TempStr := AnsiUpperCase(IntToHex(BuffPtr^,2))
+        else
+          TempStr := AnsiLowerCase(IntToHex(BuffPtr^,2));
+        If Length(TempStr) = 2 then
+          begin
+            PutChar(TempStr[1]);
+            PutChar(TempStr[2]);
+          end
+        else raise EBOConversionError.CreateFmt('DataToHexStr: Invalid string length (%d).',[Length(TempStr)]);
+        Inc(BuffPtr);
+      end;
+  end
+else Result := '';
+end;
+ 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function DataToHexStr(Arr: array of UInt8; HexStringFormat: THexStringFormat): String;
+var
+  SplitCnt:   Integer;
+  i:          Integer;  
+  CharResPos:  Integer;
+  DataResPos: TMemSize;
+  TempStr:    String;
+
+  procedure PutChar(NewChar: Char);
+  begin
+    If (SplitCnt > 0) and (DataResPos > 0) and ((DataResPos mod TMemSize(SplitCnt)) = 0) then
+      Inc(CharResPos);
+    Result[CharResPos] := NewChar;
+    Inc(CharResPos);
+    Inc(DataResPos)
+  end;
+  
+begin
+If Length(Arr) <> 0 then
+  begin
+    SplitCnt := DataToHexStr_SplitChars(HexStringFormat.Split);
+    If SplitCnt > 0 then
+      Result := StringOfChar(HexStringFormat.SplitChar,(Length(Arr) * 2) +
+                             (Pred(Length(Arr) * 2) div SplitCnt))
+    else
+      SetLength(Result,Length(Arr) * 2);
+    CharResPos := 1;
+    DataResPos := 0;
+    For i := Low(Arr) to High(Arr) do
+      begin
+        If HexStringFormat.UpperCase then
+          TempStr := AnsiUpperCase(IntToHex(Arr[i],2))
+        else
+          TempStr := AnsiLowerCase(IntToHex(Arr[i],2));
+        If Length(TempStr) = 2 then
+          begin
+            PutChar(TempStr[1]);
+            PutChar(TempStr[2]);
+          end
+        else raise EBOConversionError.CreateFmt('DataToHexStr: Invalid string length (%d).',[Length(TempStr)]);
+      end;
+  end
+else Result := '';
+end;
+
+//------------------------------------------------------------------------------
+
+Function DataToHexStr(const Buffer; Size: TMemSize; Split: THexStringSplit): String;
+var
+  Format: THexStringFormat;
+begin
+Format := DefHexStringFormat;
+Format.Split := Split;
+Result := DataToHexStr(Buffer,Size,Format);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function DataToHexStr(Arr: array of UInt8; Split: THexStringSplit): String;
+var
+  Format: THexStringFormat;
+begin
+Format := DefHexStringFormat;
+Format.Split := Split;
+Result := DataToHexStr(Arr,Format);
+end;
+
+//------------------------------------------------------------------------------
+
+Function DataToHexStr(const Buffer; Size: TMemSize): String;
+begin
+Result := DataToHexStr(Buffer,Size,DefHexStringFormat);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function DataToHexStr(Arr: array of UInt8): String; overload;
+begin
+Result := DataToHexStr(Arr,DefHexStringFormat);
+end;
+
+//==============================================================================
+
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): TMemSize;
+var
+  i,Cntr:   Integer;
+  BuffPtr:  PByte;
+  StrBuff:  String;
+begin
+If Length(Str) > 0 then
+  begin
+    If Size <> 0 then
+      begin
+        Cntr := 2;        // position in StrBuff just behind $
+        BuffPtr := @Buffer;
+        StrBuff := '$  '; // two spaces
+        Result := 0;
+        For i := 1 to Length(Str) do
+          begin
+            If Str[i] = HexStringFormat.SplitChar then
+              Continue
+            else If CharInSet(Str[i],['0'..'9','a'..'f','A'..'F']) then
+              begin
+                StrBuff[Cntr] := Str[i];
+                Inc(Cntr);
+                If Cntr > 3 then
+                  begin
+                    If Result < Size then
+                      BuffPtr^ := UInt8(StrToInt(StrBuff))
+                    else
+                      raise EBOBufferTooSmall.CreateFmt('HexStrToData: Buffer too small (%d).',[Size]);
+                    Cntr := 2;
+                    Inc(BuffPtr);                    
+                    Inc(Result);
+                  end;
+              end
+            else EBOInvalidCharacter.CreateFmt('HexStrToData: Invalid character (#%d).',[Ord(Str[i])]);
+          end;
+      end
+    else
+      begin
+        // only return required size, do not convert
+        Cntr := Length(Str);
+        For i := 1 to Length(Str) do
+          If Str[i] = HexStringFormat.SplitChar then
+            Dec(Cntr)
+          else If not CharInSet(Str[i],['0'..'9','a'..'f','A'..'F']) then
+            raise EBOInvalidCharacter.CreateFmt('HexStrToData: Invalid character (#%d).',[Ord(Str[i])]);
+        Result := TMemSize(Cntr div 2);
+      end;
+  end
+else Result := 0;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function HexStrToData(const Str: String; HexStringFormat: THexStringFormat): TArrayOfBytes;
+var
+  ByteCnt:  Integer;
+begin
+ByteCnt := HexStrToData(Str,nil^,0,HexStringFormat);
+SetLength(Result,ByteCnt);
+If ByteCnt > 0 then
+  begin
+    ByteCnt := HexStrToData(Str,Result[0],Length(Result),HexStringFormat);
+    If ByteCnt <> Length(Result) then
+      SetLength(Result,ByteCnt);
+  end;
+end;
+ 
+//------------------------------------------------------------------------------
+
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; SplitChar: Char): TMemSize;
+var
+  Format: THexStringFormat;
+begin
+Format := DefHexStringFormat;
+Format.SplitChar := SplitChar;
+Result := HexStrToData(Str,Buffer,Size,Format);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function HexStrToData(const Str: String; SplitChar: Char): TArrayOfBytes;
+var
+  Format: THexStringFormat;
+begin
+Format := DefHexStringFormat;
+Format.SplitChar := SplitChar;
+Result := HexStrToData(Str,Format);
+end;
+
+//------------------------------------------------------------------------------
+
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize;
+begin
+Result := HexStrToData(Str,Buffer,Size,DefHexStringFormat);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function HexStrToData(const Str: String): TArrayOfBytes;
+begin
+Result := HexStrToData(Str,DefHexStringFormat);
+end;
+
+//==============================================================================
+
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; HexStringFormat: THexStringFormat): Boolean;
+begin
+try
+  Size := HexStrToData(Str,Buffer,Size,HexStringFormat);
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; HexStringFormat: THexStringFormat): Boolean;
+begin
+try
+  Arr := HexStrToData(Str,HexStringFormat);
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; SplitChar: Char): Boolean;
+var
+  Format: THexStringFormat;
+begin
+Format := DefHexStringFormat;
+Format.SplitChar := SplitChar;
+Result := TryHexStrToData(Str,Buffer,Size,Format);
+end;
+ 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; SplitChar: Char): Boolean;
+var
+  Format: THexStringFormat;
+begin
+Format := DefHexStringFormat;
+Format.SplitChar := SplitChar;
+Result := TryHexStrToData(Str,Arr,Format);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean;
+begin
+Result := TryHexStrToData(Str,Buffer,Size,DefHexStringFormat);
+end;
+ 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean;
+begin
+Result := TryHexStrToData(Str,Arr,DefHexStringFormat);
+end;
+
+{-------------------------------------------------------------------------------
+================================================================================
+                     General data <-> Bit string conversions
+================================================================================
+-------------------------------------------------------------------------------}
+{-------------------------------------------------------------------------------
+    General data <-> Bit string conversions - auxiliary functions
+-------------------------------------------------------------------------------}
+
+Function DataToBitStr_SplitChars(Split: TBitStringSplit): Integer;
+begin
+case Split of
+  bss4bits:   Result := 4;
+  bss8bits:   Result := 8;
+  bss16bits:  Result := 16;
+  bss32bits:  Result := 32;
+else
+ {hssNone}
+  Result := 0;
+end;
+end;
+
+{-------------------------------------------------------------------------------
+    General data <-> Bit string conversions - main implementation
+-------------------------------------------------------------------------------}
+
+Function DataToBitStr(const Buffer; Size: TMemSize; BitStringFormat: TDataBitStringFormat): String;
+var
+  SplitCnt:   Integer;
+  i,j:        TMemSize;
+  CharResPos: Integer;
+  DataResPos: TMemSize;
+  BuffPtr:    PByte;
+  TempByte:   UInt8;
+
+  procedure PutChar(NewChar: Char);
+  begin
+    If (SplitCnt > 0) and (DataResPos > 0) and ((DataResPos mod TMemSize(SplitCnt)) = 0) then
+      Inc(CharResPos);
+    Result[CharResPos] := NewChar;
+    Inc(CharResPos);
+    Inc(DataResPos)
+  end;
+  
+begin
+If Size <> 0 then
+  begin
+    SplitCnt := DataToBitStr_SplitChars(BitStringFormat.Split);
+    If SplitCnt > 0 then
+      Result := StringOfChar(BitStringFormat.SplitChar,(UInt64(Size) * 8) +
+                             (Pred(UInt64(Size) * 8) div UInt64(SplitCnt)))
+    else
+      SetLength(Result,Size * 8);
+    CharResPos := 1;
+    DataResPos := 0;
+    If BitStringFormat.BytesOrder = bsoLeftToRight then
+      BuffPtr := @Buffer
+    else
+      BuffPtr := PtrAdvance(@Buffer,Size - 1);
+    For i := 0 to Pred(Size) do
+      begin
+        If BitStringFormat.BitsInByteOrder = bsoLeftToRight then
+          TempByte := UInt8(BuffPtr^)
+        else
+          TempByte := ReverseBits(UInt8(BuffPtr^));
+        For j := 1 to 8 do
+          begin
+            If TempByte and 1 <> 0 then
+              PutChar('1')
+            else
+              PutChar('0');
+            TempByte := TempByte shr 1;
+          end;
+        If BitStringFormat.BytesOrder = bsoLeftToRight then
+          Inc(BuffPtr)
+        else
+          Dec(BuffPtr);
+      end;
+  end
+else Result := '';
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function DataToBitStr(Arr: array of UInt8; BitStringFormat: TDataBitStringFormat): String;
+var
+  SplitCnt:   Integer;
+  i,j:        TMemSize;
+  CharResPos: Integer;
+  DataResPos: TMemSize;
+  ArrPos:     Integer;
+  TempByte:   UInt8;
+
+  procedure PutChar(NewChar: Char);
+  begin
+    If (SplitCnt > 0) and (DataResPos > 0) and ((DataResPos mod TMemSize(SplitCnt)) = 0) then
+      Inc(CharResPos);
+    Result[CharResPos] := NewChar;
+    Inc(CharResPos);
+    Inc(DataResPos)
+  end;
+  
+begin
+If Length(Arr) <> 0 then
+  begin
+    SplitCnt := DataToBitStr_SplitChars(BitStringFormat.Split);
+    If SplitCnt > 0 then
+      Result := StringOfChar(BitStringFormat.SplitChar,(UInt64(Length(Arr)) * 8) +
+                             (Pred(UInt64(Length(Arr)) * 8) div UInt64(SplitCnt)))
+    else
+      SetLength(Result,Length(Arr) * 8);
+    CharResPos := 1;
+    DataResPos := 0;
+    If BitStringFormat.BytesOrder = bsoLeftToRight then
+      ArrPos := Low(Arr)
+    else
+      ArrPos := High(Arr);
+    For i := 0 to Pred(Length(Arr)) do
+      begin
+        If BitStringFormat.BitsInByteOrder = bsoLeftToRight then
+          TempByte := Arr[ArrPos]
+        else
+          TempByte := ReverseBits(Arr[ArrPos]);
+        For j := 1 to 8 do
+          begin
+            If TempByte and 1 <> 0 then
+              PutChar('1')
+            else
+              PutChar('0');
+            TempByte := TempByte shr 1;
+          end;
+        If BitStringFormat.BytesOrder = bsoLeftToRight then
+          Inc(ArrPos)
+        else
+          Dec(ArrPos);
+      end;
+  end
+else Result := '';
+end;
+
+//------------------------------------------------------------------------------
+
+Function DataToBitStr(const Buffer; Size: TMemSize; Split: TBitStringSplit): String;
+var
+  Format: TDataBitStringFormat;
+begin
+Format := DefDataBitStringFormat;
+Format.Split := Split;
+Result := DataToBitStr(Buffer,Size,Format);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function DataToBitStr(Arr: array of UInt8; Split: TBitStringSplit): String;
+var
+  Format: TDataBitStringFormat;
+begin
+Format := DefDataBitStringFormat;
+Format.Split := Split;
+Result := DataToBitStr(Arr,Format);
+end;
+
+//------------------------------------------------------------------------------
+
+Function DataToBitStr(const Buffer; Size: TMemSize): String;
+begin
+Result := DataToBitStr(Buffer,Size,DefDataBitStringFormat);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function DataToBitStr(Arr: array of UInt8): String;
+begin
+Result := DataToBitStr(Arr,DefDataBitStringFormat);
+end;
+
+//==============================================================================
+
+Function BitStrToData(const Str: String; out Buffer; Size: TMemSize; BitStringFormat: TDataBitStringFormat): TMemSize;
+var
+  i:        Integer;
+  BuffPtr:  PByte;
+  TempByte: UInt8;
+  Cntr:     Integer;
+begin
+If Length(Str) > 0 then
+  begin
+    If Size <> 0 then
+      begin
+        Result := 0;
+        If BitStringFormat.BytesOrder = bsoLeftToRight then
+          BuffPtr := @Buffer
+        else
+          BuffPtr := PtrAdvance(@Buffer,Size - 1);
+        TempByte := 0;
+        Cntr := 0;
+        For i := 1 to Length(Str) do
+          begin
+            If Str[i] = BitStringFormat.SplitChar then
+              Continue
+            else If CharInSet(Str[i],['0','1']) then
+              begin
+                If Str[i] <> '0' then
+                  TempByte := (TempByte shl 1) or 1
+                else
+                  TempByte := TempByte shl 1;
+                Inc(Cntr);
+              end;
+            If Cntr >= 8 then
+              begin
+                If BitStringFormat.BitsInByteOrder = bsoLeftToRight then
+                  BuffPtr^ := Byte(ReverseBits(TempByte))
+                else
+                  BuffPtr^ := Byte(TempByte);
+                If BitStringFormat.BytesOrder = bsoLeftToRight then
+                  Inc(BuffPtr)
+                else
+                  Dec(BuffPtr);
+                TempByte := 0;
+                Cntr := 0;
+                Inc(Result);
+              end;
+          end;
+      end
+    else
+      begin
+        // only return required size, do not convert
+        Cntr := Length(Str);
+        For i := 1 to Length(Str) do
+          If Str[i] = BitStringFormat.SplitChar then
+            Dec(Cntr)
+          else If not CharInSet(Str[i],['0','1']) then
+            raise EBOInvalidCharacter.CreateFmt('BitStrToData: Invalid character (#%d).',[Ord(Str[i])]);
+        Result := TMemSize(Cntr div 8);
+      end;
+  end
+else Result := 0;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitStrToData(const Str: String; BitStringFormat: TDataBitStringFormat): TArrayOfBytes;
+var
+  ByteCnt:  Integer;
+begin
+ByteCnt := BitStrToData(Str,nil^,0,BitStringFormat);
+SetLength(Result,ByteCnt);
+If ByteCnt > 0 then
+  begin
+    ByteCnt := BitStrToData(Str,Result[0],Length(Result),BitStringFormat);
+    If ByteCnt <> Length(Result) then
+      SetLength(Result,ByteCnt);
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function BitStrToData(const Str: String; out Buffer; Size: TMemSize; SplitChar: Char): TMemSize;
+var
+  Format: TDataBitStringFormat;
+begin
+Format := DefDataBitStringFormat;
+Format.SplitChar := SplitChar;
+Result := BitStrToData(Str,Buffer,Size,Format);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitStrToData(const Str: String; SplitChar: Char): TArrayOfBytes;
+var
+  Format: TDataBitStringFormat;
+begin
+Format := DefDataBitStringFormat;
+Format.SplitChar := SplitChar;
+Result := BitStrToData(Str,Format);
+end;
+
+//------------------------------------------------------------------------------
+
+Function BitStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize;
+begin
+Result := BitStrToData(Str,Buffer,Size,DefDataBitStringFormat);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitStrToData(const Str: String): TArrayOfBytes;
+begin
+Result := BitStrToData(Str,DefDataBitStringFormat);
+end;
+
+//==============================================================================
+
+Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize; BitStringFormat: TDataBitStringFormat): Boolean;
+begin
+try
+  Size := BitStrToData(Str,Buffer,Size,BitStringFormat);
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes; BitStringFormat: TDataBitStringFormat): Boolean;
+begin
+try
+  Arr := BitStrToData(Str,BitStringFormat);
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize; SplitChar: Char): Boolean;
+var
+  Format: TDataBitStringFormat;
+begin
+Format := DefDataBitStringFormat;
+Format.SplitChar := SplitChar;
+Result := TryBitStrToData(Str,Buffer,Size,Format);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes; SplitChar: Char): Boolean;
+var
+  Format: TDataBitStringFormat;
+begin
+Format := DefDataBitStringFormat;
+Format.SplitChar := SplitChar;
+Result := TryBitStrToData(Str,Arr,Format);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean;
+begin
+Result := TryBitStrToData(Str,Buffer,Size,DefDataBitStringFormat);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean;
+begin
+Result := TryBitStrToData(Str,Arr,DefDataBitStringFormat);
+end;
+
+
+{===============================================================================
+--------------------------------------------------------------------------------
+
+                             Bit-level manipulations
+
+--------------------------------------------------------------------------------
+===============================================================================}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -5762,330 +6501,168 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
-                     General data <-> Hex string conversions
+                                   Bit parity
 ================================================================================
 -------------------------------------------------------------------------------}
+
+Function BitParity(Value: UInt8): Boolean;
+begin
+Value := Value xor (Value shr 4);
+Value := Value xor (Value shr 2);
+Value := Value xor (Value shr 1);
+Result := (Value and 1) = 0;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitParity(Value: UInt16): Boolean;
+begin
+Value := Value xor (Value shr 8);
+Value := Value xor (Value shr 4);
+Value := Value xor (Value shr 2);
+Value := Value xor (Value shr 1);
+Result := (Value and 1) = 0;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitParity(Value: UInt32): Boolean;
+begin
+Value := Value xor (Value shr 16);
+Value := Value xor (Value shr 8);
+Value := Value xor (Value shr 4);
+Value := Value xor (Value shr 2);
+Value := Value xor (Value shr 1);
+Result := (Value and 1) = 0;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitParity(Value: UInt64): Boolean;
+begin
+Value := Value xor (Value shr 32);
+Value := Value xor (Value shr 16);
+Value := Value xor (Value shr 8);
+Value := Value xor (Value shr 4);
+Value := Value xor (Value shr 2);
+Value := Value xor (Value shr 1);
+Result := (Value and 1) = 0;
+end;
+
+
+{===============================================================================
+--------------------------------------------------------------------------------
+
+                               Pointer operations
+
+--------------------------------------------------------------------------------
+===============================================================================}
+
 {-------------------------------------------------------------------------------
-    General data <-> Hex string conversions - auxiliary functions
+================================================================================
+                           Pointer arithmetic helpers
+================================================================================
 -------------------------------------------------------------------------------}
 
-Function DataToHexStr_SplitChars(Split: THexStringSplit): Integer;
+{$IFDEF OverflowChecks}{$Q-}{$ENDIF}
+
+Function PtrAdvance(Ptr: Pointer; Offset: PtrInt): Pointer;
 begin
-case Split of
-  hssNibble:  Result := 1;
-  hssByte:    Result := 2;
-  hssWord:    Result := 4;
-  hss24bits:  Result := 6;
-  hssLong:    Result := 8;
-  hssQuad:    Result := 16;
-  hss80bits:  Result := 20;
-  hssOcta:    Result := 32;
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+Result := Pointer(PtrUInt(Ptr) + PtrUInt(Offset));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function PtrAdvance(Ptr: Pointer; Count: Integer; Stride: TMemSize): Pointer;
+begin
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+Result := Pointer(PtrUInt(Ptr) + PtrUInt(PtrInt(Count) * PtrInt(Stride)));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+end;
+
+{$IFDEF OverflowChecks}{$Q+}{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+procedure PtrAdvanceVar(var Ptr: Pointer; Offset: PtrInt);
+begin
+Ptr := PtrAdvance(Ptr,Offset);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure PtrAdvanceVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize);
+begin
+Ptr := PtrAdvance(Ptr,Count,Stride);
+end;
+
+{-------------------------------------------------------------------------------
+================================================================================
+                            Memory address alignment
+================================================================================
+-------------------------------------------------------------------------------}
+
+Function AlignmentBytes(Alignment: TMemoryAlignment): TMemSize;
+begin
+case Alignment of
+  ma8bit,ma1byte:       Result := 1;
+  ma16bit,ma2byte:      Result := 2;
+  ma32bit,ma4byte:      Result := 4;
+  ma64bit,ma8byte:      Result := 8;
+  ma128bit,ma16byte:    Result := 16;
+  ma256bit,ma32byte:    Result := 32;
+  ma512bit,ma64byte:    Result := 64;
+  ma1024bit,ma128byte:  Result := 128;
+  ma2048bit,ma256byte:  Result := 256;
 else
- {hssNone}
-  Result := 0;
-end;
-end;
-
-{-------------------------------------------------------------------------------
-    General data <-> Hex string conversions - main implementation
--------------------------------------------------------------------------------}
-
-Function DataToHexStr(const Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): String;
-var
-  SplitCnt:   Integer;
-  i:          TMemSize;
-  CharResPos: Integer;
-  DataResPos: TMemSize;
-  BuffPtr:    PByte;
-  TempStr:    String;
-
-  procedure PutChar(NewChar: Char);
-  begin
-    If (SplitCnt > 0) and (DataResPos > 0) and ((DataResPos mod TMemSize(SplitCnt)) = 0) then
-      Inc(CharResPos);
-    Result[CharResPos] := NewChar;
-    Inc(CharResPos);
-    Inc(DataResPos)
-  end;
-  
-begin
-If Size <> 0 then
-  begin
-    // preallocate resulting string and then just fill it
-    SplitCnt := DataToHexStr_SplitChars(HexStringFormat.Split);
-    If SplitCnt > 0 then
-      Result := StringOfChar(HexStringFormat.SplitChar,(UInt64(Size) * 2) +
-                             (Pred(UInt64(Size) * 2) div UInt64(SplitCnt)))
-    else
-      SetLength(Result,Size * 2);
-    CharResPos := 1;
-    DataResPos := 0;
-    BuffPtr := @Buffer;
-    For i := 0 to Pred(Size) do
-      begin
-        If HexStringFormat.UpperCase then
-          TempStr := AnsiUpperCase(IntToHex(BuffPtr^,2))
-        else
-          TempStr := AnsiLowerCase(IntToHex(BuffPtr^,2));
-        If Length(TempStr) = 2 then
-          begin
-            PutChar(TempStr[1]);
-            PutChar(TempStr[2]);
-          end
-        else raise EBOConversionError.CreateFmt('DataToHexStr: Invalid string length (%d).',[Length(TempStr)]);
-        Inc(BuffPtr);
-      end;
-  end
-else Result := '';
-end;
- 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function DataToHexStr(Arr: array of UInt8; HexStringFormat: THexStringFormat): String;
-var
-  SplitCnt:   Integer;
-  i:          Integer;  
-  CharResPos:  Integer;
-  DataResPos: TMemSize;
-  TempStr:    String;
-
-  procedure PutChar(NewChar: Char);
-  begin
-    If (SplitCnt > 0) and (DataResPos > 0) and ((DataResPos mod TMemSize(SplitCnt)) = 0) then
-      Inc(CharResPos);
-    Result[CharResPos] := NewChar;
-    Inc(CharResPos);
-    Inc(DataResPos)
-  end;
-  
-begin
-If Length(Arr) <> 0 then
-  begin
-    SplitCnt := DataToHexStr_SplitChars(HexStringFormat.Split);
-    If SplitCnt > 0 then
-      Result := StringOfChar(HexStringFormat.SplitChar,(Length(Arr) * 2) +
-                             (Pred(Length(Arr) * 2) div SplitCnt))
-    else
-      SetLength(Result,Length(Arr) * 2);
-    CharResPos := 1;
-    DataResPos := 0;
-    For i := Low(Arr) to High(Arr) do
-      begin
-        If HexStringFormat.UpperCase then
-          TempStr := AnsiUpperCase(IntToHex(Arr[i],2))
-        else
-          TempStr := AnsiLowerCase(IntToHex(Arr[i],2));
-        If Length(TempStr) = 2 then
-          begin
-            PutChar(TempStr[1]);
-            PutChar(TempStr[2]);
-          end
-        else raise EBOConversionError.CreateFmt('DataToHexStr: Invalid string length (%d).',[Length(TempStr)]);
-      end;
-  end
-else Result := '';
-end;
-
-//------------------------------------------------------------------------------
-
-Function DataToHexStr(const Buffer; Size: TMemSize; Split: THexStringSplit): String;
-var
-  Format: THexStringFormat;
-begin
-Format := DefHexStringFormat;
-Format.Split := Split;
-Result := DataToHexStr(Buffer,Size,Format);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function DataToHexStr(Arr: array of UInt8; Split: THexStringSplit): String;
-var
-  Format: THexStringFormat;
-begin
-Format := DefHexStringFormat;
-Format.Split := Split;
-Result := DataToHexStr(Arr,Format);
-end;
-
-//------------------------------------------------------------------------------
-
-Function DataToHexStr(const Buffer; Size: TMemSize): String;
-begin
-Result := DataToHexStr(Buffer,Size,DefHexStringFormat);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function DataToHexStr(Arr: array of UInt8): String; overload;
-begin
-Result := DataToHexStr(Arr,DefHexStringFormat);
-end;
-
-//==============================================================================
-
-Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; HexStringFormat: THexStringFormat): TMemSize;
-var
-  i,Cntr:   Integer;
-  BuffPtr:  PByte;
-  StrBuff:  String;
-begin
-If Length(Str) > 0 then
-  begin
-    If Size <> 0 then
-      begin
-        Cntr := 2;        // position in StrBuff just behind $
-        BuffPtr := @Buffer;
-        StrBuff := '$  '; // two spaces
-        Result := 0;
-        For i := 1 to Length(Str) do
-          begin
-            If Str[i] = HexStringFormat.SplitChar then
-              Continue
-            else If CharInSet(Str[i],['0'..'9','a'..'f','A'..'F']) then
-              begin
-                StrBuff[Cntr] := Str[i];
-                Inc(Cntr);
-                If Cntr > 3 then
-                  begin
-                    If Result < Size then
-                      BuffPtr^ := UInt8(StrToInt(StrBuff))
-                    else
-                      raise EBOBufferTooSmall.CreateFmt('HexStrToData: Buffer too small (%d).',[Size]);
-                    Cntr := 2;
-                    Inc(BuffPtr);                    
-                    Inc(Result);
-                  end;
-              end
-            else EBOInvalidCharacter.CreateFmt('HexStrToData: Invalid character (#%d).',[Ord(Str[i])]);
-          end;
-      end
-    else
-      begin
-        // only return required size, do not convert
-        Cntr := Length(Str);
-        For i := 1 to Length(Str) do
-          If Str[i] = HexStringFormat.SplitChar then
-            Dec(Cntr)
-          else If not CharInSet(Str[i],['0'..'9','a'..'f','A'..'F']) then
-            raise EBOInvalidCharacter.CreateFmt('HexStrToData: Invalid character (#%d).',[Ord(Str[i])]);
-        Result := TMemSize(Cntr div 2);
-      end;
-  end
-else Result := 0;
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function HexStrToData(const Str: String; HexStringFormat: THexStringFormat): TArrayOfBytes;
-var
-  ByteCnt:  Integer;
-begin
-ByteCnt := HexStrToData(Str,nil^,0,HexStringFormat);
-SetLength(Result,ByteCnt);
-If ByteCnt > 0 then
-  begin
-    ByteCnt := HexStrToData(Str,Result[0],Length(Result),HexStringFormat);
-    If ByteCnt <> Length(Result) then
-      SetLength(Result,ByteCnt);
-  end;
-end;
- 
-//------------------------------------------------------------------------------
-
-Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; SplitChar: Char): TMemSize;
-var
-  Format: THexStringFormat;
-begin
-Format := DefHexStringFormat;
-Format.SplitChar := SplitChar;
-Result := HexStrToData(Str,Buffer,Size,Format);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function HexStrToData(const Str: String; SplitChar: Char): TArrayOfBytes;
-var
-  Format: THexStringFormat;
-begin
-Format := DefHexStringFormat;
-Format.SplitChar := SplitChar;
-Result := HexStrToData(Str,Format);
-end;
-
-//------------------------------------------------------------------------------
-
-Function HexStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize;
-begin
-Result := HexStrToData(Str,Buffer,Size,DefHexStringFormat);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function HexStrToData(const Str: String): TArrayOfBytes;
-begin
-Result := HexStrToData(Str,DefHexStringFormat);
-end;
-
-//==============================================================================
-
-Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; HexStringFormat: THexStringFormat): Boolean;
-begin
-try
-  Size := HexStrToData(Str,Buffer,Size,HexStringFormat);
-  Result := True;
-except
-  Result := False;
-end;
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; HexStringFormat: THexStringFormat): Boolean;
-begin
-try
-  Arr := HexStrToData(Str,HexStringFormat);
-  Result := True;
-except
-  Result := False;
+  raise EBOInvalidValue.CreateFmt('AlignmentBytes: Invalid memory alignment (%d).',[Ord(Alignment)]);
 end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; SplitChar: Char): Boolean;
-var
-  Format: THexStringFormat;
+Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;
 begin
-Format := DefHexStringFormat;
-Format.SplitChar := SplitChar;
-Result := TryHexStrToData(Str,Buffer,Size,Format);
-end;
- 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; SplitChar: Char): Boolean;
-var
-  Format: THexStringFormat;
-begin
-Format := DefHexStringFormat;
-Format.SplitChar := SplitChar;
-Result := TryHexStrToData(Str,Arr,Format);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+Result := (PtrUInt(Address) and PtrUInt(Pred(AlignmentBytes(Alignment)))) = 0;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
 
-Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean;
+Function Misalignment(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;
 begin
-Result := TryHexStrToData(Str,Buffer,Size,DefHexStringFormat);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(Pred(AlignmentBytes(Alignment)))));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
- 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean;
+//------------------------------------------------------------------------------
+
+Function AlignedMemory(Address: Pointer; Alignment: TMemoryAlignment): Pointer;
 begin
-Result := TryHexStrToData(Str,Arr,DefHexStringFormat);
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+Result := Pointer((PtrUInt(Address) + PtrUInt(Pred(AlignmentBytes(Alignment)))) and not PtrUInt(Pred(AlignmentBytes(Alignment))));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
+
+//------------------------------------------------------------------------------
+
+procedure AlignMemory(var Address: Pointer; Alignment: TMemoryAlignment);
+begin
+Address := AlignedMemory(Address,Alignment);
+end;
+
+
+{===============================================================================
+--------------------------------------------------------------------------------
+
+                             Binary data operations
+
+--------------------------------------------------------------------------------
+===============================================================================}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -6339,97 +6916,7 @@ If Length(A) = Length(B) then
     else Result := True;  // both arrays are empty
   end
 else Result := False; // arrays differ in length
-end;
-
-{-------------------------------------------------------------------------------
-================================================================================
-                                   Bit parity
-================================================================================
--------------------------------------------------------------------------------}
-
-Function BitParity(Value: UInt8): Boolean;
-begin
-Value := Value xor (Value shr 4);
-Value := Value xor (Value shr 2);
-Value := Value xor (Value shr 1);
-Result := (Value and 1) = 0;
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function BitParity(Value: UInt16): Boolean;
-begin
-Value := Value xor (Value shr 8);
-Value := Value xor (Value shr 4);
-Value := Value xor (Value shr 2);
-Value := Value xor (Value shr 1);
-Result := (Value and 1) = 0;
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function BitParity(Value: UInt32): Boolean;
-begin
-Value := Value xor (Value shr 16);
-Value := Value xor (Value shr 8);
-Value := Value xor (Value shr 4);
-Value := Value xor (Value shr 2);
-Value := Value xor (Value shr 1);
-Result := (Value and 1) = 0;
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function BitParity(Value: UInt64): Boolean;
-begin
-Value := Value xor (Value shr 32);
-Value := Value xor (Value shr 16);
-Value := Value xor (Value shr 8);
-Value := Value xor (Value shr 4);
-Value := Value xor (Value shr 2);
-Value := Value xor (Value shr 1);
-Result := (Value and 1) = 0;
-end;
-
-{-------------------------------------------------------------------------------
-================================================================================
-                           Pointer arithmetic helpers
-================================================================================
--------------------------------------------------------------------------------}
-
-{$IFDEF OverflowChecks}{$Q-}{$ENDIF}
-
-Function PtrAdvance(Ptr: Pointer; Offset: PtrInt): Pointer;
-begin
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-Result := Pointer(PtrUInt(Ptr) + PtrUInt(Offset));
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function PtrAdvance(Ptr: Pointer; Count: Integer; Stride: TMemSize): Pointer;
-begin
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-Result := Pointer(PtrUInt(Ptr) + PtrUInt(PtrInt(Count) * PtrInt(Stride)));
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
-end;
-
-{$IFDEF OverflowChecks}{$Q+}{$ENDIF}
-
-//------------------------------------------------------------------------------
-
-procedure PtrAdvanceVar(var Ptr: Pointer; Offset: PtrInt);
-begin
-Ptr := PtrAdvance(Ptr,Offset);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-procedure PtrAdvanceVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize);
-begin
-Ptr := PtrAdvance(Ptr,Count,Stride);
-end;
+end;      
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -6443,414 +6930,14 @@ If (Shift > 0) and (Shift < BufferSize) then
   Move(PtrAdvance(Addr(Buffer),Shift)^,Buffer,BufferSize - Shift);
 end;
 
-{-------------------------------------------------------------------------------
-================================================================================
-                            Memory address alignment
-================================================================================
--------------------------------------------------------------------------------}
 
-Function AlignmentBytes(Alignment: TMemoryAlignment): TMemSize;
-begin
-case Alignment of
-  ma8bit,ma1byte:       Result := 1;
-  ma16bit,ma2byte:      Result := 2;
-  ma32bit,ma4byte:      Result := 4;
-  ma64bit,ma8byte:      Result := 8;
-  ma128bit,ma16byte:    Result := 16;
-  ma256bit,ma32byte:    Result := 32;
-  ma512bit,ma64byte:    Result := 64;
-  ma1024bit,ma128byte:  Result := 128;
-  ma2048bit,ma256byte:  Result := 256;
-else
-  raise EBOInvalidValue.CreateFmt('AlignmentBytes: Invalid memory alignment (%d).',[Ord(Alignment)]);
-end;
-end;
+{===============================================================================
+--------------------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
+                                      UIM
 
-Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;
-begin
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-Result := (PtrUInt(Address) and PtrUInt(Pred(AlignmentBytes(Alignment)))) = 0;
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
-end;
-
-//------------------------------------------------------------------------------
-
-Function Misalignment(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;
-begin
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(Pred(AlignmentBytes(Alignment)))));
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
-end;
-
-//------------------------------------------------------------------------------
-
-Function AlignedMemory(Address: Pointer; Alignment: TMemoryAlignment): Pointer;
-begin
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-Result := Pointer((PtrUInt(Address) + PtrUInt(Pred(AlignmentBytes(Alignment)))) and not PtrUInt(Pred(AlignmentBytes(Alignment))));
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
-end;
-
-//------------------------------------------------------------------------------
-
-procedure AlignMemory(var Address: Pointer; Alignment: TMemoryAlignment);
-begin
-Address := AlignedMemory(Address,Alignment);
-end;
-
-{-------------------------------------------------------------------------------
-================================================================================
-                     General data <-> Bit string conversions
-================================================================================
--------------------------------------------------------------------------------}
-{-------------------------------------------------------------------------------
-    General data <-> Bit string conversions - auxiliary functions
--------------------------------------------------------------------------------}
-
-Function DataToBitStr_SplitChars(Split: TBitStringSplit): Integer;
-begin
-case Split of
-  bss4bits:   Result := 4;
-  bss8bits:   Result := 8;
-  bss16bits:  Result := 16;
-  bss32bits:  Result := 32;
-else
- {hssNone}
-  Result := 0;
-end;
-end;
-
-{-------------------------------------------------------------------------------
-    General data <-> Bit string conversions - main implementation
--------------------------------------------------------------------------------}
-
-Function DataToBitStr(const Buffer; Size: TMemSize; BitStringFormat: TDataBitStringFormat): String;
-var
-  SplitCnt:   Integer;
-  i,j:        TMemSize;
-  CharResPos: Integer;
-  DataResPos: TMemSize;
-  BuffPtr:    PByte;
-  TempByte:   UInt8;
-
-  procedure PutChar(NewChar: Char);
-  begin
-    If (SplitCnt > 0) and (DataResPos > 0) and ((DataResPos mod TMemSize(SplitCnt)) = 0) then
-      Inc(CharResPos);
-    Result[CharResPos] := NewChar;
-    Inc(CharResPos);
-    Inc(DataResPos)
-  end;
-  
-begin
-If Size <> 0 then
-  begin
-    SplitCnt := DataToBitStr_SplitChars(BitStringFormat.Split);
-    If SplitCnt > 0 then
-      Result := StringOfChar(BitStringFormat.SplitChar,(UInt64(Size) * 8) +
-                             (Pred(UInt64(Size) * 8) div UInt64(SplitCnt)))
-    else
-      SetLength(Result,Size * 8);
-    CharResPos := 1;
-    DataResPos := 0;
-    If BitStringFormat.BytesOrder = bsoLeftToRight then
-      BuffPtr := @Buffer
-    else
-      BuffPtr := PtrAdvance(@Buffer,Size - 1);
-    For i := 0 to Pred(Size) do
-      begin
-        If BitStringFormat.BitsInByteOrder = bsoLeftToRight then
-          TempByte := UInt8(BuffPtr^)
-        else
-          TempByte := ReverseBits(UInt8(BuffPtr^));
-        For j := 1 to 8 do
-          begin
-            If TempByte and 1 <> 0 then
-              PutChar('1')
-            else
-              PutChar('0');
-            TempByte := TempByte shr 1;
-          end;
-        If BitStringFormat.BytesOrder = bsoLeftToRight then
-          Inc(BuffPtr)
-        else
-          Dec(BuffPtr);
-      end;
-  end
-else Result := '';
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function DataToBitStr(Arr: array of UInt8; BitStringFormat: TDataBitStringFormat): String;
-var
-  SplitCnt:   Integer;
-  i,j:        TMemSize;
-  CharResPos: Integer;
-  DataResPos: TMemSize;
-  ArrPos:     Integer;
-  TempByte:   UInt8;
-
-  procedure PutChar(NewChar: Char);
-  begin
-    If (SplitCnt > 0) and (DataResPos > 0) and ((DataResPos mod TMemSize(SplitCnt)) = 0) then
-      Inc(CharResPos);
-    Result[CharResPos] := NewChar;
-    Inc(CharResPos);
-    Inc(DataResPos)
-  end;
-  
-begin
-If Length(Arr) <> 0 then
-  begin
-    SplitCnt := DataToBitStr_SplitChars(BitStringFormat.Split);
-    If SplitCnt > 0 then
-      Result := StringOfChar(BitStringFormat.SplitChar,(UInt64(Length(Arr)) * 8) +
-                             (Pred(UInt64(Length(Arr)) * 8) div UInt64(SplitCnt)))
-    else
-      SetLength(Result,Length(Arr) * 8);
-    CharResPos := 1;
-    DataResPos := 0;
-    If BitStringFormat.BytesOrder = bsoLeftToRight then
-      ArrPos := Low(Arr)
-    else
-      ArrPos := High(Arr);
-    For i := 0 to Pred(Length(Arr)) do
-      begin
-        If BitStringFormat.BitsInByteOrder = bsoLeftToRight then
-          TempByte := Arr[ArrPos]
-        else
-          TempByte := ReverseBits(Arr[ArrPos]);
-        For j := 1 to 8 do
-          begin
-            If TempByte and 1 <> 0 then
-              PutChar('1')
-            else
-              PutChar('0');
-            TempByte := TempByte shr 1;
-          end;
-        If BitStringFormat.BytesOrder = bsoLeftToRight then
-          Inc(ArrPos)
-        else
-          Dec(ArrPos);
-      end;
-  end
-else Result := '';
-end;
-
-//------------------------------------------------------------------------------
-
-Function DataToBitStr(const Buffer; Size: TMemSize; Split: TBitStringSplit): String;
-var
-  Format: TDataBitStringFormat;
-begin
-Format := DefDataBitStringFormat;
-Format.Split := Split;
-Result := DataToBitStr(Buffer,Size,Format);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function DataToBitStr(Arr: array of UInt8; Split: TBitStringSplit): String;
-var
-  Format: TDataBitStringFormat;
-begin
-Format := DefDataBitStringFormat;
-Format.Split := Split;
-Result := DataToBitStr(Arr,Format);
-end;
-
-//------------------------------------------------------------------------------
-
-Function DataToBitStr(const Buffer; Size: TMemSize): String;
-begin
-Result := DataToBitStr(Buffer,Size,DefDataBitStringFormat);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function DataToBitStr(Arr: array of UInt8): String;
-begin
-Result := DataToBitStr(Arr,DefDataBitStringFormat);
-end;
-
-//==============================================================================
-
-Function BitStrToData(const Str: String; out Buffer; Size: TMemSize; BitStringFormat: TDataBitStringFormat): TMemSize;
-var
-  i:        Integer;
-  BuffPtr:  PByte;
-  TempByte: UInt8;
-  Cntr:     Integer;
-begin
-If Length(Str) > 0 then
-  begin
-    If Size <> 0 then
-      begin
-        Result := 0;
-        If BitStringFormat.BytesOrder = bsoLeftToRight then
-          BuffPtr := @Buffer
-        else
-          BuffPtr := PtrAdvance(@Buffer,Size - 1);
-        TempByte := 0;
-        Cntr := 0;
-        For i := 1 to Length(Str) do
-          begin
-            If Str[i] = BitStringFormat.SplitChar then
-              Continue
-            else If CharInSet(Str[i],['0','1']) then
-              begin
-                If Str[i] <> '0' then
-                  TempByte := (TempByte shl 1) or 1
-                else
-                  TempByte := TempByte shl 1;
-                Inc(Cntr);
-              end;
-            If Cntr >= 8 then
-              begin
-                If BitStringFormat.BitsInByteOrder = bsoLeftToRight then
-                  BuffPtr^ := Byte(ReverseBits(TempByte))
-                else
-                  BuffPtr^ := Byte(TempByte);
-                If BitStringFormat.BytesOrder = bsoLeftToRight then
-                  Inc(BuffPtr)
-                else
-                  Dec(BuffPtr);
-                TempByte := 0;
-                Cntr := 0;
-                Inc(Result);
-              end;
-          end;
-      end
-    else
-      begin
-        // only return required size, do not convert
-        Cntr := Length(Str);
-        For i := 1 to Length(Str) do
-          If Str[i] = BitStringFormat.SplitChar then
-            Dec(Cntr)
-          else If not CharInSet(Str[i],['0','1']) then
-            raise EBOInvalidCharacter.CreateFmt('BitStrToData: Invalid character (#%d).',[Ord(Str[i])]);
-        Result := TMemSize(Cntr div 8);
-      end;
-  end
-else Result := 0;
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function BitStrToData(const Str: String; BitStringFormat: TDataBitStringFormat): TArrayOfBytes;
-var
-  ByteCnt:  Integer;
-begin
-ByteCnt := BitStrToData(Str,nil^,0,BitStringFormat);
-SetLength(Result,ByteCnt);
-If ByteCnt > 0 then
-  begin
-    ByteCnt := BitStrToData(Str,Result[0],Length(Result),BitStringFormat);
-    If ByteCnt <> Length(Result) then
-      SetLength(Result,ByteCnt);
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function BitStrToData(const Str: String; out Buffer; Size: TMemSize; SplitChar: Char): TMemSize;
-var
-  Format: TDataBitStringFormat;
-begin
-Format := DefDataBitStringFormat;
-Format.SplitChar := SplitChar;
-Result := BitStrToData(Str,Buffer,Size,Format);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function BitStrToData(const Str: String; SplitChar: Char): TArrayOfBytes;
-var
-  Format: TDataBitStringFormat;
-begin
-Format := DefDataBitStringFormat;
-Format.SplitChar := SplitChar;
-Result := BitStrToData(Str,Format);
-end;
-
-//------------------------------------------------------------------------------
-
-Function BitStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize;
-begin
-Result := BitStrToData(Str,Buffer,Size,DefDataBitStringFormat);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function BitStrToData(const Str: String): TArrayOfBytes;
-begin
-Result := BitStrToData(Str,DefDataBitStringFormat);
-end;
-
-//==============================================================================
-
-Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize; BitStringFormat: TDataBitStringFormat): Boolean;
-begin
-try
-  Size := BitStrToData(Str,Buffer,Size,BitStringFormat);
-  Result := True;
-except
-  Result := False;
-end;
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes; BitStringFormat: TDataBitStringFormat): Boolean;
-begin
-try
-  Arr := BitStrToData(Str,BitStringFormat);
-  Result := True;
-except
-  Result := False;
-end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize; SplitChar: Char): Boolean;
-var
-  Format: TDataBitStringFormat;
-begin
-Format := DefDataBitStringFormat;
-Format.SplitChar := SplitChar;
-Result := TryBitStrToData(Str,Buffer,Size,Format);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes; SplitChar: Char): Boolean;
-var
-  Format: TDataBitStringFormat;
-begin
-Format := DefDataBitStringFormat;
-Format.SplitChar := SplitChar;
-Result := TryBitStrToData(Str,Arr,Format);
-end;
-
-//------------------------------------------------------------------------------
-
-Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean;
-begin
-Result := TryBitStrToData(Str,Buffer,Size,DefDataBitStringFormat);
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean;
-begin
-Result := TryBitStrToData(Str,Arr,DefDataBitStringFormat);
-end;
-
+--------------------------------------------------------------------------------
+===============================================================================}
 
 {-------------------------------------------------------------------------------
 ================================================================================
