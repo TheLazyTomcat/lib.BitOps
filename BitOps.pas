@@ -149,6 +149,7 @@ type
   EBOException = class(Exception);
 
   EBOUnknownFunction = class(EBOException);
+  EBOInvalidValue    = class(EBOException);
 
   EBOConversionError  = class(EBOException);
   EBOInvalidCharacter = class(EBOConversionError);
@@ -915,15 +916,23 @@ type
   so do not assume anything about the numerical value or position of any enum
   value.
 }
-  TMemoryAlignment = (ma8bit,ma16bit,ma32bit,ma64bit,ma128bit,ma256bit,ma512bit,
-                      ma1byte,ma2byte,ma4byte,ma8byte,ma16byte,ma32byte,ma64byte);
+  TMemoryAlignment = (ma8bit,ma16bit,ma32bit,ma64bit,ma128bit,ma256bit,ma512bit,ma1024bit,ma2048bit,
+                      ma1byte,ma2byte,ma4byte,ma8byte,ma16byte,ma32byte,ma64byte,ma128byte,ma256byte);
 
 //------------------------------------------------------------------------------
+
+{
+  AlignmentBytes returns number of bytes corresponding to requested alignment.
+}
+Function AlignmentBytes(Alignment: TMemoryAlignment): TMemSize;
+
+//------------------------------------------------------------------------------
+
 {
   CheckAlignment returns true when the provided memory address is aligned
   as indicated by Alignment parameter, false otherwise.
 }
-Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;
+Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
 
 {
   Misalignment returns distance, in bytes, from the closest properly aligned
@@ -931,13 +940,25 @@ Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;
   address.
   If the address is aligned, it will return zero.
 }
-Function Misalignment(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;
+Function Misalignment(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
 
 //------------------------------------------------------------------------------
+{
+  AlignedMemory checks provided memory address for requested alignment. When
+  the address is properly aligned, it is returned and nothing more is done.
+  When is is not properly aligned, then this functions will return closest
+  properly aligned memory address that is not smaler than the provided address.
 
-{$message 'implement'}
-//Function AlignedMemory(Address: Pointer; Alignment: TMemoryAlignment): Pointer
-//procedure AlignMemory(var Address: Pointer; Alignment: TMemoryAlignment);
+    WARNING - this function does NOT do any (re)allocation, it merely returns
+              an aligned pointer closest to a given one.
+}
+Function AlignedMemory(Address: Pointer; Alignment: TMemoryAlignment): Pointer;{$IFDEF CanInline} inline;{$ENDIF}
+
+{
+  AlignMemory works the same as AlignedMemory, it just operates directly on a
+  passed variable.
+}
+procedure AlignMemory(var Address: Pointer; Alignment: TMemoryAlignment);{$IFDEF CanInline} inline;{$ENDIF}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -6428,42 +6449,56 @@ end;
 ================================================================================
 -------------------------------------------------------------------------------}
 
-Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;
+Function AlignmentBytes(Alignment: TMemoryAlignment): TMemSize;
 begin
 case Alignment of
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-  ma16bit,ma2byte:    Result := (PtrUInt(Address) and PtrUInt(1)) = 0;
-  ma32bit,ma4byte:    Result := (PtrUInt(Address) and PtrUInt(3)) = 0;
-  ma64bit,ma8byte:    Result := (PtrUInt(Address) and PtrUInt(7)) = 0;
-  ma128bit,ma16byte:  Result := (PtrUInt(Address) and PtrUInt(15)) = 0;
-  ma256bit,ma32byte:  Result := (PtrUInt(Address) and PtrUInt(31)) = 0;
-  ma512bit,ma64byte:  Result := (PtrUInt(Address) and PtrUInt(63)) = 0;
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
+  ma8bit,ma1byte:       Result := 1;
+  ma16bit,ma2byte:      Result := 2;
+  ma32bit,ma4byte:      Result := 4;
+  ma64bit,ma8byte:      Result := 8;
+  ma128bit,ma16byte:    Result := 16;
+  ma256bit,ma32byte:    Result := 32;
+  ma512bit,ma64byte:    Result := 64;
+  ma1024bit,ma128byte:  Result := 128;
+  ma2048bit,ma256byte:  Result := 256;
 else
- {ma8bit,ma1byte}
-  Result := True;
+  raise EBOInvalidValue.CreateFmt('AlignmentBytes: Invalid memory alignment (%d).',[Ord(Alignment)]);
 end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;
+begin
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+Result := (PtrUInt(Address) and PtrUInt(Pred(AlignmentBytes(Alignment)))) = 0;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
 
 Function Misalignment(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;
 begin
-case Alignment of
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-  ma16bit,ma2byte:    Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(1)));
-  ma32bit,ma4byte:    Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(3)));
-  ma64bit,ma8byte:    Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(7)));
-  ma128bit,ma16byte:  Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(15)));
-  ma256bit,ma32byte:  Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(31)));
-  ma512bit,ma64byte:  Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(63)));
-{$IFDEF FPCDWM}{$POP}{$ENDIF}  
-else
- {ma8bit,ma1byte}
-  Result := 0;
-end;
+Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(Pred(AlignmentBytes(Alignment)))));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
+//------------------------------------------------------------------------------
+
+Function AlignedMemory(Address: Pointer; Alignment: TMemoryAlignment): Pointer;
+begin
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
+Result := Pointer((PtrUInt(Address) + PtrUInt(Pred(AlignmentBytes(Alignment)))) and not PtrUInt(Pred(AlignmentBytes(Alignment))));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+procedure AlignMemory(var Address: Pointer; Alignment: TMemoryAlignment);
+begin
+Address := AlignedMemory(Address,Alignment);
+end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
