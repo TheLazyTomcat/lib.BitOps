@@ -14,9 +14,9 @@
 
   Version 1.14 (2021-09-22)
 
-  Last change 2021-09-22
+  Last change 2022-01-16
 
-  ©2014-2021 František Milt
+  ©2014-2022 František Milt
 
   Contacts:
     František Milt: frantisek.milt@gmail.com
@@ -266,8 +266,8 @@ Function DataToHexStr(Arr: array of UInt8; HexStringFormat: THexStringFormat): S
 Function DataToHexStr(const Buffer; Size: TMemSize; Split: THexStringSplit): String; overload;
 Function DataToHexStr(Arr: array of UInt8; Split: THexStringSplit): String; overload;
 
-Function DataToHexStr(const Buffer; Size: TMemSize): String; overload;{$IFDEF Inline} inline; {$ENDIF}
-Function DataToHexStr(Arr: array of UInt8): String; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function DataToHexStr(const Buffer; Size: TMemSize): String; overload;
+Function DataToHexStr(Arr: array of UInt8): String; overload;
 
 //------------------------------------------------------------------------------
 
@@ -277,8 +277,8 @@ Function HexStrToData(const Str: String; HexStringFormat: THexStringFormat): TAr
 Function HexStrToData(const Str: String; out Buffer; Size: TMemSize; SplitChar: Char): TMemSize; overload;
 Function HexStrToData(const Str: String; SplitChar: Char): TArrayOfBytes; overload;
 
-Function HexStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;{$IFDEF Inline} inline; {$ENDIF}
-Function HexStrToData(const Str: String): TArrayOfBytes; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function HexStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;
+Function HexStrToData(const Str: String): TArrayOfBytes; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -288,8 +288,8 @@ Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; HexStringFor
 Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize; SplitChar: Char): Boolean; overload;
 Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes; SplitChar: Char): Boolean; overload;
 
-Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
-Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function TryHexStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean; overload;
+Function TryHexStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -322,8 +322,8 @@ Function DataToBitStr(Arr: array of UInt8; BitStringFormat: TDataBitStringFormat
 Function DataToBitStr(const Buffer; Size: TMemSize; Split: TBitStringSplit): String; overload;
 Function DataToBitStr(Arr: array of UInt8; Split: TBitStringSplit): String; overload;
 
-Function DataToBitStr(const Buffer; Size: TMemSize): String; overload;{$IFDEF Inline} inline; {$ENDIF}
-Function DataToBitStr(Arr: array of UInt8): String; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function DataToBitStr(const Buffer; Size: TMemSize): String; overload;
+Function DataToBitStr(Arr: array of UInt8): String; overload;
 
 //------------------------------------------------------------------------------
 
@@ -333,8 +333,8 @@ Function BitStrToData(const Str: String; BitStringFormat: TDataBitStringFormat):
 Function BitStrToData(const Str: String; out Buffer; Size: TMemSize; SplitChar: Char): TMemSize; overload;
 Function BitStrToData(const Str: String; SplitChar: Char): TArrayOfBytes; overload;
 
-Function BitStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;{$IFDEF Inline} inline; {$ENDIF}
-Function BitStrToData(const Str: String): TArrayOfBytes; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function BitStrToData(const Str: String; out Buffer; Size: TMemSize): TMemSize; overload;
+Function BitStrToData(const Str: String): TArrayOfBytes; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -344,8 +344,8 @@ Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes; BitStringFor
 Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize; SplitChar: Char): Boolean; overload;
 Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes; SplitChar: Char): Boolean; overload;
 
-Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
-Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; overload;{$IFDEF Inline} inline; {$ENDIF}
+Function TryBitStrToData(const Str: String; out Buffer; var Size: TMemSize): Boolean; overload;
+Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; overload;{$IFDEF CanInline} inline; {$ENDIF}
 
 
 {===============================================================================
