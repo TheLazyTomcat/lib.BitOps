@@ -14,7 +14,7 @@
 
   Version 1.14 (2021-09-22)
 
-  Last change 2022-01-16
+  Last change 2022-06-25
 
   ©2014-2022 František Milt
 
@@ -96,6 +96,7 @@ unit BitOps;
 {$ENDIF}
 
 //------------------------------------------------------------------------------
+
 {
   UseLookupTable
 
@@ -103,8 +104,14 @@ unit BitOps;
   lookup table instead of testing each bit in a passed value.
 
   Defined by default.
+
+  To disable/undefine this symbol in a project without changing this library,
+  define project-wide symbol BitOps_UseLookupTable_Off.
 }
 {$DEFINE UseLookupTable}
+{$IFDEF BitOps_UseLookupTable_Off}
+  {$UNDEF UseLookupTable}
+{$ENDIF}
 
 {
   AllowASMExtensions
@@ -127,8 +134,14 @@ unit BitOps;
       (ins) = ins is a specific used instruction from the extension set
 
   Defined by default.
+
+  To disable/undefine this symbol in a project without changing this library,
+  define project-wide symbol BitOps_AllowASMExtensions_Off.
 }
 {$DEFINE AllowASMExtensions}
+{$IFDEF BitOps_AllowASMExtensions_Off}
+  {$UNDEF AllowASMExtensions}
+{$ENDIF}
 
 //------------------------------------------------------------------------------
 
