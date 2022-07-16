@@ -12,9 +12,9 @@
     Set of functions providing some of the not-so-common bit-manipulating
     operations and other binary utilities.
 
-  Version 1.14 (2021-09-22)
+  Version 1.15 (2022-07-16)
 
-  Last change 2022-06-25
+  Last change 2022-07-16
 
   ©2014-2022 František Milt
 
@@ -245,6 +245,32 @@ Function TryBitStrToNumber(const BitString: String; out Value: UInt64): Boolean;
 Function BitStrToNumberDef(const BitString: String; Default: UInt64; BitStringFormat: TBitStringFormat): UInt64; overload;
 Function BitStrToNumberDef(const BitString: String; Default: UInt64; Split: TBitStringSplit): UInt64; overload;
 Function BitStrToNumberDef(const BitString: String; Default: UInt64): UInt64; overload;
+
+{-------------------------------------------------------------------------------
+================================================================================
+                   Integer number <-> Octal string conversions
+================================================================================
+-------------------------------------------------------------------------------}
+
+Function NumberToOctStr(Number: UInt8): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
+Function NumberToOctStr(Number: UInt16): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
+Function NumberToOctStr(Number: UInt32): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
+Function NumberToOctStr(Number: UInt64): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
+
+//------------------------------------------------------------------------------
+
+Function OctStrToNumber(const OctString: String): UInt64;
+
+//------------------------------------------------------------------------------
+
+Function TryOctStrToNumber(const OctString: String; out Value: UInt8): Boolean; overload;
+Function TryOctStrToNumber(const OctString: String; out Value: UInt16): Boolean; overload;
+Function TryOctStrToNumber(const OctString: String; out Value: UInt32): Boolean; overload;
+Function TryOctStrToNumber(const OctString: String; out Value: UInt64): Boolean; overload;
+
+//------------------------------------------------------------------------------
+
+Function OctStrToNumberDef(const OctString: String; Default: UInt64): UInt64;
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -1543,6 +1569,139 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
+                   Integer number <-> Octal string conversions
+================================================================================
+-------------------------------------------------------------------------------}
+
+Function NumberToOctString(Number: UInt64): String;
+var
+  Len:  TStrOff;
+begin
+Result := StringOfChar('0',22);
+Len := 0;
+while Number <> 0 do
+  begin
+    Result[Length(Result) - Len] := Chr(Ord('0') + (Number and 7));
+    Number := Number shr 3;
+    Inc(Len);
+  end;
+// remove leading zeroes
+If len > 0 then
+  Result := Copy(Result,Succ(Length(Result) - Len),Len)
+else
+  Result := '0';
+end;
+
+//------------------------------------------------------------------------------
+
+Function NumberToOctStr(Number: UInt8): String;
+begin
+Result := NumberToOctString(UInt64(Number));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToOctStr(Number: UInt16): String;
+begin
+Result := NumberToOctString(UInt64(Number));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToOctStr(Number: UInt32): String;
+begin
+Result := NumberToOctString(UInt64(Number));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToOctStr(Number: UInt64): String;
+begin
+Result := NumberToOctString(UInt64(Number));
+end;
+
+//------------------------------------------------------------------------------
+
+Function OctStrToNumber(const OctString: String): UInt64;
+var
+  i:  TStrOff;
+begin
+// highest possible octal value is 1 777 777 777 777 777 777 777 (length 22)
+Result := 0;
+If (Length(OctString) > 0) and (Length(OctString) <= 22) then
+  begin
+    For i := 1 to Length(OctString) do
+      If Ord(OctString[i]) in [Ord('0')..Ord('7')] then
+        begin
+          If (Result and $E000000000000000) = 0 then
+            Result := Result shl 3
+          else
+            raise EBOConversionError.CreateFmt('OctStrToNumber: "%s" is not a valid octal number.',[OctString]);
+          Result := Result or (Ord(OctString[i]) - Ord('0'));
+        end
+      else raise EBOInvalidCharacter.CreateFmt('OctStrToNumber: Unknown character (#%d) in octstring.',[Ord(OctString[i])]);
+  end
+else raise EBOConversionError.CreateFmt('OctStrToNumber: "%s" is not a valid octal number.',[OctString]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryOctStrToNumber(const OctString: String; out Value: UInt8): Boolean;
+begin
+try
+  Value := UInt8(OctStrToNumber(OctString));
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryOctStrToNumber(const OctString: String; out Value: UInt16): Boolean;
+begin
+try
+  Value := UInt16(OctStrToNumber(OctString));
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryOctStrToNumber(const OctString: String; out Value: UInt32): Boolean;
+begin
+try
+  Value := UInt32(OctStrToNumber(OctString));
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryOctStrToNumber(const OctString: String; out Value: UInt64): Boolean;
+begin
+try
+  Value := UInt64(OctStrToNumber(OctString));
+  Result := True;
+except
+  Result := False;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function OctStrToNumberDef(const OctString: String; Default: UInt64): UInt64;
+begin
+If not TryOctStrToNumber(OctString,Result) then
+  Result := Default;
+end;
+
+{-------------------------------------------------------------------------------
+================================================================================
                      General data <-> Hex string conversions
 ================================================================================
 -------------------------------------------------------------------------------}
@@ -1626,7 +1785,7 @@ Function DataToHexStr(Arr: array of UInt8; HexStringFormat: THexStringFormat): S
 var
   SplitCnt:   Integer;
   i:          Integer;  
-  CharResPos:  Integer;
+  CharResPos: Integer;
   DataResPos: TMemSize;
   TempStr:    String;
 
@@ -1738,7 +1897,7 @@ If Length(Str) > 0 then
                     Inc(Result);
                   end;
               end
-            else EBOInvalidCharacter.CreateFmt('HexStrToData: Invalid character (#%d).',[Ord(Str[i])]);
+            else raise EBOInvalidCharacter.CreateFmt('HexStrToData: Invalid character (#%d).',[Ord(Str[i])]);
           end;
       end
     else
