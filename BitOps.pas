@@ -14,7 +14,7 @@
 
   Version 1.15 (2022-07-16)
 
-  Last change 2022-07-16
+  Last change 2022-09-24
 
   ©2014-2022 František Milt
 
@@ -74,7 +74,8 @@ unit BitOps;
 {$IFEND}
 
 {$IFDEF FPC}
-  {$MODE Delphi}
+  {$MODE ObjFPC}
+  {$MODESWITCH ClassicProcVars+}
   {$INLINE ON}
   {$DEFINE CanInline}
   {$IFNDEF PurePascal}
