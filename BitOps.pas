@@ -12,9 +12,9 @@
     Set of functions providing some of the not-so-common bit-manipulating
     operations and other binary utilities.
 
-  Version 1.17 (2022-11-17)
+  Version 1.17.1 (2022-12-14)
 
-  Last change 2022-11-17
+  Last change 2022-12-14
 
   ©2014-2022 František Milt
 
@@ -4076,10 +4076,10 @@ asm
 {$IFDEF x64}
   {$IFDEF Windows}
     AND   RDX, 63
-    BTS   dword ptr [RCX], RDX
+    BTS   qword ptr [RCX], RDX
   {$ELSE}
     AND   RSI, 63
-    BTS   dword ptr [RDI], RSI
+    BTS   qword ptr [RDI], RSI
   {$ENDIF}
 {$ELSE}
     AND   EDX, 63
@@ -4203,10 +4203,10 @@ asm
 {$IFDEF x64}
   {$IFDEF Windows}
     AND   RDX, 63
-    BTR   dword ptr [RCX], RDX
+    BTR   qword ptr [RCX], RDX
   {$ELSE}
     AND   RSI, 63
-    BTR   dword ptr [RDI], RSI
+    BTR   qword ptr [RDI], RSI
   {$ENDIF}
 {$ELSE}
     AND   EDX, 63
@@ -4330,10 +4330,10 @@ asm
 {$IFDEF x64}
   {$IFDEF Windows}
     AND   RDX, 63
-    BTC   dword ptr [RCX], RDX
+    BTC   qword ptr [RCX], RDX
   {$ELSE}
     AND   RSI, 63
-    BTC   dword ptr [RDI], RSI
+    BTC   qword ptr [RDI], RSI
   {$ENDIF}
 {$ELSE}
     AND   EDX, 63
