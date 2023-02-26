@@ -12,11 +12,11 @@
     Set of functions providing some of the not-so-common bit-manipulating
     operations and other binary utilities.
 
-  Version 1.17.1 (2022-12-14)
+  Version 1.17.2 (2023-02-22)
 
-  Last change 2022-12-14
+  Last change 2023-02-22
 
-  ©2014-2022 František Milt
+  ©2014-2023 František Milt
 
   Contacts:
     František Milt: frantisek.milt@gmail.com
@@ -4808,7 +4808,7 @@ Result := PopCountTable[UInt8(Value)] + PopCountTable[UInt8(Value shr 8)] +
   PopCountTable[UInt8(Value shr 32)] + PopCountTable[UInt8(Value shr 40)] +
   PopCountTable[UInt8(Value shr 48)] + PopCountTable[UInt8(Value shr 56)];
 {$ELSE}
-Result := PopCount(Int64Rec(Value).Lo) + PopCount(Int64Rec(Value).Hi);
+Result := Fce_PopCount_32_Pas(Int64Rec(Value).Lo) + Fce_PopCount_32_Pas(Int64Rec(Value).Hi);
 {$ENDIF}
 end;
 {$ELSE}
