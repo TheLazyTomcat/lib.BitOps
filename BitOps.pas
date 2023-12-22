@@ -78,8 +78,7 @@ unit BitOps;
   {$MODE ObjFPC}
   {$MODESWITCH ClassicProcVars+}
   {$INLINE ON}
-  {$message 'later check inlining'}
-  {.$DEFINE CanInline}
+  {$DEFINE CanInline}
   {$IFNDEF PurePascal}
     {$ASMMODE Intel}
   {$ENDIF}
@@ -208,20 +207,20 @@ const
 
 //------------------------------------------------------------------------------
 
-Function NumberToBitStr(Number: UInt8; BitStringFormat: TBitStringFormat): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function NumberToBitStr(Number: UInt16; BitStringFormat: TBitStringFormat): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function NumberToBitStr(Number: UInt32; BitStringFormat: TBitStringFormat): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function NumberToBitStr(Number: UInt64; BitStringFormat: TBitStringFormat): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
+Function NumberToBitStr(Number: UInt8; BitStringFormat: TBitStringFormat): String; overload;
+Function NumberToBitStr(Number: UInt16; BitStringFormat: TBitStringFormat): String; overload;
+Function NumberToBitStr(Number: UInt32; BitStringFormat: TBitStringFormat): String; overload;
+Function NumberToBitStr(Number: UInt64; BitStringFormat: TBitStringFormat): String; overload;
 
 Function NumberToBitStr(Number: UInt8; Split: TBitStringSplit): String; overload;
 Function NumberToBitStr(Number: UInt16; Split: TBitStringSplit): String; overload;
 Function NumberToBitStr(Number: UInt32; Split: TBitStringSplit): String; overload;
 Function NumberToBitStr(Number: UInt64; Split: TBitStringSplit): String; overload;
 
-Function NumberToBitStr(Number: UInt8): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function NumberToBitStr(Number: UInt16): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function NumberToBitStr(Number: UInt32): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function NumberToBitStr(Number: UInt64): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
+Function NumberToBitStr(Number: UInt8): String; overload;
+Function NumberToBitStr(Number: UInt16): String; overload;
+Function NumberToBitStr(Number: UInt32): String; overload;
+Function NumberToBitStr(Number: UInt64): String; overload;
 
 //------------------------------------------------------------------------------
 
@@ -258,10 +257,10 @@ Function BitStrToNumberDef(const BitString: String; Default: UInt64): UInt64; ov
 ================================================================================
 -------------------------------------------------------------------------------}
 
-Function NumberToOctStr(Number: UInt8): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function NumberToOctStr(Number: UInt16): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function NumberToOctStr(Number: UInt32): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function NumberToOctStr(Number: UInt64): String; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
+Function NumberToOctStr(Number: UInt8): String; overload;
+Function NumberToOctStr(Number: UInt16): String; overload;
+Function NumberToOctStr(Number: UInt32): String; overload;
+Function NumberToOctStr(Number: UInt64): String; overload;
 
 //------------------------------------------------------------------------------
 
@@ -647,10 +646,10 @@ Function BSR(Value: UInt64): Integer; overload;{$IFNDEF PurePascal} register; as
 ================================================================================
 -------------------------------------------------------------------------------}
 
-Function PopCount(Value: UInt8): Integer; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function PopCount(Value: UInt16): Integer; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function PopCount(Value: UInt32): Integer; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function PopCount(Value: UInt64): Integer; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
+Function PopCount(Value: UInt8): Integer; overload;
+Function PopCount(Value: UInt16): Integer; overload;
+Function PopCount(Value: UInt32): Integer; overload;
+Function PopCount(Value: UInt64): Integer; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -858,10 +857,10 @@ procedure ReverseBitsValue(var Value: UInt64); overload;{$IFDEF CanInline} inlin
 ================================================================================
 -------------------------------------------------------------------------------}
 
-Function LZCount(Value: UInt8): Integer; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function LZCount(Value: UInt16): Integer; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function LZCount(Value: UInt32): Integer; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function LZCount(Value: UInt64): Integer; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
+Function LZCount(Value: UInt8): Integer; overload;
+Function LZCount(Value: UInt16): Integer; overload;
+Function LZCount(Value: UInt32): Integer; overload;
+Function LZCount(Value: UInt64): Integer; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -869,10 +868,10 @@ Function LZCount(Value: UInt64): Integer; overload;{$IF Defined(CanInline) and D
 ================================================================================
 -------------------------------------------------------------------------------}
 
-Function TZCount(Value: UInt8): Integer; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function TZCount(Value: UInt16): Integer; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function TZCount(Value: UInt32): Integer; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function TZCount(Value: UInt64): Integer; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
+Function TZCount(Value: UInt8): Integer; overload;
+Function TZCount(Value: UInt16): Integer; overload;
+Function TZCount(Value: UInt32): Integer; overload;
+Function TZCount(Value: UInt64): Integer; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -880,10 +879,10 @@ Function TZCount(Value: UInt64): Integer; overload;{$IF Defined(CanInline) and D
 ================================================================================
 -------------------------------------------------------------------------------}
 
-Function ExtractBits(Value: UInt8; Start,Length: Integer): UInt8; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function ExtractBits(Value: UInt16; Start,Length: Integer): UInt16; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function ExtractBits(Value: UInt32; Start,Length: Integer): UInt32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function ExtractBits(Value: UInt64; Start,Length: Integer): UInt64; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
+Function ExtractBits(Value: UInt8; Start,Length: Integer): UInt8; overload;
+Function ExtractBits(Value: UInt16; Start,Length: Integer): UInt16; overload;
+Function ExtractBits(Value: UInt32; Start,Length: Integer): UInt32; overload;
+Function ExtractBits(Value: UInt64; Start,Length: Integer): UInt64; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -891,10 +890,10 @@ Function ExtractBits(Value: UInt64; Start,Length: Integer): UInt64; overload;{$I
 ================================================================================
 -------------------------------------------------------------------------------}
 
-Function ParallelBitsExtract(Value,Mask: UInt8): UInt8; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function ParallelBitsExtract(Value,Mask: UInt16): UInt16; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function ParallelBitsExtract(Value,Mask: UInt32): UInt32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function ParallelBitsExtract(Value,Mask: UInt64): UInt64; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
+Function ParallelBitsExtract(Value,Mask: UInt8): UInt8; overload;
+Function ParallelBitsExtract(Value,Mask: UInt16): UInt16; overload;
+Function ParallelBitsExtract(Value,Mask: UInt32): UInt32; overload;
+Function ParallelBitsExtract(Value,Mask: UInt64): UInt64; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -902,10 +901,10 @@ Function ParallelBitsExtract(Value,Mask: UInt64): UInt64; overload;{$IF Defined(
 ================================================================================
 -------------------------------------------------------------------------------}
 
-Function ParallelBitsDeposit(Value,Mask: UInt8): UInt8; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function ParallelBitsDeposit(Value,Mask: UInt16): UInt16; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function ParallelBitsDeposit(Value,Mask: UInt32): UInt32; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
-Function ParallelBitsDeposit(Value,Mask: UInt64): UInt64; overload;{$IF Defined(CanInline) and Defined(FPC)} inline;{$IFEND}
+Function ParallelBitsDeposit(Value,Mask: UInt8): UInt8; overload;
+Function ParallelBitsDeposit(Value,Mask: UInt16): UInt16; overload;
+Function ParallelBitsDeposit(Value,Mask: UInt32): UInt32; overload;
+Function ParallelBitsDeposit(Value,Mask: UInt64): UInt64; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -3545,7 +3544,19 @@ asm
 end;
 {$ELSE}
 begin
-Result := UInt8(Value shl Shift);
+{
+  Typecasting of Shift to 8bit is here due to problems in FPC (PurePascal,
+  inlining active, O3 optimization). The error reported during compilation is...
+
+    Error: (8007) Asm: [shl mem16,reg16] invalid combination of opcode and operands
+
+  ...and is shown for second (16bit) overload of function SALValue on its only
+  implementation line.
+
+  It seems to manifests only for 16bit integers, but I have put it everywhere
+  as a precaution.
+}
+Result := UInt8(Value shl UInt8(Shift));
 end;
 {$ENDIF}
 
@@ -3569,7 +3580,7 @@ asm
 end;
 {$ELSE}
 begin
-Result := UInt16(Value shl Shift);
+Result := UInt16(Value shl UInt8(Shift));
 end;
 {$ENDIF}
 
@@ -3593,7 +3604,7 @@ asm
 end;
 {$ELSE}
 begin
-Result := UInt32(Value shl Shift);
+Result := UInt32(Value shl UInt8(Shift));
 end;
 {$ENDIF}
 
@@ -3642,7 +3653,7 @@ asm
 end;
 {$ELSE}
 begin
-Result := UInt64(Value shl Shift);
+Result := UInt64(Value shl UInt8(Shift));
 end;
 {$ENDIF}
 
