@@ -14,7 +14,7 @@
 
   Version 1.18.3 (2023-11-26)
 
-  Last change (2023-11-26)
+  Last change (2023-12-23)
 
   ©2014-2023 František Milt
 
@@ -2679,7 +2679,7 @@ asm
 end;
 {$ELSE}
 begin
-Shift := Shift and 32;
+Shift := Shift and 31;
 Result := UInt32((Value shr Shift) or (Value shl (32 - Shift)));
 end;
 {$ENDIF}
@@ -2805,7 +2805,7 @@ var
   i:      Integer;
   Carry:  Boolean;
 begin
-Shift := Shift and 7;
+Shift := Shift and 31;
 Carry := CF;
 Result := Value;
 For i := 1 to Shift do
@@ -2851,7 +2851,7 @@ var
   i:      Integer;
   Carry:  Boolean;
 begin
-Shift := Shift and 15;
+Shift := Shift and 31;
 Carry := CF;
 Result := Value;
 For i := 1 to Shift do
@@ -3181,7 +3181,7 @@ var
   i:      Integer;
   Carry:  Boolean;
 begin
-Shift := Shift and 7;
+Shift := Shift and 31;
 Carry := CF;
 Result := Value;
 For i := 1 to Shift do
@@ -3227,7 +3227,7 @@ var
   i:      Integer;
   Carry:  Boolean;
 begin
-Shift := Shift and 15;
+Shift := Shift and 31;
 Carry := CF;
 Result := Value;
 For i := 1 to Shift do
@@ -3653,7 +3653,12 @@ asm
 end;
 {$ELSE}
 begin
-Result := UInt64(Value shl UInt8(Shift));
+{
+  We need to explicitly mask the Shift, because Delphi (at least D7) 32bit
+  software implementation just nulls the result for large shifts (64+), which
+  does not conform to Intel's documentation of SHL/SAL instruction.
+}
+Result := UInt64(Value shl UInt8(Shift and 63));
 end;
 {$ENDIF}
 
@@ -3709,11 +3714,21 @@ asm
 end;
 {$ELSE}
 begin
-Shift := Shift and 7;
-If (Value and UInt8($80)) <> 0 then
-  Result := UInt8((Value shr Shift) or (UInt8($FF) shl (8 - Shift)))
+Shift := Shift and 31;
+If Shift < 8 then
+  begin
+    If (Value and UInt8($80)) <> 0 then
+      Result := UInt8((Value shr Shift) or (UInt8($FF) shl (8 - Shift)))
+    else
+      Result := UInt8(Value shr Shift);
+  end
 else
-  Result := UInt8(Value shr Shift);
+  begin
+    If (Value and UInt8($80)) <> 0 then
+      Result := UInt8($FF)
+    else
+      Result := 0;
+  end;
 end;
 {$ENDIF}
 
@@ -3737,11 +3752,21 @@ asm
 end;
 {$ELSE}
 begin
-Shift := Shift and 15;
-If (Value and UInt16($8000)) <> 0 then
-  Result := UInt16((Value shr Shift) or (UInt16($FFFF) shl (16 - Shift)))
+Shift := Shift and 31;
+If Shift < 16 then
+  begin
+    If (Value and UInt16($8000)) <> 0 then
+      Result := UInt16((Value shr Shift) or (UInt16($FFFF) shl (16 - Shift)))
+    else
+      Result := UInt16(Value shr Shift);
+  end
 else
-  Result := UInt16(Value shr Shift);
+  begin
+    If (Value and UInt16($8000)) <> 0 then
+      Result := UInt16($FFFF)
+    else
+      Result := 0;
+  end;
 end;
 {$ENDIF}
 
@@ -3766,10 +3791,14 @@ end;
 {$ELSE}
 begin
 Shift := Shift and 31;
-If (Value and UInt32($80000000)) <> 0 then
-  Result := UInt32((Value shr Shift) or (UInt32($FFFFFFFF) shl (32 - Shift)))
-else
-  Result := UInt32(Value shr Shift);
+If Shift <> 0 then
+  begin
+    If (Value and UInt32($80000000)) <> 0 then
+      Result := UInt32((Value shr Shift) or (UInt32($FFFFFFFF) shl (32 - Shift)))
+    else
+      Result := UInt32(Value shr Shift);
+  end
+else Result := Value;
 end;
 {$ENDIF}
 
@@ -3828,10 +3857,14 @@ end;
 {$ELSE}
 begin
 Shift := Shift and 63;
-If (Value and UInt64($8000000000000000)) <> 0 then
-  Result := UInt64((Value shr Shift) or (UInt64($FFFFFFFFFFFFFFFF) shl (64 - Shift)))
-else
-  Result := UInt64(Value shr Shift);
+If Shift <> 0 then
+  begin
+    If (Value and UInt64($8000000000000000)) <> 0 then
+      Result := UInt64((Value shr Shift) or (UInt64($FFFFFFFFFFFFFFFF) shl (64 - Shift)))
+    else
+      Result := UInt64(Value shr Shift);
+  end
+else Result := Value;
 end;
 {$ENDIF}
 
