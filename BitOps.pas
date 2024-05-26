@@ -12,9 +12,9 @@
     Set of functions providing some of the not-so-common bit-manipulating
     operations and other binary utilities.
 
-  Version 1.20.1 (2024-04-14)
+  Version 1.21 (2024-05-26)
 
-  Last change 2024-04-28
+  Last change 2024-05-26
 
   ©2014-2024 František Milt
 
@@ -1507,6 +1507,140 @@ procedure BufferShiftDown(var Buffer; BufferSize: TMemSize; Shift: TMemSize);
 }
 procedure CopyBits(Source,Destination: Pointer; BitCount: TMemSize); overload;
 procedure CopyBits(Source,Destination: Pointer; SrcBitOffset,DstBitOffset,BitCount: TMemSize); overload;
+
+
+{===============================================================================
+--------------------------------------------------------------------------------
+
+                                Other operations
+
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+================================================================================
+                                Low-level compare
+================================================================================
+-------------------------------------------------------------------------------}
+{
+  For meaning of individual flags, please refer to x86(-64) CPU documentation
+  (eg. Intel® 64 and IA-32 Architectures Software Developer’s Manual, section
+  3.4.3.1; or AMD64 Architecture Programmer’s Manual, section 3.1.4).
+}
+const
+  BO_FLAG_CARRY    = $0001;
+  BO_FLAG_PARITY   = $0004;
+  BO_FLAG_AUXCARRY = $0010;
+  BO_FLAG_ZERO     = $0040;
+  BO_FLAG_SIGN     = $0080;
+  BO_FLAG_OVERFLOW = $0800;
+
+type
+  TBOStatusFlag = (flCarry,flParity,flAuxCarry,flZero,flSign,flOverflow);
+  TBOStatusFlags = set of TBOStatusFlag;
+
+{
+  LLDecodeFlags
+
+  Converts flags word (as returned by LLCompareRaw or LLTestRaw) to a
+  TBOStatusFlags set.
+}
+Function LLDecodeFlags(Flags: UInt16): TBOStatusFlags;
+
+//------------------------------------------------------------------------------
+{$IFNDEF PurePascal}
+{
+  LLCompareRaw
+
+  Performs instruction CMP (compare, which is equivalent to SUB, in other words
+  calculating A minus B) on the two given values and returns resulting status
+  flags from (E/R)FLAGS register.
+
+  Only the status flags are returned, other bits from the register are masked
+  and not returned.
+
+  Use constants BO_FLAG_* (see above) to test for individual flags.
+
+    NOTE - These functions are available only when PurePascal symbol is not
+           defined. Function accepting 64bit values is accessible only in 64bit
+           programs.
+
+  For more technical details, refer to x86(-64) CPU documentation.
+}
+Function LLCompareRaw(A,B: UInt8): UInt16; overload; register; assembler;
+Function LLCompareRaw(A,B: UInt16): UInt16; overload; register; assembler;
+Function LLCompareRaw(A,B: UInt32): UInt16; overload; register; assembler;
+{$IFDEF x64}
+Function LLCompareRaw(A,B: UInt64): UInt16; overload; register; assembler;
+{$ENDIF}
+
+//------------------------------------------------------------------------------
+{
+  LLCompare
+
+  Works the same as LLCompareRaw (see there for more details), but parses the
+  result and returns the flags as a set of TBOStatusFlag enums. If an enum is
+  present in the returned set, then the corresponding flag was set(1). When not
+  present, then it was clear(0).
+}
+Function LLCompare(A,B: UInt8): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompare(A,B: UInt16): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompare(A,B: UInt32): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFDEF x64}
+Function LLCompare(A,B: UInt64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$ENDIF}
+
+{$ENDIF}
+
+{-------------------------------------------------------------------------------
+================================================================================
+                                 Low-level test
+================================================================================
+-------------------------------------------------------------------------------}
+
+{$IFNDEF PurePascal}
+{
+  LLTestRaw
+
+  Performs instruction TEST (which is equivalent to bit-wise logical AND) on
+  the two given values and returns resulting status flags from (E/R)FLAGS
+  register.
+
+  Only status flags for parity, zero and sign are returned, other bits from
+  the register are masked and not returned (they are cleared to zero).
+
+  Use constants BO_FLAG_* (see above) to test for individual flags.
+
+    NOTE - These functions are available only when PurePascal symbol is not
+           defined. Function accepting 64bit values is accessible only in 64bit
+           programs.
+
+  For more technical details, refer to x86(-64) CPU documentation.
+}
+Function LLTestRaw(A,B: UInt8): UInt16; overload; register; assembler;
+Function LLTestRaw(A,B: UInt16): UInt16; overload; register; assembler;
+Function LLTestRaw(A,B: UInt32): UInt16; overload; register; assembler;
+{$IFDEF x64}
+Function LLTestRaw(A,B: UInt64): UInt16; overload; register; assembler;
+{$ENDIF}
+
+//------------------------------------------------------------------------------
+{
+  LLTest
+
+  Works the same as LLTestRaw (see there for more details), but parses the
+  result and returns the flags as a set of TBOStatusFlag enums. If an enum is
+  present in the returned set, then the corresponding flag was set(1). When not
+  present, then it was clear(0).
+}
+Function LLTest(A,B: UInt8): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTest(A,B: UInt16): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTest(A,B: UInt32): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFDEF x64}
+Function LLTest(A,B: UInt64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$ENDIF}
+
+{$ENDIF}
 
 
 {===============================================================================
@@ -8403,11 +8537,11 @@ var
     If (DstBitOffset + (BitCount and 7)) > 8 then
       // destination span byte boundary
       PUInt16(Destination)^ := CBO16(SetBits(CBO16(PUInt16(Destination)^),UInt16(UInt16(Buffer) shl DstBitOffset),
-        Integer(DstBitOffset),Pred(Integer(DstBitOffset + (BitCount and 7)))))
+        Integer(DstBitOffset),Pred(Integer(DstBitOffset + (BitCount and 7))),False))
     else
       // destination is within one byte
       PUInt8(Destination)^ := SetBits(PUInt8(Destination)^,UInt8(Buffer shl DstBitOffset),
-        Integer(DstBitOffset),Pred(Integer(DstBitOffset + (BitCount and 7))));
+        Integer(DstBitOffset),Pred(Integer(DstBitOffset + (BitCount and 7))),False);
   end;
 
 //--  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --
@@ -8492,6 +8626,282 @@ If BitCount > 0 then
     else CopyBits(Source,Destination,BitCount);
   end;
 end;
+
+
+{===============================================================================
+--------------------------------------------------------------------------------
+
+                                Other operations
+
+--------------------------------------------------------------------------------
+===============================================================================}
+
+{-------------------------------------------------------------------------------
+================================================================================
+                                Low-level compare
+================================================================================
+-------------------------------------------------------------------------------}
+
+Function LLDecodeFlags(Flags: UInt16): TBOStatusFlags;
+begin
+Result := [];
+If Flags and BO_FLAG_CARRY <> 0 then
+  Include(Result,flCarry);
+If Flags and BO_FLAG_PARITY <> 0 then
+  Include(Result,flParity);
+If Flags and BO_FLAG_AUXCARRY <> 0 then
+  Include(Result,flAuxCarry);
+If Flags and BO_FLAG_ZERO <> 0 then
+  Include(Result,flZero);
+If Flags and BO_FLAG_SIGN <> 0 then
+  Include(Result,flSign);
+If Flags and BO_FLAG_OVERFLOW <> 0 then
+  Include(Result,flOverflow);
+end;
+
+//------------------------------------------------------------------------------
+{$IFNDEF PurePascal}
+const
+  BO_FLAG_MASK_CMP  = $08D5;
+
+//------------------------------------------------------------------------------
+
+Function LLCompareRaw(A,B: UInt8): UInt16;
+{
+  Arguments/result register use (64b/32b/16b/8b values):
+
+                    win32 & lin32         win64             lin64
+         A           -/EAX/AX/AL      RCX/ECX/CX/CL     RDI/EDI/DI/DIL
+         B           -/EDX/DX/DL      RDX/EDX/DX/DL     RSI/ESI/SI/SIL
+    Result               AX                AX                AX
+}
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    CMP     CL, DL
+  {$ELSE}
+    CMP     DIL, SIL
+  {$ENDIF}
+    PUSHFQ
+    POP     RAX
+    AND     RAX, BO_FLAG_MASK_CMP
+{$ELSE}
+    CMP     AL, DL
+    PUSHFD
+    POP     EAX
+    AND     EAX, BO_FLAG_MASK_CMP
+{$ENDIF}
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompareRaw(A,B: UInt16): UInt16;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    CMP     CX, DX
+  {$ELSE}
+    CMP     DI, SI
+  {$ENDIF}
+    PUSHFQ
+    POP     RAX
+    AND     RAX, BO_FLAG_MASK_CMP
+{$ELSE}
+    CMP     AX, DX
+    PUSHFD
+    POP     EAX
+    AND     EAX, BO_FLAG_MASK_CMP
+{$ENDIF}
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompareRaw(A,B: UInt32): UInt16;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    CMP     ECX, EDX
+  {$ELSE}
+    CMP     EDI, ESI
+  {$ENDIF}
+    PUSHFQ
+    POP     RAX
+    AND     RAX, BO_FLAG_MASK_CMP
+{$ELSE}
+    CMP     EAX, EDX
+    PUSHFD
+    POP     EAX
+    AND     EAX, BO_FLAG_MASK_CMP
+{$ENDIF}
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+{$IFDEF x64}
+Function LLCompareRaw(A,B: UInt64): UInt16;
+asm
+{$IFDEF Windows}
+    CMP     RCX, RDX
+{$ELSE}
+    CMP     RDI, RSI
+{$ENDIF}
+    PUSHFQ
+    POP     RAX
+    AND     RAX, BO_FLAG_MASK_CMP
+end;
+{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function LLCompare(A,B: UInt8): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLCompareRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompare(A,B: UInt16): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLCompareRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompare(A,B: UInt32): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLCompareRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+{$IFDEF x64}
+Function LLCompare(A,B: UInt64): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLCompareRaw(A,B));
+end;
+{$ENDIF}
+
+{$ENDIF}
+
+{-------------------------------------------------------------------------------
+================================================================================
+                                 Low-level test
+================================================================================
+-------------------------------------------------------------------------------}
+{$IFNDEF PurePascal}
+const
+  BO_FLAG_MASK_TEST = $00C4;
+
+//------------------------------------------------------------------------------
+
+Function LLTestRaw(A,B: UInt8): UInt16;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    TEST    CL, DL
+  {$ELSE}
+    TEST    DIL, SIL
+  {$ENDIF}
+    PUSHFQ
+    POP     RAX
+    AND     RAX, BO_FLAG_MASK_TEST
+{$ELSE}
+    TEST    AL, DL
+    PUSHFD
+    POP     EAX
+    AND     EAX, BO_FLAG_MASK_TEST
+{$ENDIF}
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTestRaw(A,B: UInt16): UInt16;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    TEST    CX, DX
+  {$ELSE}
+    TEST    DI, SI
+  {$ENDIF}
+    PUSHFQ
+    POP     RAX
+    AND     RAX, BO_FLAG_MASK_TEST
+{$ELSE}
+    TEST    AX, DX
+    PUSHFD
+    POP     EAX
+    AND     EAX, BO_FLAG_MASK_TEST
+{$ENDIF}
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTestRaw(A,B: UInt32): UInt16;
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    TEST    ECX, EDX
+  {$ELSE}
+    TEST    EDI, ESI
+  {$ENDIF}
+    PUSHFQ
+    POP     RAX
+    AND     RAX, BO_FLAG_MASK_TEST
+{$ELSE}
+    TEST    EAX, EDX
+    PUSHFD
+    POP     EAX
+    AND     EAX, BO_FLAG_MASK_TEST
+{$ENDIF}
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+{$IFDEF x64}
+Function LLTestRaw(A,B: UInt64): UInt16;
+asm
+{$IFDEF Windows}
+    TEST    RCX, RDX
+{$ELSE}
+    TEST    RDI, RSI
+{$ENDIF}
+    PUSHFQ
+    POP     RAX
+    AND     RAX, BO_FLAG_MASK_TEST
+end;
+{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function LLTest(A,B: UInt8): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLTestRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTest(A,B: UInt16): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLTestRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTest(A,B: UInt32): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLTestRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+{$IFDEF x64}
+Function LLTest(A,B: UInt64): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLTestRaw(A,B));
+end;
+{$ENDIF}
+
+{$ENDIF}
 
 
 {===============================================================================
