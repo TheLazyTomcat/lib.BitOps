@@ -14,7 +14,7 @@
 
   Version 1.21 (2024-05-26)
 
-  Last change 2024-05-26
+  Last change 2024-05-27
 
   ©2014-2024 František Milt
 
@@ -716,6 +716,29 @@ procedure SwapEndianValue(var Value: UInt64); overload;{$IFDEF CanInline} inline
 
 procedure EndianSwap(var Buffer; Size: TMemSize); overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 procedure SwapEndian(var Buffer; Size: TMemSize); overload;
+
+//------------------------------------------------------------------------------
+{
+  Reverses byte order of individial items in a given array or vector.
+
+  Number in the name denotes size of items in bits. Function without number
+  accepts an explicitly given item size (in bytes).
+
+  Argument Arr should point to the first element/item in the array.
+
+  Count gives number of items in the array (NOT its size in bytes).
+}
+procedure EndianSwapItems16(var Arr; Count: TMemSize);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+procedure EndianSwapItems32(var Arr; Count: TMemSize);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+procedure EndianSwapItems64(var Arr; Count: TMemSize);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+procedure EndianSwapItems(var Arr; ItemSize,Count: TMemSize);
+
+procedure SwapEndianItems16(var Arr; Count: TMemSize);
+procedure SwapEndianItems32(var Arr; Count: TMemSize);
+procedure SwapEndianItems64(var Arr; Count: TMemSize);
+
+procedure SwapEndianItems(var Arr; ItemSize,Count: TMemSize);
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -4537,63 +4560,183 @@ procedure EndianSwap(var Buffer; Size: TMemSize);
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
-    XCHG  RCX, RDX
-  {$ELSE}
-    MOV   RDX, RDI
-    MOV   RCX, RSI
-  {$ENDIF}
 
-    CMP   RCX, 1
-    JBE   @RoutineEnd
+    PUSH  RSI
+    PUSH  RDI
 
-    LEA   RAX, [RDX + RCX - 1]
-    SHR   RCX, 1
+    CMP   RDX, 1
+    JNA   @RoutineEnd
 
-  @LoopStart:
-    MOV   R8B, byte ptr [RDX]
-    MOV   R9B, byte ptr [RAX]
-    MOV   byte ptr [RAX], R8B
-    MOV   byte ptr [RDX], R9B
-    INC   RDX
-    DEC   RAX
+    MOV   RSI, RCX
+    LEA   RDI, [RCX + RDX - 1]
 
-    DEC   RCX
-    JNZ   @LoopStart
+    PUSH  RDX
+    SHR   RDX, 4    // div 16 (2 * 8)
+    JZ    @RemainingBytes
+    SUB   RDI, 7
+
+  @LongLoop:
+
+    MOV   RAX, qword ptr [RSI]
+    MOV   RCX, qword ptr [RDI]
+    BSWAP RAX
+    BSWAP RCX
+    MOV   qword ptr [RSI], RCX
+    MOV   qword ptr [RDI], RAX
+
+    ADD   RSI, 8
+    SUB   RDI, 8
+
+    DEC   RDX
+    JNZ   @LongLoop
+
+    ADD   RDI, 7
+
+  @RemainingBytes:
+
+    POP   RDX
+    SHR   RDX, 1
+    AND   RDX, 7
+    JZ    @RoutineEnd
+
+  @ByteLoop:
+
+    MOV   AL, byte ptr [RSI]
+    MOV   CL, byte ptr [RDI]
+    MOV   byte ptr [RSI], CL
+    MOV   byte ptr [RDI], AL
+
+    INC   RSI
+    DEC   RDI
+
+    DEC   RDX
+    JNZ   @ByteLoop
 
   @RoutineEnd:
+
+    POP   RDI
+    POP   RSI
+
+  {$ELSE}
+
+    CMP   RSI, 1
+    JNA   @RoutineEnd
+
+    MOV   RCX, RSI
+    MOV   RSI, RDI
+    LEA   RDI, [RSI + RCX - 1]
+
+    PUSH  RCX
+    SHR   RCX, 4    // div 16 (2 * 8)
+    JZ    @RemainingBytes
+    SUB   RDI, 7
+
+  @LongLoop:
+
+    MOV   RAX, qword ptr [RSI]
+    MOV   RDX, qword ptr [RDI]
+    BSWAP RAX
+    BSWAP RDX
+    MOV   qword ptr [RSI], RDX
+    MOV   qword ptr [RDI], RAX
+
+    ADD   RSI, 8
+    SUB   RDI, 8
+
+    DEC   RCX
+    JNZ   @LongLoop
+
+    ADD   RDI, 7
+
+  @RemainingBytes:
+
+    POP   RCX
+    SHR   RCX, 1
+    AND   RCX, 7
+    JZ    @RoutineEnd
+
+  @ByteLoop:
+
+    MOV   AL, byte ptr [RSI]
+    MOV   DL, byte ptr [RDI]
+    MOV   byte ptr [RSI], DL
+    MOV   byte ptr [RDI], AL
+
+    INC   RSI
+    DEC   RDI
+
+    DEC   RCX
+    JNZ   @ByteLoop
+
+  @RoutineEnd:
+
+  {$ENDIF}
 {$ELSE}
-    MOV   ECX, EDX
-    CMP   ECX, 1
-    JBE   @RoutineEnd
 
     PUSH  ESI
     PUSH  EDI
 
-    MOV   ESI, EAX
-    LEA   EDI, [EAX + ECX - 1]
-    SHR   ECX, 1
+    CMP   EDX, 1
+    JNA   @RoutineEnd
 
-  @LoopStart:
+    MOV   ESI, EAX
+    LEA   EDI, [EAX + EDX - 1]
+
+    PUSH  EDX
+    SHR   EDX, 3    // div 8 (2 * 4)
+    JZ    @RemainingBytes
+    SUB   EDI, 3
+
+  @LongLoop:
+
+    MOV   EAX, dword ptr [ESI]
+    MOV   ECX, dword ptr [EDI]
+    BSWAP EAX
+    BSWAP ECX
+    MOV   dword ptr [ESI], ECX
+    MOV   dword ptr [EDI], EAX
+
+    ADD   ESI, 4
+    SUB   EDI, 4
+
+    DEC   EDX
+    JNZ   @LongLoop
+
+    ADD   EDI, 3    // rectify high address
+
+  @RemainingBytes:
+
+    POP   EDX
+    SHR   EDX, 1    // div 2
+    AND   EDX, 3
+    JZ    @RoutineEnd
+
+  @ByteLoop:
+
     MOV   AL, byte ptr [ESI]
-    MOV   DL, byte ptr [EDI]
+    MOV   CL, byte ptr [EDI]
+    MOV   byte ptr [ESI], CL
     MOV   byte ptr [EDI], AL
-    MOV   byte ptr [ESI], DL
+
     INC   ESI
     DEC   EDI
 
-    DEC   ECX
-    JNZ   @LoopStart
+    DEC   EDX
+    JNZ   @ByteLoop
+
+  @RoutineEnd:
 
     POP   EDI
     POP   ESI
 
-  @RoutineEnd:
 {$ENDIF}
 end;
 {$ELSE}
 var
   i:        TMemSize;
-  ByteBuff: Byte;
+  SrcPtr:   PByte;
+  DstPtr:   PByte;
+  ByteTemp: Byte;
 begin
 case Size of
   Low(Size)..1: Exit;
@@ -4601,13 +4744,19 @@ case Size of
              4: EndianSwapValue(UInt32(Buffer));
              8: EndianSwapValue(UInt64(Buffer));
 else
+{
+  Do not implement for long/quadwords, such optimization would not work due to
+  overhead from calls to SwapEndian for each words.
+}
+  SrcPtr := Addr(Buffer);
+  DstPtr := PtrAdvance(Addr(Buffer),Size - 1);
   For i := 0 to Pred(Size div 2) do
     begin
-    {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-      ByteBuff := PByte(PtrUInt(Addr(Buffer)) + i)^;
-      PByte(PtrUInt(Addr(Buffer)) + i)^ := PByte(PtrUInt(Addr(Buffer)) + PtrUInt(Size - i - 1))^;
-      PByte(PtrUInt(Addr(Buffer)) + PtrUInt(Size - i - 1))^ := ByteBuff;
-    {$IFDEF FPCDWM}{$POP}{$ENDIF}
+      ByteTemp := SrcPtr^;
+      SrcPtr^ := DstPtr^;
+      DstPtr^ := ByteTemp;
+      Inc(SrcPtr);
+      Dec(DstPtr);
     end;
 end;
 end;
@@ -4618,6 +4767,298 @@ end;
 procedure SwapEndian(var Buffer; Size: TMemSize);
 begin
 EndianSwap(Buffer,Size);
+end;
+
+//==============================================================================
+
+procedure EndianSwapItems16(var Arr; Count: TMemSize);
+{$IFNDEF PurePascal}
+asm
+{
+                    win32 & lin32         win64             lin64
+       @Arr              EAX               RCX               RDI
+      Count              EDX               RDX               RSI
+}
+{$IFDEF x64}
+  {$IFDEF Windows}
+
+    CMP   RDX, 0
+    JNA   @RoutineEnd
+
+@MainLoop:
+
+    MOV   AX, word ptr [RCX]
+    XCHG  AL, AH
+    MOV   word ptr [RCX], AX
+
+    ADD   RCX, 2
+    DEC   RDX
+    JNZ   @MainLoop
+
+  {$ELSE}
+
+    CMP   RSI, 0
+    JNA   @RoutineEnd
+
+@MainLoop:
+
+    MOV   AX, word ptr [RDI]
+    XCHG  AL, AH
+    MOV   word ptr [RDI], AX
+
+    ADD   RDI, 2
+    DEC   RSI
+    JNZ   @MainLoop
+
+  {$ENDIF}
+{$ELSE}
+
+    CMP   EDX, 0
+    JNA   @RoutineEnd
+
+@MainLoop:
+  {
+    Using string instructions (LODS, STOS) does not seem to provide any
+    performance benefit here.
+  }
+    MOV   CX, word ptr [EAX]
+    XCHG  CL, CH
+    MOV   word ptr [EAX], CX
+
+    ADD   EAX, 2 
+    DEC   EDX
+    JNZ   @MainLoop
+
+{$ENDIF}
+
+@RoutineEnd:
+end;
+{$ELSE}
+var
+  BuffPtr:  PUInt16;
+  i:        TMemSize;
+begin
+If Count > 0 then
+  begin
+    BuffPtr := @Arr;
+    For i := 0 to Pred(Count) do
+      begin
+        EndianSwapValue(BuffPtr^);
+        Inc(BuffPtr);
+      end;
+  end;
+end;
+{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+procedure EndianSwapItems32(var Arr; Count: TMemSize);
+{$IFNDEF PurePascal}
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+
+    CMP   RDX, 0
+    JNA   @RoutineEnd
+
+@MainLoop:
+
+    MOV   EAX, dword ptr [RCX]
+    BSWAP EAX
+    MOV   dword ptr [RCX], EAX
+
+    ADD   RCX, 4
+    DEC   RDX
+    JNZ   @MainLoop
+
+  {$ELSE}
+
+    CMP   RSI, 0
+    JNA   @RoutineEnd
+
+@MainLoop:
+
+    MOV   EAX, dword ptr [RDI]
+    BSWAP EAX
+    MOV   dword ptr [RDI], EAX
+
+    ADD   RDI, 4
+    DEC   RSI
+    JNZ   @MainLoop
+
+  {$ENDIF}
+{$ELSE}
+
+    CMP   EDX, 0
+    JNA   @RoutineEnd
+
+@MainLoop:
+  {
+    I know about MOVBE instruction, but it is a relatively recent (~2013)
+    addition to the instruction set, therefore I am using more backward
+    compatible solution of load-bswap-save.
+  }
+    MOV   ECX, dword ptr [EAX]
+    BSWAP ECX
+    MOV   dword ptr [EAX], ECX
+
+    ADD   EAX, 4 
+    DEC   EDX
+    JNZ   @MainLoop
+
+{$ENDIF}
+
+@RoutineEnd:
+end;
+{$ELSE}
+var
+  BuffPtr:  PUInt32;
+  i:        TMemSize;
+begin
+If Count > 0 then
+  begin
+    BuffPtr := @Arr;
+    For i := 0 to Pred(Count) do
+      begin
+        EndianSwapValue(BuffPtr^);
+        Inc(BuffPtr);
+      end;
+  end;
+end;
+{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+procedure EndianSwapItems64(var Arr; Count: TMemSize);
+{$IFNDEF PurePascal}
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+
+    CMP   RDX, 0
+    JNA   @RoutineEnd
+
+@MainLoop:
+
+    MOV   RAX, qword ptr [RCX]
+    BSWAP RAX
+    MOV   qword ptr [RCX], RAX
+
+    ADD   RCX, 8
+    DEC   RDX
+    JNZ   @MainLoop
+
+@RoutineEnd:
+
+  {$ELSE}
+
+    CMP   RSI, 0
+    JNA   @RoutineEnd
+
+@MainLoop:
+
+    MOV   RAX, qword ptr [RDI]
+    BSWAP RAX
+    MOV   qword ptr [RDI], RAX
+
+    ADD   RDI, 8
+    DEC   RSI
+    JNZ   @MainLoop
+
+@RoutineEnd:
+
+  {$ENDIF}
+{$ELSE}
+
+    PUSH  EBX
+    CMP   EDX, 0
+    JNA   @RoutineEnd
+
+@MainLoop:
+
+    MOV   EBX, dword ptr [EAX]
+    MOV   ECX, dword ptr [EAX + 4]
+    BSWAP EBX
+    BSWAP ECX
+    MOV   dword ptr [EAX], ECX
+    MOV   dword ptr [EAX + 4], EBX
+
+    ADD   EAX, 8
+    DEC   EDX
+    JNZ   @MainLoop
+
+@RoutineEnd:
+    POP   EBX
+
+{$ENDIF}
+end;
+{$ELSE}
+var
+  BuffPtr:  PUInt64;
+  i:        TMemSize;
+begin
+If Count > 0 then
+  begin
+    BuffPtr := @Arr;
+    For i := 0 to Pred(Count) do
+      begin
+        EndianSwapValue(BuffPtr^);
+        Inc(BuffPtr);
+      end;
+  end;
+end;
+{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+procedure EndianSwapItems(var Arr; ItemSize,Count: TMemSize);
+var
+  BuffPtr:  Pointer;
+  i:        TMemSize;
+begin
+If (ItemSize > 1) and (Count > 0) then
+  begin
+    case ItemSize of
+      2:  EndianSwapItems16(Arr,Count);
+      4:  EndianSwapItems32(Arr,Count);
+      8:  EndianSwapItems64(Arr,Count);
+    else
+      BuffPtr := @Arr;
+      For i := 0 to Pred(Count) do
+        begin
+          EndianSwap(BuffPtr^,ItemSize);
+          PtrAdvanceVar(BuffPtr,ItemSize);
+        end;
+    end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SwapEndianItems16(var Arr; Count: TMemSize);
+begin
+EndianSwapItems16(Arr,Count);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SwapEndianItems32(var Arr; Count: TMemSize);
+begin
+EndianSwapItems32(Arr,Count);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SwapEndianItems64(var Arr; Count: TMemSize);
+begin
+EndianSwapItems64(Arr,Count);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SwapEndianItems(var Arr; ItemSize,Count: TMemSize);
+begin
+EndianSwapItems(Arr,ItemSize,Count);
 end;
 
 {-------------------------------------------------------------------------------
