@@ -12,7 +12,7 @@
     Set of functions providing some of the not-so-common bit-manipulating
     operations and other binary utilities.
 
-  Version 1.21 (2024-05-26)
+  Version 1.22 (2024-05-31)
 
   Last change 2024-05-31
 
@@ -63,7 +63,7 @@ unit BitOps;
 }
 {$IFDEF BitOps_PurePascal}
   {$DEFINE PurePascal}
-{$ENDIF}{.$DEFINE PurePascal}
+{$ENDIF}
 
 {
   BitOps_UseAuxExceptions
@@ -1615,10 +1615,26 @@ procedure ZeroMemory(Mem: Pointer; Size: TMemSize);{$IFDEF CanInline} inline;{$E
                               Memory space copying
 ================================================================================
 -------------------------------------------------------------------------------}
-{$message 'todo'}
-//procedure CopyMemory(Dst,Src: Pointer; Size: TMemSize);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+{
+  CopyMemory
+  MoveMemory
 
-//procedure MoveMemory(Dst,Src: Pointer; Size: TMemSize);{$IFDEF CanInline} inline;{$ENDIF}
+  Copies Size-number of bytes from Src memory location to Dst memory location.
+
+  Unlike in Windows-defined implementation, where CopyMemory does not allow
+  for overlapped buffers, here it is completely equivalent to MoveMemory.
+
+    NOTE - these functions are only wrappers for procedure System.Move, which
+           is usually heavilly optimized, so there is no need to reimplement it
+           here. Size larger than High(PtrInt) (a limit in System.Move) is
+           compensated for and is therefore supported.
+
+    WARNING - arguments for source and destination are reversed when compared
+              to System.Move.
+}
+procedure CopyMemory(Dst,Src: Pointer; Size: TMemSize);{$IFDEF CanInline} inline;{$ENDIF}
+
+procedure MoveMemory(Dst,Src: Pointer; Size: TMemSize);
 
 
 {===============================================================================
@@ -9772,6 +9788,32 @@ end;
 procedure ZeroMemory(Mem: Pointer; Size: TMemSize);
 begin
 FillByte(Mem^,Size,0);
+end;
+
+{-------------------------------------------------------------------------------
+================================================================================
+                              Memory space copying
+================================================================================
+-------------------------------------------------------------------------------}
+
+procedure CopyMemory(Dst,Src: Pointer; Size: TMemSize);
+begin
+MoveMemory(Dst,Src,Size);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure MoveMemory(Dst,Src: Pointer; Size: TMemSize);
+begin
+while Size > TMemSize(High(PtrInt)) do
+  begin
+    System.Move(Src^,Dst^,High(PtrInt));
+    PtrAdvanceVar(Src,High(PtrInt));
+    PtrAdvanceVar(Dst,High(PtrInt));
+    Size := Size - TMemSize(High(PtrInt));
+  end;
+If Size > 0 then
+  System.Move(Src^,Dst^,PtrInt(Size));
 end;
 
 
