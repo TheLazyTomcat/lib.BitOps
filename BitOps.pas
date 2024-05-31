@@ -14,7 +14,7 @@
 
   Version 1.21 (2024-05-26)
 
-  Last change 2024-05-27
+  Last change 2024-05-31
 
   ©2014-2024 František Milt
 
@@ -41,8 +41,7 @@
   Library AuxExceptions is required only when rebasing local exception classes
   (see symbol BitOps_UseAuxExceptions for details).
 
-  SimpleCPUID is required only when AllowASMExtensions symbol is defined and
-  PurePascal symbol is not defined.
+  SimpleCPUID is required only when PurePascal symbol is not defined.
 
   Libraries AuxExceptions and SimpleCPUID might also be required as an indirect
   dependencies.
@@ -64,7 +63,7 @@ unit BitOps;
 }
 {$IFDEF BitOps_PurePascal}
   {$DEFINE PurePascal}
-{$ENDIF}
+{$ENDIF}{.$DEFINE PurePascal}
 
 {
   BitOps_UseAuxExceptions
@@ -192,9 +191,10 @@ uses
 type
   EBOException = class({$IFDEF UseAuxExceptions}EAEGeneralException{$ELSE}Exception{$ENDIF});
 
-  EBOUnknownFunction  = class(EBOException);
-  EBONoImplementation = class(EBOException);
-  EBOInvalidValue     = class(EBOException);
+  EBOUnknownFunction     = class(EBOException);
+  EBONoImplementation    = class(EBOException);
+  EBOInvalidValue        = class(EBOException);
+  EBOUnsupportedPlatform = class(EBOException);
 
   EBOConversionError  = class(EBOException);
   EBOInvalidCharacter = class(EBOConversionError);
@@ -1531,6 +1531,95 @@ procedure BufferShiftDown(var Buffer; BufferSize: TMemSize; Shift: TMemSize);
 procedure CopyBits(Source,Destination: Pointer; BitCount: TMemSize); overload;
 procedure CopyBits(Source,Destination: Pointer; SrcBitOffset,DstBitOffset,BitCount: TMemSize); overload;
 
+{-------------------------------------------------------------------------------
+================================================================================
+                              Memory space filling
+================================================================================
+-------------------------------------------------------------------------------}
+{
+  FillByte
+
+  Fills given untyped destination buffer Dst with Count-number of Value bytes.
+  This is equivalent to RTL function FillChar.
+
+  64bit ASM code requires SSE2 instruction set extension. Presence and support
+  of this extension is asserted at the unit initialization - when not supported,
+  then an exception of class EBOUnsupportedPlatform is raised there.
+}
+procedure FillByte(var Dst; Count: TMemSize; Value: UInt8);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+{
+  FillWord
+
+  Fills given untyped destination buffer Dst with Count-number of Value words.
+
+  64bit ASM code requires SSE2 instruction set extension (see FillByte for more
+  details).
+
+    WARNING - count gives number of words (2-byte entities) to fill, not bytes!
+}
+procedure FillWord(var Dst; Count: TMemSize; Value: UInt16);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+{
+  FillLong
+
+  Fills given untyped destination buffer Dst with Count-number of Value long
+  words.
+
+  64bit ASM code requires SSE2 instruction set extension (see FillByte for more
+  details).
+
+    WARNING - count gives number of long words (4-byte entities) to fill,
+              not bytes!
+}
+procedure FillLong(var Dst; Count: TMemSize; Value: UInt32);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+{
+  FillLong
+
+  Fills given untyped destination buffer Dst with Count-number of Value quad
+  words.
+
+  64bit ASM code requires SSE2 instruction set extension (see FillByte for more
+  details).
+
+    WARNING - count gives number of quad words (8-byte entities) to fill,
+              not bytes!
+}
+procedure FillQuad(var Dst; Count: TMemSize; Value: UInt64);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+//------------------------------------------------------------------------------
+{
+  FillMemory
+
+  Fills given memory space of Size bytes with Value bytes.
+
+  It is equivalent to function FillByte except that it accepts pointer instead
+  of untyped variable. In fact it internally calls the FillByte function.
+}
+procedure FillMemory(Mem: Pointer; Size: TMemSize; Value: UInt8);{$IFDEF CanInline} inline;{$ENDIF}
+
+//------------------------------------------------------------------------------
+{
+  ZeroMemory
+
+  Fills given memory space of Size bytes with zero (0) bytes.
+
+  If is equivalent to FillMemory with Value argument set to zero (internally
+  calls the FillByte function).
+}
+procedure ZeroMemory(Mem: Pointer; Size: TMemSize);{$IFDEF CanInline} inline;{$ENDIF}
+
+{-------------------------------------------------------------------------------
+================================================================================
+                              Memory space copying
+================================================================================
+-------------------------------------------------------------------------------}
+{$message 'todo'}
+//procedure CopyMemory(Dst,Src: Pointer; Size: TMemSize);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+//procedure MoveMemory(Dst,Src: Pointer; Size: TMemSize);{$IFDEF CanInline} inline;{$ENDIF}
+
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -1763,7 +1852,7 @@ Function UIM_BitOps_SetFuncImpl(Func: TUIM_BitOps_Function; NewImpl: TUIM_BitOps
 implementation
 
 uses
-  BasicUIM{$IFDEF ASM_Extensions}, SimpleCPUID{$ENDIF};
+  BasicUIM{$IFNDEF PurePascal}, SimpleCPUID{$ENDIF};
 
 {$IFDEF FPC_DisableWarns}
   {$DEFINE FPCDWM}
@@ -5027,7 +5116,9 @@ If (ItemSize > 1) and (Count > 0) then
       For i := 0 to Pred(Count) do
         begin
           EndianSwap(BuffPtr^,ItemSize);
-          PtrAdvanceVar(BuffPtr,ItemSize);
+          // PtrAdvanceVar cannot be inlined here, because it is not yet
+          // implemented at this point of compilation
+          BuffPtr := PtrAdvance(BuffPtr,ItemSize);
         end;
     end;
   end;
@@ -9068,6 +9159,621 @@ If BitCount > 0 then
   end;
 end;
 
+{-------------------------------------------------------------------------------
+================================================================================
+                              Memory space filling
+================================================================================
+-------------------------------------------------------------------------------}
+
+procedure FillByte(var Dst; Count: TMemSize; Value: UInt8);
+{$IFNDEF PurePascal}
+asm
+{
+                    win32 & lin32         win64             lin64
+      @Dst               EAX               RCX               RDI
+     Count               EDX               RDX               RSI
+     Value                CL               R8B                DL
+}
+{$IFDEF x64}
+  // unify arguments distribution somewhat...
+  {$IFDEF Windows}
+      PUSH    RDI
+
+      MOV     RDI, RCX
+      MOV     RCX, RDX
+      MOVZX   RAX, R8B
+  {$ELSE}
+      MOV     RCX, RSI
+      MOVZX   RAX, DL
+  {$ENDIF}
+{
+  ...so by now the arguments are:
+
+     @Dst - RDI
+    Count - RCX
+    Value - AL (higher bits are explicitly zeroed)
+
+    RDX is used locally to preserve actual value of count.
+}
+      // prepare data
+      MOV     R9, $0101010101010101
+      IMUL    RAX, R9
+      // clear direction flag
+      CLD
+
+      // do not use complex algorithm for small data
+      CMP     RCX, 128
+      JBE     @StoreQuads
+
+      // align destination on 8-byte boundary for burst stores
+      TEST    RDI, 7
+      JZ      @StoreBlocks
+
+      // preserve original count in RDX
+      MOV     RDX, RCX
+      MOV     RCX, RDI
+      AND     RCX, 7
+      SUB     RCX, 8
+      NEG     RCX
+      SUB     RDX, RCX
+
+      // write RCX bytes (AL)
+      REP STOSB
+
+      MOV     RCX, RDX
+
+@StoreBlocks:
+      // destination pointer is aligned, copy blocks of 64 bytes
+      CMP     RCX, 64
+      JB      @StoreQuads
+      MOV     RDX, RCX
+      SHR     RCX, 6
+
+      // decrement the count in one go
+      MOV     R9, RCX
+      SHL     R9, 6
+      SUB     RDX, R9
+
+{
+  Store with non-temporal hint.
+
+    NOTE - instructions MOVNTI and MFENCE are both part of SSE2 instruction set
+           extension, but since all 64bit systems require SSE2 to be present
+           and all 64bit-capable CPUs should support this extension, we do not
+           test its support here (it is hard-tested in unit initialization).
+}
+@BlockLoop:
+      MOVNTI  qword ptr [RDI], RAX
+      MOVNTI  qword ptr [RDI + 8], RAX
+      MOVNTI  qword ptr [RDI + 16], RAX
+      MOVNTI  qword ptr [RDI + 24], RAX
+      MOVNTI  qword ptr [RDI + 32], RAX
+      MOVNTI  qword ptr [RDI + 40], RAX
+      MOVNTI  qword ptr [RDI + 48], RAX
+      MOVNTI  qword ptr [RDI + 56], RAX
+
+      ADD     RDI, 64
+      DEC     RCX
+      JNZ     @BlockLoop
+
+      // ensure memory integrity after non-temporal stores
+      MFENCE
+
+      MOV     RCX, RDX
+
+@StoreQuads:
+      // write remaining quadwords
+      MOV     RDX, RCX
+      SHR     RDX, 3
+      JZ      @StoreBytes
+      XCHG    RCX, RDX
+
+      // write RCX quadwords (RAX)
+      REP STOSQ
+
+      MOV     RCX, RDX
+      // there can now be at most 7 bytes left
+      AND     RCX, 7
+
+@StoreBytes:
+      // write remaining (RCX) bytes (AL)
+      REP STOSB
+
+@RoutineEnd:
+  {$IFDEF Windows}
+      POP     RDI
+  {$ENDIF}
+
+{$ELSE}
+      // nothing spectacular here...
+
+      PUSH  EDI
+      CLD
+
+      MOV   EDI, EAX
+
+      AND   ECX, $FF
+      IMUL  EAX, ECX, $01010101
+
+      MOV   ECX, EDX
+      SHR   ECX, 2
+
+      REP STOSD
+
+      MOV   ECX, EDX
+      AND   ECX, 3
+
+      REP STOSB
+
+      POP   EDI
+
+{$ENDIF}
+end;
+{$ELSE}
+var
+  Buff: PUInt8;
+  i:    TMemSize;
+begin
+If Count > 0 then
+  begin
+    Buff := @Dst;
+    For i := 0 to Pred(Count) do
+      begin
+        Buff^ := Value;
+        Inc(Buff);
+      end;
+  end;
+end;
+{$ENDIF}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure FillWord(var Dst; Count: TMemSize; Value: UInt16);
+{$IFNDEF PurePascal}
+asm
+{$IFDEF x64}
+
+  {$IFDEF Windows}
+      PUSH    RDI
+
+      MOV     RDI, RCX
+      MOV     RCX, RDX
+      MOVZX   RAX, R8W
+  {$ELSE}
+      MOV     RCX, RSI
+      MOVZX   RAX, DX
+  {$ENDIF}
+
+      // clear R8 register, in case we will use it later
+      XOR     R8, R8
+      MOV     R9, $0001000100010001
+      IMUL    RAX, R9
+
+      CMP     RCX, 64
+      JBE     @StoreQuads
+
+      TEST    RDI, 7
+      JZ      @StoreBlocks
+
+    {
+      Destination is not aligned, align it on 8-byte boundary.
+
+      First calculate how many BYTES we need to write to align the address.
+
+      Then write entire quad (count here is above 64, so no problem if we
+      write too far), increment the adress by number of bytes previously
+      calculated.
+
+      Store the number in R8 for further use and calculate how many whole words
+      we have written - decrement count by this number.
+
+      If odd number of bytes was written, then we need to decrement the count
+      by one more, ROR the data by 8 bits and also write a remainder byte at
+      the complete end of processing.
+    }
+      MOV     R9, RDI
+      AND     R9, 7
+      SUB     R9, 8
+      NEG     R9
+
+      MOV     qword ptr [RDI], RAX
+      ADD     RDI, R9
+
+      MOV     R8, R9
+      SHR     R9, 1   // div 2
+      SBB     RCX, R9
+
+      TEST    R8, 1
+      JZ      @StoreBlocks
+      ROR     RAX, 8
+
+@StoreBlocks:
+
+      CMP     RCX, 32
+      JB      @StoreQuads
+      MOV     RDX, RCX
+      SHR     RCX, 5
+
+      MOV     R9, RCX
+      SHL     R9, 5
+      SUB     RDX, R9
+
+@BlockLoop:
+      MOVNTI  qword ptr [RDI], RAX
+      MOVNTI  qword ptr [RDI + 8], RAX
+      MOVNTI  qword ptr [RDI + 16], RAX
+      MOVNTI  qword ptr [RDI + 24], RAX
+      MOVNTI  qword ptr [RDI + 32], RAX
+      MOVNTI  qword ptr [RDI + 40], RAX
+      MOVNTI  qword ptr [RDI + 48], RAX
+      MOVNTI  qword ptr [RDI + 56], RAX
+
+      ADD     RDI, 64
+      DEC     RCX
+      JNZ     @BlockLoop
+
+      MFENCE
+
+      MOV     RCX, RDX
+
+@StoreQuads:
+
+      MOV     RDX, RCX
+      SHR     RDX, 2
+      JZ      @StoreWords
+      XCHG    RCX, RDX
+
+      REP STOSQ
+
+      MOV     RCX, RDX
+      AND     RCX, 3
+
+@StoreWords:
+
+      REP STOSW
+
+      // write remainder byte if needed
+      TEST    R8, 1
+      JZ      @RoutineEnd
+      MOV     byte ptr [RDI], AL
+
+@RoutineEnd:
+  {$IFDEF Windows}
+      POP     RDI
+  {$ENDIF}
+
+{$ELSE}
+
+      PUSH  EDI
+      CLD
+
+      MOV   EDI, EAX
+
+      AND   ECX, $FFFF
+      IMUL  EAX, ECX, $00010001
+
+      MOV   ECX, EDX
+      SHR   ECX, 1
+
+      REP STOSD
+
+      MOV   ECX, EDX
+      AND   ECX, 1
+
+      REP STOSW
+
+      POP   EDI
+
+{$ENDIF}
+end;
+{$ELSE}
+var
+  Buff: PUInt16;
+  i:    TMemSize;
+begin
+If Count > 0 then
+  begin
+    Buff := @Dst;
+    For i := 0 to Pred(Count) do
+      begin
+        Buff^ := Value;
+        Inc(Buff);
+      end;
+  end;
+end;
+{$ENDIF}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure FillLong(var Dst; Count: TMemSize; Value: UInt32);
+{$IFNDEF PurePascal}
+asm
+{$IFDEF x64}
+
+  {$IFDEF Windows}
+      PUSH    RDI
+
+      MOV     RDI, RCX
+      MOV     RCX, RDX
+      MOV     EAX, R8D  // higher 32bits of RAX are implicitly cleared
+  {$ELSE}
+      MOV     RCX, RSI
+      MOV     EAX, EDX
+  {$ENDIF}
+
+      // clear R8 register, in case we will use it later
+      XOR     R8, R8
+      MOV     R9, $0000000100000001
+      IMUL    RAX, R9
+
+      CMP     RCX, 32
+      JBE     @StoreQuads
+
+      TEST    RDI, 7
+      JZ      @StoreBlocks
+
+      // aligning...
+      MOV     R9, RDI
+      AND     R9, 7
+      SUB     R9, 8
+      NEG     R9
+
+      MOV     qword ptr [RDI], RAX
+      ADD     RDI, R9
+
+      MOV     R8, R9
+      AND     R8, 3   // mod 4
+      SHR     R9, 2   // div 4
+      SUB     RCX, R9
+
+      TEST    R8, 3
+      JZ      @StoreBlocks
+      LEA     RDX, [RCX - 1]
+      LEA     RCX, [R8 * 8]
+      ROR     RAX, CL
+      MOV     RCX, RDX
+
+@StoreBlocks:
+
+      CMP     RCX, 16
+      JB      @StoreQuads
+      MOV     RDX, RCX
+      SHR     RCX, 4
+
+      MOV     R9, RCX
+      SHL     R9, 4
+      SUB     RDX, R9
+
+@BlockLoop:
+      MOVNTI  qword ptr [RDI], RAX
+      MOVNTI  qword ptr [RDI + 8], RAX
+      MOVNTI  qword ptr [RDI + 16], RAX
+      MOVNTI  qword ptr [RDI + 24], RAX
+      MOVNTI  qword ptr [RDI + 32], RAX
+      MOVNTI  qword ptr [RDI + 40], RAX
+      MOVNTI  qword ptr [RDI + 48], RAX
+      MOVNTI  qword ptr [RDI + 56], RAX
+
+      ADD     RDI, 64
+      DEC     RCX
+      JNZ     @BlockLoop
+
+      MFENCE
+
+      MOV     RCX, RDX
+
+@StoreQuads:
+
+      MOV     RDX, RCX
+      SHR     RDX, 1
+      JZ      @StoreLongs
+      XCHG    RCX, RDX
+
+      REP STOSQ
+
+      MOV     RCX, RDX
+      AND     RCX, 1
+
+@StoreLongs:
+
+      REP STOSD
+
+      // write remainder bytes if needed
+      TEST    R8, 3
+      JZ      @RoutineEnd
+      SUB     R8, 4
+      NEG     R8
+
+@ByteLoop:
+      MOV     byte ptr [RDI], AL
+
+      ROR     RAX, 8
+      INC     RDI
+      DEC     R8
+      JNZ     @ByteLoop
+
+@RoutineEnd:
+  {$IFDEF Windows}
+      POP     RDI
+  {$ENDIF}
+
+{$ELSE}
+
+      PUSH  EDI
+      CLD
+
+      MOV   EDI, EAX      
+      MOV   EAX, ECX
+      MOV   ECX, EDX
+
+      REP STOSD
+
+      POP   EDI
+
+{$ENDIF}
+end;
+{$ELSE}
+var
+  Buff: PUInt32;
+  i:    TMemSize;
+begin
+If Count > 0 then
+  begin
+    Buff := @Dst;
+    For i := 0 to Pred(Count) do
+      begin
+        Buff^ := Value;
+        Inc(Buff);
+      end;
+  end;
+end;
+{$ENDIF}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure FillQuad(var Dst; Count: TMemSize; Value: UInt64);
+{$IFNDEF PurePascal}
+asm
+{$IFDEF x64}
+
+{$IFDEF Windows}
+    PUSH    RDI
+
+    MOV     RDI, RCX
+    MOV     RCX, RDX
+    MOV     RAX, R8
+{$ELSE}
+    MOV     RCX, RSI
+    MOV     RAX, RDX
+{$ENDIF}
+
+    XOR     R8, R8
+
+    CMP     RCX, 16
+    JBE     @StoreQuads
+
+    TEST    RDI, 7
+    JZ      @StoreBlocks
+
+    // aligning...
+    MOV     R8, RDI
+    AND     R8, 7
+    LEA     R9, [R8 - 8]
+    NEG     R9
+
+    MOV     qword ptr [RDI], RAX
+    ADD     RDI, R9
+
+    MOV     RDX, RCX
+    LEA     RCX, [R9 * 8]
+    ROR     RAX, CL
+    LEA     RCX, [RDX - 1]
+
+@StoreBlocks:
+
+    CMP     RCX, 8
+    JB      @StoreQuads
+    MOV     RDX, RCX
+    SHR     RCX, 3
+
+    MOV     R9, RCX
+    SHL     R9, 3
+    SUB     RDX, R9
+
+@BlockLoop:
+    MOVNTI  qword ptr [RDI], RAX
+    MOVNTI  qword ptr [RDI + 8], RAX
+    MOVNTI  qword ptr [RDI + 16], RAX
+    MOVNTI  qword ptr [RDI + 24], RAX
+    MOVNTI  qword ptr [RDI + 32], RAX
+    MOVNTI  qword ptr [RDI + 40], RAX
+    MOVNTI  qword ptr [RDI + 48], RAX
+    MOVNTI  qword ptr [RDI + 56], RAX
+
+    ADD     RDI, 64
+    DEC     RCX
+    JNZ     @BlockLoop
+
+    MFENCE
+
+    MOV     RCX, RDX
+
+@StoreQuads:
+
+    REP STOSQ
+
+    // write remainder bytes if needed
+    TEST    R8, 7
+    JZ      @RoutineEnd
+
+@ByteLoop:
+    MOV     byte ptr [RDI], AL
+
+    ROR     RAX, 8
+    INC     RDI
+    DEC     R8
+    JNZ     @ByteLoop
+
+@RoutineEnd:
+{$IFDEF Windows}
+    POP     RDI
+{$ENDIF}
+
+{$ELSE}
+      // value is passed on stack
+
+      PUSH  EBX
+
+      CMP   EDX, 0
+      JBE   @RoutineEnd
+
+      MOV   EBX, dword ptr [Value]
+      MOV   ECX, dword ptr [Value + 4]
+
+@MainLoop:
+      MOV   dword ptr [EAX], EBX
+      MOV   dword ptr [EAX + 4], ECX
+
+      ADD   EAX, 8
+      DEC   EDX
+      JNZ   @MainLoop
+
+@RoutineEnd:
+      POP   EBX
+
+{$ENDIF}
+end;
+{$ELSE}
+var
+  Buff: PUInt64;
+  i:    TMemSize;
+begin
+If Count > 0 then
+  begin
+    Buff := @Dst;
+    For i := 0 to Pred(Count) do
+      begin
+        Buff^ := Value;
+        Inc(Buff);
+      end;
+  end;
+end;
+{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+procedure FillMemory(Mem: Pointer; Size: TMemSize; Value: UInt8);
+begin
+FillByte(Mem^,Size,Value);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure ZeroMemory(Mem: Pointer; Size: TMemSize);
+begin
+FillByte(Mem^,Size,0);
+end;
+
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -9502,6 +10208,17 @@ For i := Low(TUIM_BitOps_Function) to High(TUIM_BitOps_Function) do
     If UIM_CheckASMSupport(i) then
       UIM_BitOps_SetFuncImpl(i,imAssembly)
   end;
+{$IFNDEF PurePascal}
+with TSimpleCPUID.Create do
+try
+{$IFDEF x64}
+  If not Info.SupportedExtensions.SSE2 then
+    raise EBOUnsupportedPlatform.Create('UnitInitialize: SSE2 extension is required for x86-64 system.');
+{$ENDIF}
+finally
+  Free;
+end;
+{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
