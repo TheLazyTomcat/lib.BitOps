@@ -14,7 +14,7 @@
 
   Version 1.25.1 (2025-08-16)
 
-  Last change 2025-08-16
+  Last change 2025-08-17
 
   ©2014-2025 František Milt
 
@@ -1338,10 +1338,6 @@ procedure PtrAdvanceVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize); ove
   If pointer A is smaller (the address is lower) than B, then a negative value
   is returned. If A is larger than B, then a positive value is returned. When
   the two pointers point to the same address, then zero is returned.
-
-  If SignedCompare is set to false (default), then addresses of the two
-  pointers are compared using unsigned integer comparison (address number
-  is seen as unsigned), otherwise they are compared using signed integers.
 }
 Function PtrCompare(A,B: Pointer): Integer;
 
