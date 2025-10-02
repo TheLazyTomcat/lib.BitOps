@@ -14,7 +14,7 @@
 
   Version 1.25.2 (2025-08-20)
 
-  Last change 2025-08-20
+  Last change 2025-10-03
 
   ©2014-2025 František Milt
 
@@ -10981,7 +10981,7 @@ Function UIM_BitOps_GetFuncImpl(Func: TUIM_BitOps_Function): TUIM_BitOps_Impleme
 var
   SelectedImplID: TUIMIdentifier;
 begin
-If varImplManager.FindObj(TUIMIdentifier(Func)).Selected(SelectedImplID) then
+If varImplManager.RoutingFindObj(TUIMIdentifier(Func)).Selected(SelectedImplID) then
   Result := TUIM_BitOps_Implementation(SelectedImplID)
 else
   raise EBONoImplementation.Create('UIM_BitOps_GetFuncImpl: No implementation selected.');
@@ -10992,7 +10992,7 @@ end;
 Function UIM_BitOps_SetFuncImpl(Func: TUIM_BitOps_Function; NewImpl: TUIM_BitOps_Implementation): TUIM_BitOps_Implementation;
 begin
 Result := UIM_BitOps_GetFuncImpl(Func);
-varImplManager.FindObj(TUIMIdentifier(Func)).Select(TUIMIdentifier(NewImpl));
+varImplManager.RoutingFindObj(TUIMIdentifier(Func)).Select(TUIMIdentifier(NewImpl));
 end;
 
 {-------------------------------------------------------------------------------
@@ -11033,7 +11033,7 @@ begin
 varImplManager := TImplementationManager.Create;
 For i := Low(TUIM_BitOps_Function) to High(TUIM_BitOps_Function) do
   begin
-    with varImplManager.AddObj(TUIMIdentifier(i),ImplsVar[i]^) do
+    with varImplManager.RoutingAddObj(TUIMIdentifier(i),ImplsVar[i]^) do
       begin
         Add(TUIMIdentifier(imNone),NilPtr);
         Add(TUIMIdentifier(imPascal),ImplsPas[i],[ifSelect]);
