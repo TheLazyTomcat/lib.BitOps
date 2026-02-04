@@ -14,9 +14,9 @@
 
   Version 1.25.2 (2025-08-20)
 
-  Last change 2025-10-03
+  Last change 2026-02-04
 
-  ©2014-2025 František Milt
+  ©2014-2026 František Milt
 
   Contacts:
     František Milt: frantisek.milt@gmail.com
@@ -724,14 +724,17 @@ procedure SwapEndian(var Buffer; Size: TMemSize); overload;
   Number in the name denotes size of items in bits. Function without number
   accepts an explicitly given item size (in bytes).
 
-  Argument Arr should point to the first element/item in the array.
+    Argument Arr should point to the first element/item in the array to be
+    reversed.
 
-  Count gives number of items in the array (NOT its size in bytes).
+    Count gives number of items in the array that will be byte-swapped. Make
+    sure you do not give too high number as there are no overflow checks in
+    place.
 
-  Stride is a linear distance betveen two items (NOT a space between them,
-  distance from one item to another). Usually it equals to item size - it is
-  here for situations when manipulating an array of records and only one
-  field of each record needs to be swapped.
+    Stride is a linear distance betveen two items (NOT a space between them,
+    distance from one item to another). Usually it equals to item size - it
+    is here for situations when manipulating an array of records and only one
+    field of each record needs to be swapped.
 }
 procedure EndianSwapItems16(var Arr; Count,Stride: TMemSize);{$IFNDEF PurePascal} register; assembler;{$ENDIF} overload;
 procedure EndianSwapItems32(var Arr; Count,Stride: TMemSize);{$IFNDEF PurePascal} register; assembler;{$ENDIF} overload;
@@ -951,7 +954,8 @@ Function GetFlagState(Value,FlagBitmask: UInt64; ExactMatch: Boolean = False): B
 -------------------------------------------------------------------------------}
 {
   Bits set in the FlagBitmask are also set (to 1) in the passed number and this
-  resulting number is then returned.
+  resulting number is then returned. Bits not set in the mask are copied to the
+  result without change.
 
   Functions accepting array of flags will set all bits within all the passed
   flag bistmasks.
@@ -1009,7 +1013,8 @@ procedure SetFlagsValue(var Value: UInt64; Flags: array of UInt64); overload;
 -------------------------------------------------------------------------------}
 {
   Bits set in the FlagBitmask are reset (to 0) in the passed number and this
-  resulting number is then returned.
+  resulting number is then returned. Bits not set in the mask are copied to the
+  result without change.
 
   Functions accepting array of flags will reset all bits within all the passed
   flag bistmasks.
@@ -1068,7 +1073,7 @@ procedure ResetFlagsValue(var Value: UInt64; Flags: array of UInt64); overload;
 {
   Sets or resets (depending on NewState; false = reset, true = set) all bits
   selected (set to 1) in FlagBitmask in the passed number Value and returns the
-  result.
+  result. Bits not set in the mask are copied without change.
 }
 
 Function SetFlagState(Value,FlagBitmask: UInt8; NewState: Boolean): UInt8; overload;
@@ -1092,10 +1097,10 @@ procedure SetFlagStateValue(var Value: UInt64; FlagBitmask: UInt64; NewState: Bo
   Returns contiguous segment of bits from passed Value, selected by a bit range.
 
   When ShiftDown is true, the extracted bits are shifted down so that the first
-  extracted bit is at lowest position in the result, otherwise the bit segment
-  is left at its original position.
+  extracted bit is at lowest position (bit 0) in the result, otherwise the bit
+  segment is left at its original position.
 
-  Bit indices are taken module 8, 16, 32 and 64, depending on the argument
+  Bit indices are taken modulo 8, 16, 32 and 64, depending on the argument
   width.
 }
 
@@ -1113,13 +1118,13 @@ Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = Tru
   Replaces contiguous segment of bits selected by range in Value by
   corresponding bits from the NewBits.
 
-  Parameter ShiftUP is counterpart to ShiftDown in GetBits. When it is true,
+  Parameter ShiftUp is counterpart to ShiftDown in GetBits. When it is true,
   the deposited bits (NewBits parameter) are shifted up so that the first bit
   (bit 0) becomes the first deposited bit. When false, the NewBits are taken
   without change, meaning the deposited bits are taken from corresponding
-  location in the NewBits, not from the low-order bits.
+  locations in the NewBits, not from the low-order bits.
 
-  Bit indices are taken module 8, 16, 32 and 64, depending on the argument
+  Bit indices are taken modulo 8, 16, 32 and 64, depending on the argument
   width.
 }
 
@@ -1162,7 +1167,7 @@ procedure ReverseBitsValue(var Value: UInt64); overload;{$IFDEF CanInline} inlin
 ================================================================================
 -------------------------------------------------------------------------------}
 {
-  Returns number of leading most significant zero bits (number of zero bits
+  Returns number of leading (most significant) zero bits (number of zero bits
   above the highest set bit). If the number is zero, it will return size of
   the number (in bits).
 
@@ -1180,7 +1185,7 @@ Function LZCount(Value: UInt64): Integer; overload;
 ================================================================================
 -------------------------------------------------------------------------------}
 {
-  Returns number of trailing least significant zero bits (number of zero bits
+  Returns number of trailing (least significant) zero bits (number of zero bits
   below the lowest set bit). If the number is zero, it will return size of the
   number (in bits).
 
@@ -1254,7 +1259,7 @@ procedure DepositBitsValue(var Value: UInt64; NewBits: UInt64; Start,Length: Int
 {
   Extracts bits from value using a mask - bits that are set (to 1) in the mask
   are extracted, other bits are ignored. The extracted bits are written into
-  result from the lowest bit (bit 0) up. Unused bit in the result are zeroed.
+  result from the lowest bit (bit 0) up. Unused bits in the result are zeroed.
 
   Assembly implementation uses instruction PEXT.
 }
@@ -1347,6 +1352,28 @@ procedure AdvancePtrVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize); ove
   the two pointers point to the same address, then zero is returned.
 }
 Function PtrCompare(A,B: Pointer): Integer;
+Function ComparePtr(A,B: Pointer): Integer;{$IFDEF CanInline} inline;{$ENDIF}
+
+//------------------------------------------------------------------------------
+{
+  Used to select relation between two pointers, see description of function
+  PtrCompareRel for more details.
+}
+type
+  TPtrRelation = (
+    relSame,relNotSame,relLower,relNotLower,relLowerOrSame,relNotLowerNorSame,
+    relHigher,relNotHigher,relHigherOrSame,relNotHigherNorSame);
+
+{
+  Checks whether the two given pointers are in the selected relation. When
+  they are, then true is returned, when they are not, then false is returned.
+
+  For example, if relHigher is selected as relation, the function will return
+  true only when the first given pointer (A) will point to a higher address
+  than the second pointer (B).
+}
+Function PtrCompareRel(A,B: Pointer; Relation: TPtrRelation = relSame): Boolean;
+Function ComparePtrRel(A,B: Pointer; Relation: TPtrRelation = relSame): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -1355,13 +1382,21 @@ Function PtrCompare(A,B: Pointer): Integer;
 -------------------------------------------------------------------------------}
 type
 {
-  More alignments can be added later anywhere into the following enumeration,
-  so do not assume anything about the numerical value or position of any enum
-  value.
+  This enum is used when selecting a desired alignment or probing for actual
+  existing alignment.
+
+  It contains two complementary groups of values - one group is for selecting
+  bit alignments, the other for byte alignments.
+
+    WARNING - more alignments can be added later anywhere into this
+              enumeration, so do not assume anything about the numerical
+              value or position of any individual value.
 }
   TMemoryAlignment = (maNone,
-    ma8bit,ma16bit,ma32bit,ma64bit,ma128bit,ma256bit,ma512bit,ma1024bit,ma2048bit,
-    ma1byte,ma2byte,ma4byte,ma8byte,ma16byte,ma32byte,ma64byte,ma128byte,ma256byte);
+    ma8bit,ma16bit,ma32bit,ma64bit,ma128bit,ma256bit,ma512bit,ma1024bit,
+    ma1kbit,ma2kbit,ma4kbit,ma8kbit,ma16kbit,ma32kbit,
+    ma1byte,ma2byte,ma4byte,ma8byte,ma16byte,ma32byte,ma64byte,ma128byte,
+    ma256byte,ma512byte,ma1024byte,ma1kbyte,ma2kbyte,ma4kbyte,ma1mbyte);
 
 //------------------------------------------------------------------------------
 
@@ -1370,6 +1405,31 @@ type
 }
 Function AlignmentBytes(Alignment: TMemoryAlignment): TMemSize;
 
+{
+  AlignmentBits returns number of bits corresponding to requested alignment.
+  This number will always be an integral multiple of 8.
+}
+Function AlignmentBits(Alignment: TMemoryAlignment): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
+
+{
+  Switches type of alignment - that is, it will return corresponding bit
+  alignment if byte alignment is passed and vice-versa.
+
+  For example, if ma128bit is passed, then ma16byte will be returned. Or if
+  ma4byte is passed, then ma32bit is returned.
+
+  If given alignment have more logical counterparts (eg. ma128byte can be
+  converted either to ma1024bit or ma1kbit), then the one with higher
+  ordinality is selected (in mentioned example it would be ma1kbit).
+
+  For alignment of maNone it will always return ma8bit.
+
+    WARNING - if selected alignment does not have corresponding counterpart
+              (eg. ma1mbyte does not have bit counterpart), then it will
+              raise an EBOInvalidValue exception.
+}
+Function AlignmentSwitch(Alignment: TMemoryAlignment): TMemoryAlignment;
+
 //------------------------------------------------------------------------------
 
 {
@@ -1377,10 +1437,11 @@ Function AlignmentBytes(Alignment: TMemoryAlignment): TMemSize;
   as indicated by Alignment parameter, false otherwise.
 }
 Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
+Function AlignmentCheck(Address: Pointer; Alignment: TMemoryAlignment): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
 
 {
   Misalignment returns distance, in bytes, from the closest properly aligned
-  (defined by parameter Alignment) address that is not larger than the passed
+  (defined by parameter Alignment) address that is not higher than the passed
   address.
   If the address is aligned, it will return zero.
 }
@@ -1407,13 +1468,14 @@ Function AlignmentOffset(Address: Pointer; Alignment: TMemoryAlignment): TMemSiz
   happen, ma1byte or ma8bit should be the worst case).
 }
 Function ResolveAlignment(Address: Pointer; ByteAlignments: Boolean = False): TMemoryAlignment;
+Function AlignmentResolve(Address: Pointer; ByteAlignments: Boolean = False): TMemoryAlignment;{$IFDEF CanInline} inline;{$ENDIF}
 
 //------------------------------------------------------------------------------
 {
   AlignedMemory checks provided memory address for requested alignment. When
   the address is properly aligned, it is returned and nothing more is done.
   When is is not properly aligned, then this functions will return closest
-  properly aligned memory address that is not smaller than the provided address.
+  properly aligned memory address that is not lower than the provided address.
 
     WARNING - this function does NOT do any (re)allocation, it merely returns
               an aligned pointer closest to a given one.
@@ -1446,8 +1508,8 @@ type
 
 //------------------------------------------------------------------------------
 {
-  Following function are comparing data presented in two buffers or two arrays
-  of byte.
+  Following functions are comparing data presented in two buffers or two arrays
+  of bytes.
 
   Behavior of these functions depends on how the parameter CompareMethod is set:
 
@@ -1540,6 +1602,9 @@ Function SameData(A,B: array of UInt8): Boolean; overload;
   byte is placed at the start of the buffer. Number of bytes shifted is equal
   to BufferSize - Shift (so that the entire rest of the buffer beyond Shift
   offset is moved).
+
+  Content of the buffer beyond the shifted bytes is undefined.
+
   This function is intended for situations where buffered data are only
   partially consumed and what is left must be shifted down to the beginning of
   the buffer for further processing.
@@ -1584,7 +1649,10 @@ procedure CopyBits(Source,Destination: Pointer; SrcBitOffset,DstBitOffset,BitCou
 
   64bit ASM code requires SSE2 instruction set extension. Presence and support
   of this extension is asserted at the unit initialization - when not supported,
-  then an exception of class EBOUnsupportedPlatform is raised there.
+  then an exception of class EBOUnsupportedPlatform is raised there. But note
+  that this should be of no consequence as all 64bit systems require the CPU
+  to support SSE2, and all existing processors that support 64 mode should also
+  support this extensions.
 }
 procedure FillByte(var Dst; Count: TMemSize; Value: UInt8);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 
@@ -1643,7 +1711,7 @@ procedure FillMemory(Mem: Pointer; Size: TMemSize; Value: UInt8);{$IFDEF CanInli
 {
   ZeroMemory
 
-  Fills given memory space of Size bytes with zero (0) bytes.
+  Fills given memory space of Size bytes with null (0x00) bytes.
 
   If is equivalent to FillMemory with Value argument set to zero (internally
   calls the FillByte function).
@@ -8669,6 +8737,36 @@ else
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
+//------------------------------------------------------------------------------
+
+Function ComparePtr(A,B: Pointer): Integer;
+begin
+Result := ComparePtr(A,B);
+end;
+
+//==============================================================================
+
+Function PtrCompareRel(A,B: Pointer; Relation: TPtrRelation = relSame): Boolean;
+begin
+case Relation of
+  relSame:                      Result := PtrCompare(A,B) = 0;
+  relNotSame:                   Result := PtrCompare(A,B) <> 0;
+  relLower,relNotHigherNorSame: Result := PtrCompare(A,B) < 0;
+  relNotLower,relHigherOrSame:  Result := PtrCompare(A,B) >= 0;
+  relLowerOrSame,relNotHigher:  Result := PtrCompare(A,B) <= 0;
+  relNotLowerNorSame,relHigher: Result := PtrCompare(A,B) > 0;
+else
+  raise EBOInvalidValue.CreateFmt('PtrCompareRel: Unknown relation (%d).',[Ord(Relation)]);
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function ComparePtrRel(A,B: Pointer; Relation: TPtrRelation = relSame): Boolean;
+begin
+Result := PtrCompareRel(A,B,Relation);
+end;
+
 {-------------------------------------------------------------------------------
 ================================================================================
                             Memory address alignment
@@ -8686,10 +8784,64 @@ case Alignment of
   ma128bit,ma16byte:    Result := 16;
   ma256bit,ma32byte:    Result := 32;
   ma512bit,ma64byte:    Result := 64;
-  ma1024bit,ma128byte:  Result := 128;
-  ma2048bit,ma256byte:  Result := 256;
+  ma1024bit,ma1kbit,
+  ma128byte:            Result := 128;
+  ma2kbit,ma256byte:    Result := 256;
+  ma4kbit,ma512byte:    Result := 512;
+  ma8kbit,
+  ma1024byte,ma1kbyte:  Result := 1024;
+  ma16kbit,ma2kbyte:    Result := 2048;
+  ma32kbit,ma4kbyte:    Result := 4096;
+  ma1mbyte:             Result := 1048576;    // 1024^2
 else
   raise EBOInvalidValue.CreateFmt('AlignmentBytes: Invalid memory alignment (%d).',[Ord(Alignment)]);
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function AlignmentBits(Alignment: TMemoryAlignment): TMemSize;
+begin
+Result := TMemSize(AlignmentBytes(Alignment) shl 3);
+end;
+
+//------------------------------------------------------------------------------
+
+Function AlignmentSwitch(Alignment: TMemoryAlignment): TMemoryAlignment;
+begin
+case Alignment of
+  maNone:     Result := ma8bit;
+  ma8bit:     Result := ma1byte;
+  ma16bit:    Result := ma2byte;
+  ma32bit:    Result := ma4byte;
+  ma64bit:    Result := ma8byte;
+  ma128bit:   Result := ma16byte;
+  ma256bit:   Result := ma32byte;
+  ma512bit:   Result := ma64byte;
+  ma1024bit:  Result := ma128byte;
+  ma1kbit:    Result := ma128byte;
+  ma2kbit:    Result := ma256byte;
+  ma4kbit:    Result := ma512byte;
+  ma8kbit:    Result := ma1kbyte;
+  ma16kbit:   Result := ma2kByte;
+  ma32kbit:   Result := ma4kByte;
+  ma1byte:    Result := ma8bit;
+  ma2byte:    Result := ma16bit;
+  ma4byte:    Result := ma32bit;
+  ma8byte:    Result := ma64bit;
+  ma16byte:   Result := ma128bit;
+  ma32byte:   Result := ma256bit;
+  ma64byte:   Result := ma512bit;
+  ma128byte:  Result := ma1kbit;
+  ma256byte:  Result := ma2kbit;
+  ma512byte:  Result := ma4kbit;
+  ma1024byte: Result := ma8kbit;
+  ma1kbyte:   Result := ma8kbit;
+  ma2kbyte:   Result := ma16kbit;
+  ma4kbyte:   Result := ma32kbit;
+  ma1mbyte:   raise EBOInvalidValue.CreateFmt('AlignmentSwitch: No counterpart for selected alignment (%d).',[Ord(Alignment)]);
+else
+  raise EBOInvalidValue.CreateFmt('AlignmentSwitch: Invalid memory alignment (%d).',[Ord(Alignment)]);
 end;
 end;
 
@@ -8700,6 +8852,13 @@ begin
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 Result := (PtrUInt(Address) and PtrUInt(Pred(AlignmentBytes(Alignment)))) = 0;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
+end;
+
+//------------------------------------------------------------------------------
+
+Function AlignmentCheck(Address: Pointer; Alignment: TMemoryAlignment): Boolean;
+begin
+Result := CheckAlignment(Address,Alignment);
 end;
 
 //------------------------------------------------------------------------------
@@ -8715,11 +8874,11 @@ end;
 
 Function AlignmentOffset(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;
 var
-  Malign: TMemSize;
+  Misalign: TMemSize;
 begin
-Malign := Misalignment(Address,Alignment);
-If Malign <> 0 then
-  Result := AlignmentBytes(Alignment) - Malign
+Misalign := Misalignment(Address,Alignment);
+If Misalign <> 0 then
+  Result := AlignmentBytes(Alignment) - Misalign
 else
   Result := 0;
 end;
@@ -8739,9 +8898,9 @@ Function ResolveAlignment(Address: Pointer; ByteAlignments: Boolean = False): TM
   Function HighAlignment: TMemoryAlignment;
   begin
     If ByteAlignments then
-      Result := ma256byte
+      Result := High(TMemoryAlignment)
     else
-      Result := ma2048bit;
+      Result := Pred(ma1byte);
   end;
 
 var
@@ -8756,6 +8915,13 @@ For i := HighAlignment downto LowAlignment do
       Result := i;
       Break{For i};
     end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function AlignmentResolve(Address: Pointer; ByteAlignments: Boolean = False): TMemoryAlignment;
+begin
+Result := ResolveAlignment(Address,ByteAlignments);
 end;
 
 //------------------------------------------------------------------------------
