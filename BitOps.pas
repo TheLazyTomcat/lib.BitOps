@@ -776,10 +776,17 @@ procedure SwapEndianItems(var Arr; ItemSize,Count: TMemSize); overload;
   width.
 }
 
-Function BT(Value: UInt8; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
-Function BT(Value: UInt16; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
-Function BT(Value: UInt32; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
-Function BT(Value: UInt64; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
+Function BT(Value: Int8; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
+Function BT(Value: Int16; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
+Function BT(Value: Int32; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
+Function BT(Value: Int64; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
+
+Function BT(Value: UInt8; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BT(Value: UInt16; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BT(Value: UInt32; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function BT(Value: UInt64; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -1991,18 +1998,26 @@ Function LLDecodeFlags(Flags: UInt16): TBOStatusFlags;
 
   Use constants BO_FLAG_* (see above) to test for individual flags.
 
-    NOTE - These functions are available only when PurePascal symbol is not
-           defined. Function accepting 64bit values is accessible only in 64bit
-           programs.
+    NOTE - these functions are available only when PurePascal symbol is not
+           defined.
+
+    NOTE - on 32bit systems, function accepting 64bit values is only emulated 
+           and its result does not reflect state of real hardware register
+           (flags are calculated in software).
 
   For more technical details, refer to x86(-64) CPU documentation.
 }
-Function LLCompareRaw(A,B: UInt8): UInt16; overload; register; assembler;
-Function LLCompareRaw(A,B: UInt16): UInt16; overload; register; assembler;
-Function LLCompareRaw(A,B: UInt32): UInt16; overload; register; assembler;
-{$IFDEF x64}
-Function LLCompareRaw(A,B: UInt64): UInt16; overload; register; assembler;
-{$ENDIF}
+Function LLCompareRaw(A,B: Int8): UInt16; overload; register; assembler;
+Function LLCompareRaw(A,B: Int16): UInt16; overload; register; assembler;
+Function LLCompareRaw(A,B: Int32): UInt16; overload; register; assembler;
+Function LLCompareRaw(A,B: Int64): UInt16; overload;{$IFDEF x64} register; assembler;{$ENDIF}
+
+Function LLCompareRaw(A,B: UInt8): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompareRaw(A,B: UInt16): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompareRaw(A,B: UInt32): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function LLCompareRaw(A,B: UInt64): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 {
@@ -2013,12 +2028,17 @@ Function LLCompareRaw(A,B: UInt64): UInt16; overload; register; assembler;
   present in the returned set, then the corresponding flag was set(1). When not
   present, then it was clear(0).
 }
+Function LLCompare(A,B: Int8): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompare(A,B: Int16): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompare(A,B: Int32): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompare(A,B: Int64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 Function LLCompare(A,B: UInt8): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function LLCompare(A,B: UInt16): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function LLCompare(A,B: UInt32): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
-{$IFDEF x64}
+{$IF Declared(NativeUInt64E)}
 Function LLCompare(A,B: UInt64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
-{$ENDIF}
+{$IFEND}
 
 {$ENDIF}
 
@@ -2041,18 +2061,26 @@ Function LLCompare(A,B: UInt64): TBOStatusFlags; overload;{$IFDEF CanInline} inl
 
   Use constants BO_FLAG_* (see above) to test for individual flags.
 
-    NOTE - These functions are available only when PurePascal symbol is not
-           defined. Function accepting 64bit values is accessible only in 64bit
-           programs.
+    NOTE - these functions are available only when PurePascal symbol is not
+           defined.
+
+    NOTE - on 32bit systems, function accepting 64bit values is only emulated 
+           and its result does not reflect state of real hardware register
+           (flags are calculated in software).
 
   For more technical details, refer to x86(-64) CPU documentation.
 }
-Function LLTestRaw(A,B: UInt8): UInt16; overload; register; assembler;
-Function LLTestRaw(A,B: UInt16): UInt16; overload; register; assembler;
-Function LLTestRaw(A,B: UInt32): UInt16; overload; register; assembler;
-{$IFDEF x64}
-Function LLTestRaw(A,B: UInt64): UInt16; overload; register; assembler;
-{$ENDIF}
+Function LLTestRaw(A,B: Int8): UInt16; overload; register; assembler;
+Function LLTestRaw(A,B: Int16): UInt16; overload; register; assembler;
+Function LLTestRaw(A,B: Int32): UInt16; overload; register; assembler;
+Function LLTestRaw(A,B: Int64): UInt16; overload;{$IFDEF x64} register; assembler;{$ENDIF}
+
+Function LLTestRaw(A,B: UInt8): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTestRaw(A,B: UInt16): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTestRaw(A,B: UInt32): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function LLTestRaw(A,B: UInt64): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 {
@@ -2063,12 +2091,17 @@ Function LLTestRaw(A,B: UInt64): UInt16; overload; register; assembler;
   present in the returned set, then the corresponding flag was set(1). When not
   present, then it was clear(0).
 }
+Function LLTest(A,B: Int8): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTest(A,B: Int16): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTest(A,B: Int32): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTest(A,B: Int64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 Function LLTest(A,B: UInt8): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function LLTest(A,B: UInt16): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function LLTest(A,B: UInt32): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
-{$IFDEF x64}
+{$IF Declared(NativeUInt64E)}
 Function LLTest(A,B: UInt64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
-{$ENDIF}
+{$IFEND}
 
 {$ENDIF}
 
@@ -5562,7 +5595,7 @@ end;
 ================================================================================
 -------------------------------------------------------------------------------}
 
-Function BT(Value: UInt8; Bit: Integer): Boolean;
+Function BT(Value: Int8; Bit: Integer): Boolean;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -5587,7 +5620,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BT(Value: UInt16; Bit: Integer): Boolean;
+Function BT(Value: Int16; Bit: Integer): Boolean;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -5609,7 +5642,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BT(Value: UInt32; Bit: Integer): Boolean;
+Function BT(Value: Int32; Bit: Integer): Boolean;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -5631,7 +5664,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BT(Value: UInt64; Bit: Integer): Boolean;
+Function BT(Value: Int64; Bit: Integer): Boolean;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -5660,6 +5693,38 @@ begin
 Result := ((Value shr (Bit and 63)) and 1) <> 0;
 end;
 {$ENDIF}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BT(Value: UInt8; Bit: Integer): Boolean;
+begin
+Result := BT(Int8(Value),Bit);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BT(Value: UInt16; Bit: Integer): Boolean;
+begin
+Result := BT(Int16(Value),Bit);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BT(Value: UInt32; Bit: Integer): Boolean;
+begin
+Result := BT(Int32(Value),Bit);
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BT(Value: UInt64; Bit: Integer): Boolean;
+begin
+Result := BT(Int64(Value),Bit);
+end;
+
+{$IFEND}
+
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -10810,14 +10875,21 @@ If Flags and BO_FLAG_OVERFLOW <> 0 then
   Include(Result,flOverflow);
 end;
 
-//------------------------------------------------------------------------------
 {$IFNDEF PurePascal}
+//------------------------------------------------------------------------------
+
+Function Int64Sign(I: Int64): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
+begin
+Result := BT(I,63);
+end;
+
+//------------------------------------------------------------------------------
 const
   BO_FLAG_MASK_CMP  = $08D5;
 
 //------------------------------------------------------------------------------
 
-Function LLCompareRaw(A,B: UInt8): UInt16;
+Function LLCompareRaw(A,B: Int8): UInt16;
 {
   Arguments/result register use (64b/32b/16b/8b values):
 
@@ -10846,7 +10918,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLCompareRaw(A,B: UInt16): UInt16;
+Function LLCompareRaw(A,B: Int16): UInt16;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -10867,7 +10939,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLCompareRaw(A,B: UInt32): UInt16;
+Function LLCompareRaw(A,B: Int32): UInt16;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -10888,8 +10960,10 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+{$IFDEF OverflowChecks}{$Q-}{$ENDIF}  // for A - B
+
+Function LLCompareRaw(A,B: Int64): UInt16;
 {$IFDEF x64}
-Function LLCompareRaw(A,B: UInt64): UInt16;
 asm
 {$IFDEF Windows}
     CMP     RCX, RDX
@@ -10900,37 +10974,121 @@ asm
     POP     RAX
     AND     RAX, BO_FLAG_MASK_CMP
 end;
+{$ELSE}
+var
+  SgnA: Boolean;  // true means negative
+  SgnB: Boolean;
+  Temp: Int64;
+  SgnT: Boolean;
+begin
+SgnA := Int64Sign(A);
+SgnB := Int64Sign(B);
+Temp := A - B;
+SgnT := Int64Sign(Temp);
+Result := 0;
+If SgnA = SgnB then
+  SetFlagStateValue(Result,BO_FLAG_CARRY,A < B)
+else
+  SetFlagStateValue(Result,BO_FLAG_CARRY,A > B);
+SetFlagStateValue(Result,BO_FLAG_PARITY,BitParity(UInt8(Temp)));
+SetFlagStateValue(Result,BO_FLAG_AUXCARRY,(A and $F) < (B and $F));
+SetFlagStateValue(Result,BO_FLAG_ZERO,Temp = 0);
+SetFlagStateValue(Result,BO_FLAG_SIGN,SgnT);
+SetFlagStateValue(Result,BO_FLAG_OVERFLOW,(SgnA xor SgnB) and not(SgnB xor SgnT));
+end;
 {$ENDIF}
+
+{$IFDEF OverflowChecks}{$Q+}{$ENDIF}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompareRaw(A,B: UInt8): UInt16;
+begin
+Result := LLCompareRaw(Int8(A),Int8(B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompareRaw(A,B: UInt16): UInt16;
+begin
+Result := LLCompareRaw(Int16(A),Int16(B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompareRaw(A,B: UInt32): UInt16;
+begin
+Result := LLCompareRaw(Int32(A),Int32(B));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompareRaw(A,B: UInt64): UInt16;
+begin
+Result := LLCompareRaw(Int64(A),Int64(B));
+end;
+
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
-Function LLCompare(A,B: UInt8): TBOStatusFlags;
+Function LLCompare(A,B: Int8): TBOStatusFlags;
 begin
 Result := LLDecodeFlags(LLCompareRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompare(A,B: Int16): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLCompareRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompare(A,B: Int32): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLCompareRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompare(A,B: Int64): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLCompareRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompare(A,B: UInt8): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLCompareRaw(Int8(A),Int8(B)));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function LLCompare(A,B: UInt16): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLCompareRaw(A,B));
+Result := LLDecodeFlags(LLCompareRaw(Int16(A),Int16(B)));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function LLCompare(A,B: UInt32): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLCompareRaw(A,B));
+Result := LLDecodeFlags(LLCompareRaw(Int32(A),Int32(B)));
 end;
 
+{$IF Declared(NativeUInt64E)}
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-{$IFDEF x64}
 Function LLCompare(A,B: UInt64): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLCompareRaw(A,B));
+Result := LLDecodeFlags(LLCompareRaw(Int64(A),Int64(B)));
 end;
-{$ENDIF}
+
+{$IFEND}
 
 {$ENDIF}
 
@@ -10945,7 +11103,7 @@ const
 
 //------------------------------------------------------------------------------
 
-Function LLTestRaw(A,B: UInt8): UInt16;
+Function LLTestRaw(A,B: Int8): UInt16;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -10966,7 +11124,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLTestRaw(A,B: UInt16): UInt16;
+Function LLTestRaw(A,B: Int16): UInt16;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -10987,7 +11145,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLTestRaw(A,B: UInt32): UInt16;
+Function LLTestRaw(A,B: Int32): UInt16;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -11008,8 +11166,8 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Function LLTestRaw(A,B: Int64): UInt16;
 {$IFDEF x64}
-Function LLTestRaw(A,B: UInt64): UInt16;
 asm
 {$IFDEF Windows}
     TEST    RCX, RDX
@@ -11020,37 +11178,107 @@ asm
     POP     RAX
     AND     RAX, BO_FLAG_MASK_TEST
 end;
+{$ELSE}
+var
+  Temp: Int64;
+begin
+Temp := A and B;
+Result := 0;
+SetFlagStateValue(Result,BO_FLAG_PARITY,BitParity(UInt8(Temp)));
+SetFlagStateValue(Result,BO_FLAG_ZERO,Temp = 0);
+SetFlagStateValue(Result,BO_FLAG_SIGN,Int64Sign(Temp));
+end;
 {$ENDIF}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTestRaw(A,B: UInt8): UInt16;
+begin
+Result := LLTestRaw(Int8(A),Int8(B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTestRaw(A,B: UInt16): UInt16;
+begin
+Result := LLTestRaw(Int16(A),Int16(B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTestRaw(A,B: UInt32): UInt16;
+begin
+Result := LLTestRaw(Int32(A),Int32(B));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTestRaw(A,B: UInt64): UInt16;
+begin
+Result := LLTestRaw(Int64(A),Int64(B));
+end;
+
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
-Function LLTest(A,B: UInt8): TBOStatusFlags;
+Function LLTest(A,B: Int8): TBOStatusFlags;
 begin
 Result := LLDecodeFlags(LLTestRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTest(A,B: Int16): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLTestRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTest(A,B: Int32): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLTestRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTest(A,B: Int64): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLTestRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTest(A,B: UInt8): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLTestRaw(Int8(A),Int8(B)));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function LLTest(A,B: UInt16): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLTestRaw(A,B));
+Result := LLDecodeFlags(LLTestRaw(Int16(A),Int16(B)));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function LLTest(A,B: UInt32): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLTestRaw(A,B));
+Result := LLDecodeFlags(LLTestRaw(Int32(A),Int32(B)));
 end;
 
+{$IF Declared(NativeUInt64E)}
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-{$IFDEF x64}
 Function LLTest(A,B: UInt64): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLTestRaw(A,B));
+Result := LLDecodeFlags(LLTestRaw(Int64(A),Int64(B)));
 end;
-{$ENDIF}
+
+{$IFEND}
 
 {$ENDIF}
 
