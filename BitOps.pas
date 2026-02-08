@@ -14,7 +14,7 @@
 
   Version 1.25.2 (2025-08-20)
 
-  Last change 2026-02-04
+  Last change 2026-02-08
 
   ©2014-2026 František Milt
 
@@ -185,6 +185,11 @@ uses
   SysUtils,
   AuxTypes{$IFDEF UseAuxExceptions}, AuxExceptions{$ENDIF};
 
+// Following must be after AuxTypes, and do not touch it!
+type
+  U64Type  = {$IF Declared(NativeUInt64E)}UInt64{$ELSE}Int64{$IFEND};
+  PU64Type = ^U64Type;
+
 {===============================================================================
     Library-specific exceptions
 ===============================================================================}
@@ -247,23 +252,52 @@ const
 Function NumberToBitStr(Number: UInt8; BitStringFormat: TBitStringFormat): String; overload;
 Function NumberToBitStr(Number: UInt16; BitStringFormat: TBitStringFormat): String; overload;
 Function NumberToBitStr(Number: UInt32; BitStringFormat: TBitStringFormat): String; overload;
-Function NumberToBitStr(Number: UInt64; BitStringFormat: TBitStringFormat): String; overload;
+Function NumberToBitStr(Number: U64Type; BitStringFormat: TBitStringFormat): String; overload;
+
+Function NumberToBitStr(Number: Int8; BitStringFormat: TBitStringFormat): String; overload;
+Function NumberToBitStr(Number: Int16; BitStringFormat: TBitStringFormat): String; overload;
+Function NumberToBitStr(Number: Int32; BitStringFormat: TBitStringFormat): String; overload;
+{$IF Declared(NativeUInt64E)}
+Function NumberToBitStr(Number: Int64; BitStringFormat: TBitStringFormat): String; overload;
+{$IFEND}
 
 Function NumberToBitStr(Number: UInt8; Split: TBitStringSplit): String; overload;
 Function NumberToBitStr(Number: UInt16; Split: TBitStringSplit): String; overload;
 Function NumberToBitStr(Number: UInt32; Split: TBitStringSplit): String; overload;
-Function NumberToBitStr(Number: UInt64; Split: TBitStringSplit): String; overload;
+Function NumberToBitStr(Number: U64Type; Split: TBitStringSplit): String; overload;
+
+Function NumberToBitStr(Number: Int8; Split: TBitStringSplit): String; overload;
+Function NumberToBitStr(Number: Int16; Split: TBitStringSplit): String; overload;
+Function NumberToBitStr(Number: Int32; Split: TBitStringSplit): String; overload;
+{$IF Declared(NativeUInt64E)}
+Function NumberToBitStr(Number: Int64; Split: TBitStringSplit): String; overload;
+{$IFEND}
 
 Function NumberToBitStr(Number: UInt8): String; overload;
 Function NumberToBitStr(Number: UInt16): String; overload;
 Function NumberToBitStr(Number: UInt32): String; overload;
-Function NumberToBitStr(Number: UInt64): String; overload;
+Function NumberToBitStr(Number: U64Type): String; overload;
+
+Function NumberToBitStr(Number: Int8): String; overload;
+Function NumberToBitStr(Number: Int16): String; overload;
+Function NumberToBitStr(Number: Int32): String; overload;
+{$IF Declared(NativeUInt64E)}
+Function NumberToBitStr(Number: Int64): String; overload;
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
-Function BitStrToNumber(const BitString: String; BitStringFormat: TBitStringFormat): UInt64; overload;
-Function BitStrToNumber(const BitString: String; Split: TBitStringSplit): UInt64; overload;
-Function BitStrToNumber(const BitString: String): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BitStrToNumber(const BitString: String; BitStringFormat: TBitStringFormat): U64Type; overload;
+Function BitStrToNumber(const BitString: String; Split: TBitStringSplit): U64Type; overload;
+Function BitStrToNumber(const BitString: String): U64Type; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function BitStrToUInt(const BitString: String; BitStringFormat: TBitStringFormat): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BitStrToUInt(const BitString: String; Split: TBitStringSplit): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BitStrToUInt(const BitString: String): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function BitStrToInt(const BitString: String; BitStringFormat: TBitStringFormat): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BitStrToInt(const BitString: String; Split: TBitStringSplit): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BitStrToInt(const BitString: String): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -272,21 +306,42 @@ Function TryBitStrToNumber(const BitString: String; out Value: UInt16; BitString
 Function TryBitStrToNumber(const BitString: String; out Value: UInt32; BitStringFormat: TBitStringFormat): Boolean; overload;
 Function TryBitStrToNumber(const BitString: String; out Value: UInt64; BitStringFormat: TBitStringFormat): Boolean; overload;
 
+Function TryBitStrToNumber(const BitString: String; out Value: Int8; BitStringFormat: TBitStringFormat): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function TryBitStrToNumber(const BitString: String; out Value: Int16; BitStringFormat: TBitStringFormat): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function TryBitStrToNumber(const BitString: String; out Value: Int32; BitStringFormat: TBitStringFormat): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function TryBitStrToNumber(const BitString: String; out Value: Int64; BitStringFormat: TBitStringFormat): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 Function TryBitStrToNumber(const BitString: String; out Value: UInt8; Split: TBitStringSplit): Boolean; overload;
 Function TryBitStrToNumber(const BitString: String; out Value: UInt16; Split: TBitStringSplit): Boolean; overload;
 Function TryBitStrToNumber(const BitString: String; out Value: UInt32; Split: TBitStringSplit): Boolean; overload;
 Function TryBitStrToNumber(const BitString: String; out Value: UInt64; Split: TBitStringSplit): Boolean; overload;
+
+Function TryBitStrToNumber(const BitString: String; out Value: Int8; Split: TBitStringSplit): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function TryBitStrToNumber(const BitString: String; out Value: Int16; Split: TBitStringSplit): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function TryBitStrToNumber(const BitString: String; out Value: Int32; Split: TBitStringSplit): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function TryBitStrToNumber(const BitString: String; out Value: Int64; Split: TBitStringSplit): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
 Function TryBitStrToNumber(const BitString: String; out Value: UInt8): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function TryBitStrToNumber(const BitString: String; out Value: UInt16): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function TryBitStrToNumber(const BitString: String; out Value: UInt32): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function TryBitStrToNumber(const BitString: String; out Value: UInt64): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+Function TryBitStrToNumber(const BitString: String; out Value: Int8): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function TryBitStrToNumber(const BitString: String; out Value: Int16): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function TryBitStrToNumber(const BitString: String; out Value: Int32): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function TryBitStrToNumber(const BitString: String; out Value: Int64): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 //------------------------------------------------------------------------------
 
-Function BitStrToNumberDef(const BitString: String; Default: UInt64; BitStringFormat: TBitStringFormat): UInt64; overload;
-Function BitStrToNumberDef(const BitString: String; Default: UInt64; Split: TBitStringSplit): UInt64; overload;
-Function BitStrToNumberDef(const BitString: String; Default: UInt64): UInt64; overload;
+Function BitStrToNumberDef(const BitString: String; Default: U64Type; BitStringFormat: TBitStringFormat): U64Type; overload;
+Function BitStrToNumberDef(const BitString: String; Default: U64Type; Split: TBitStringSplit): U64Type; overload;
+Function BitStrToNumberDef(const BitString: String; Default: U64Type): U64Type; overload;
+
+{$IF Declared(NativeUInt64E)}
+Function BitStrToNumberDef(const BitString: String; Default: Int64; BitStringFormat: TBitStringFormat): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BitStrToNumberDef(const BitString: String; Default: Int64; Split: TBitStringSplit): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BitStrToNumberDef(const BitString: String; Default: Int64): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -301,11 +356,22 @@ Function BitStrToNumberDef(const BitString: String; Default: UInt64): UInt64; ov
 Function NumberToOctStr(Number: UInt8): String; overload;
 Function NumberToOctStr(Number: UInt16): String; overload;
 Function NumberToOctStr(Number: UInt32): String; overload;
-Function NumberToOctStr(Number: UInt64): String; overload;
+Function NumberToOctStr(Number: U64Type): String; overload;
+
+Function NumberToOctStr(Number: Int8): String; overload;
+Function NumberToOctStr(Number: Int16): String; overload;
+Function NumberToOctStr(Number: Int32): String; overload;
+{$IF Declared(NativeUInt64E)}
+Function NumberToOctStr(Number: Int64): String; overload;
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
-Function OctStrToNumber(const OctString: String): UInt64;
+Function OctStrToNumber(const OctString: String): U64Type;
+
+Function OctStrToUInt(const OctString: String): UInt64;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function OctStrToInt(const OctString: String): Int64;{$IFDEF CanInline} inline;{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -314,9 +380,18 @@ Function TryOctStrToNumber(const OctString: String; out Value: UInt16): Boolean;
 Function TryOctStrToNumber(const OctString: String; out Value: UInt32): Boolean; overload;
 Function TryOctStrToNumber(const OctString: String; out Value: UInt64): Boolean; overload;
 
+Function TryOctStrToNumber(const OctString: String; out Value: Int8): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function TryOctStrToNumber(const OctString: String; out Value: Int16): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function TryOctStrToNumber(const OctString: String; out Value: Int32): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function TryOctStrToNumber(const OctString: String; out Value: Int64): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 //------------------------------------------------------------------------------
 
-Function OctStrToNumberDef(const OctString: String; Default: UInt64): UInt64;
+Function OctStrToNumberDef(const OctString: String; Default: U64Type): U64Type; overload;
+
+{$IF Declared(NativeUInt64E)}
+Function OctStrToNumberDef(const OctString: String; Default: Int64): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -478,6 +553,9 @@ Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; ov
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  ROL
+  ROLValue
+
   Rotates the number left - that is, the number is shifted left (towards higher
   places) by a selected amount of bits, while the shifted-out bits are inserted
   to the right (lower places).
@@ -491,7 +569,14 @@ Function TryBitStrToData(const Str: String; out Arr: TArrayOfBytes): Boolean; ov
 Function ROL(Value: UInt8; Shift: Integer): UInt8; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function ROL(Value: UInt16; Shift: Integer): UInt16; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function ROL(Value: UInt32; Shift: Integer): UInt32; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
-Function ROL(Value: UInt64; Shift: Integer): UInt64; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+Function ROL(Value: U64Type; Shift: Integer): U64Type; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+Function ROL(Value: Int8; Shift: Integer): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function ROL(Value: Int16; Shift: Integer): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function ROL(Value: Int32; Shift: Integer): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function ROL(Value: Int64; Shift: Integer): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -500,12 +585,20 @@ procedure ROLValue(var Value: UInt16; Shift: Integer); overload;{$IFDEF CanInlin
 procedure ROLValue(var Value: UInt32; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure ROLValue(var Value: UInt64; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure ROLValue(var Value: Int8; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure ROLValue(var Value: Int16; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure ROLValue(var Value: Int32; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure ROLValue(var Value: Int64; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                                Rotate right (ROR)
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  ROR
+  RORValue
+
   Rotates the number right - the number is shifted right (towards lower places)
   by a selected amount of bits, while the shifted-out bits are inserted to the
   left (higher places).
@@ -519,7 +612,14 @@ procedure ROLValue(var Value: UInt64; Shift: Integer); overload;{$IFDEF CanInlin
 Function ROR(Value: UInt8; Shift: Integer): UInt8; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function ROR(Value: UInt16; Shift: Integer): UInt16; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function ROR(Value: UInt32; Shift: Integer): UInt32; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
-Function ROR(Value: UInt64; Shift: Integer): UInt64; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+Function ROR(Value: U64Type; Shift: Integer): U64Type; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+Function ROR(Value: Int8; Shift: Integer): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function ROR(Value: Int16; Shift: Integer): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function ROR(Value: Int32; Shift: Integer): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function ROR(Value: Int64; Shift: Integer): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -528,12 +628,22 @@ procedure RORValue(var Value: UInt16; Shift: Integer); overload;{$IFDEF CanInlin
 procedure RORValue(var Value: UInt32; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure RORValue(var Value: UInt64; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure RORValue(var Value: Int8; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RORValue(var Value: Int16; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RORValue(var Value: Int32; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RORValue(var Value: Int64; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                           Rotate left with carry (RCL)
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  RCLCarry
+  RCL
+  RCLValueCarry
+  RCLValue
+
   Rotates the number left with carry - works the same as ROL, but the number
   is being rotated trough carry flag, effectively making it n + 1 bits wide.
   When the number is shifted, the bit shifted in is taken from carry flag and
@@ -560,14 +670,28 @@ procedure RORValue(var Value: UInt64; Shift: Integer); overload;{$IFDEF CanInlin
 Function RCLCarry(Value: UInt8; Shift: Integer; var CF: Boolean): UInt8; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function RCLCarry(Value: UInt16; Shift: Integer; var CF: Boolean): UInt16; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function RCLCarry(Value: UInt32; Shift: Integer; var CF: Boolean): UInt32; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
-Function RCLCarry(Value: UInt64; Shift: Integer; var CF: Boolean): UInt64; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+Function RCLCarry(Value: U64Type; Shift: Integer; var CF: Boolean): U64Type; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+Function RCLCarry(Value: Int8; Shift: Integer; var CF: Boolean): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function RCLCarry(Value: Int16; Shift: Integer; var CF: Boolean): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function RCLCarry(Value: Int32; Shift: Integer; var CF: Boolean): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function RCLCarry(Value: Int64; Shift: Integer; var CF: Boolean): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
 Function RCL(Value: UInt8; Shift: Integer; CF: Boolean = False): UInt8; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function RCL(Value: UInt16; Shift: Integer; CF: Boolean = False): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function RCL(Value: UInt32; Shift: Integer; CF: Boolean = False): UInt32; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function RCL(Value: UInt64; Shift: Integer; CF: Boolean = False): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function RCL(Value: U64Type; Shift: Integer; CF: Boolean = False): U64Type; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function RCL(Value: Int8; Shift: Integer; CF: Boolean = False): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function RCL(Value: Int16; Shift: Integer; CF: Boolean = False): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function RCL(Value: Int32; Shift: Integer; CF: Boolean = False): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function RCL(Value: Int64; Shift: Integer; CF: Boolean = False): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -576,6 +700,11 @@ procedure RCLValueCarry(var Value: UInt16; Shift: Integer; var CF: Boolean); ove
 procedure RCLValueCarry(var Value: UInt32; Shift: Integer; var CF: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure RCLValueCarry(var Value: UInt64; Shift: Integer; var CF: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure RCLValueCarry(var Value: Int8; Shift: Integer; var CF: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RCLValueCarry(var Value: Int16; Shift: Integer; var CF: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RCLValueCarry(var Value: Int32; Shift: Integer; var CF: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RCLValueCarry(var Value: Int64; Shift: Integer; var CF: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 //------------------------------------------------------------------------------
 
 procedure RCLValue(var Value: UInt8; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
@@ -583,12 +712,22 @@ procedure RCLValue(var Value: UInt16; Shift: Integer; CF: Boolean = False); over
 procedure RCLValue(var Value: UInt32; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure RCLValue(var Value: UInt64; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure RCLValue(var Value: Int8; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RCLValue(var Value: Int16; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RCLValue(var Value: Int32; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RCLValue(var Value: Int64; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                          Rotate right with carry (RCR)
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  RCRCarry
+  RCR
+  RCRValueCarry
+  RCRValue
+
   Rotates the number right with carry - works the same as ROR, but the number
   is being shifted trough carry flag. See description of RCL for more info.
 
@@ -601,14 +740,28 @@ procedure RCLValue(var Value: UInt64; Shift: Integer; CF: Boolean = False); over
 Function RCRCarry(Value: UInt8; Shift: Integer; var CF: Boolean): UInt8; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function RCRCarry(Value: UInt16; Shift: Integer; var CF: Boolean): UInt16; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function RCRCarry(Value: UInt32; Shift: Integer; var CF: Boolean): UInt32; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
-Function RCRCarry(Value: UInt64; Shift: Integer; var CF: Boolean): UInt64; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+Function RCRCarry(Value: U64Type; Shift: Integer; var CF: Boolean): U64Type; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+Function RCRCarry(Value: Int8; Shift: Integer; var CF: Boolean): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function RCRCarry(Value: Int16; Shift: Integer; var CF: Boolean): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function RCRCarry(Value: Int32; Shift: Integer; var CF: Boolean): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function RCRCarry(Value: Int64; Shift: Integer; var CF: Boolean): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
 Function RCR(Value: UInt8; Shift: Integer; CF: Boolean = False): UInt8; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function RCR(Value: UInt16; Shift: Integer; CF: Boolean = False): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function RCR(Value: UInt32; Shift: Integer; CF: Boolean = False): UInt32; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function RCR(Value: UInt64; Shift: Integer; CF: Boolean = False): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function RCR(Value: U64Type; Shift: Integer; CF: Boolean = False): U64Type; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function RCR(Value: Int8; Shift: Integer; CF: Boolean = False): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function RCR(Value: Int16; Shift: Integer; CF: Boolean = False): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function RCR(Value: Int32; Shift: Integer; CF: Boolean = False): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function RCR(Value: Int64; Shift: Integer; CF: Boolean = False): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -617,6 +770,11 @@ procedure RCRValueCarry(var Value: UInt16; Shift: Integer; var CF: Boolean); ove
 procedure RCRValueCarry(var Value: UInt32; Shift: Integer; var CF: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure RCRValueCarry(var Value: UInt64; Shift: Integer; var CF: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure RCRValueCarry(var Value: Int8; Shift: Integer; var CF: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RCRValueCarry(var Value: Int16; Shift: Integer; var CF: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RCRValueCarry(var Value: Int32; Shift: Integer; var CF: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RCRValueCarry(var Value: Int64; Shift: Integer; var CF: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 //------------------------------------------------------------------------------
 
 procedure RCRValue(var Value: UInt8; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
@@ -624,12 +782,20 @@ procedure RCRValue(var Value: UInt16; Shift: Integer; CF: Boolean = False); over
 procedure RCRValue(var Value: UInt32; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure RCRValue(var Value: UInt64; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure RCRValue(var Value: Int8; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RCRValue(var Value: Int16; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RCRValue(var Value: Int32; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure RCRValue(var Value: Int64; Shift: Integer; CF: Boolean = False); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                           Arithmetic left shift (SAL)
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  SAL
+  SALValue
+
   This operation is identical to logical left shift (SHL).
 
   Assembly implementation uses instruction SAL.
@@ -641,7 +807,14 @@ procedure RCRValue(var Value: UInt64; Shift: Integer; CF: Boolean = False); over
 Function SAL(Value: UInt8; Shift: Integer): UInt8; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
 Function SAL(Value: UInt16; Shift: Integer): UInt16; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
 Function SAL(Value: UInt32; Shift: Integer): UInt32; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
-Function SAL(Value: UInt64; Shift: Integer): UInt64; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
+Function SAL(Value: U64Type; Shift: Integer): U64Type; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
+
+Function SAL(Value: Int8; Shift: Integer): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function SAL(Value: Int16; Shift: Integer): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function SAL(Value: Int32; Shift: Integer): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function SAL(Value: Int64; Shift: Integer): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -650,12 +823,20 @@ procedure SALValue(var Value: UInt16; Shift: Integer); overload;{$IFDEF CanInlin
 procedure SALValue(var Value: UInt32; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure SALValue(var Value: UInt64; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure SALValue(var Value: Int8; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SALValue(var Value: Int16; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SALValue(var Value: Int32; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SALValue(var Value: Int64; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                           Arithmetic right shift (SAR)
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  SAR
+  SARValue
+
   Shifts the number to the right (towards lower bits), while preserving the
   highest bit. For example...
 
@@ -674,7 +855,14 @@ procedure SALValue(var Value: UInt64; Shift: Integer); overload;{$IFDEF CanInlin
 Function SAR(Value: UInt8; Shift: Integer): UInt8; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function SAR(Value: UInt16; Shift: Integer): UInt16; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function SAR(Value: UInt32; Shift: Integer): UInt32; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
-Function SAR(Value: UInt64; Shift: Integer): UInt64; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+Function SAR(Value: U64Type; Shift: Integer): U64Type; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+Function SAR(Value: Int8; Shift: Integer): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function SAR(Value: Int16; Shift: Integer): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function SAR(Value: Int32; Shift: Integer): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function SAR(Value: Int64; Shift: Integer): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -683,12 +871,22 @@ procedure SARValue(var Value: UInt16; Shift: Integer); overload;{$IFDEF CanInlin
 procedure SARValue(var Value: UInt32; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure SARValue(var Value: UInt64; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure SARValue(var Value: Int8; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SARValue(var Value: Int16; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SARValue(var Value: Int32; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SARValue(var Value: Int64; Shift: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                                  Endianity swap
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  EndianSwap
+  SwapEndian
+  EndianSwapValue
+  SwapEndianValue
+
   Reverses order of bytes within the number or general data buffer.
 
   Assembly implementation uses instruction BSWAP.
@@ -696,11 +894,23 @@ procedure SARValue(var Value: UInt64; Shift: Integer); overload;{$IFDEF CanInlin
 
 Function EndianSwap(Value: UInt16): UInt16; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function EndianSwap(Value: UInt32): UInt32; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
-Function EndianSwap(Value: UInt64): UInt64; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+Function EndianSwap(Value: U64Type): U64Type; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+Function EndianSwap(Value: Int16): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function EndianSwap(Value: Int32): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function EndianSwap(Value: Int64): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 Function SwapEndian(Value: UInt16): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function SwapEndian(Value: UInt32): UInt32; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function SwapEndian(Value: UInt64): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function SwapEndian(Value: U64Type): U64Type; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function SwapEndian(Value: Int16): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function SwapEndian(Value: Int32): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function SwapEndian(Value: Int64): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -708,9 +918,17 @@ procedure EndianSwapValue(var Value: UInt16); overload;{$IFDEF CanInline} inline
 procedure EndianSwapValue(var Value: UInt32); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure EndianSwapValue(var Value: UInt64); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure EndianSwapValue(var Value: Int16); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure EndianSwapValue(var Value: Int32); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure EndianSwapValue(var Value: Int64); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 procedure SwapEndianValue(var Value: UInt16); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure SwapEndianValue(var Value: UInt32); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure SwapEndianValue(var Value: UInt64); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+procedure SwapEndianValue(var Value: Int16); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SwapEndianValue(var Value: Int32); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SwapEndianValue(var Value: Int64); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -719,6 +937,9 @@ procedure SwapEndian(var Buffer; Size: TMemSize); overload;
 
 //------------------------------------------------------------------------------
 {
+  EndianSwapItems[N]
+  SwapEndianItems[N]
+
   Reverses byte order of individial items in a given array or vector.
 
   Number in the name denotes size of items in bits. Function without number
@@ -768,6 +989,8 @@ procedure SwapEndianItems(var Arr; ItemSize,Count: TMemSize); overload;
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  BT
+
   Returns true when selected bit in the Value is set, false when it is clear.
 
   Assembly implementation uses instruction BT.
@@ -776,16 +999,16 @@ procedure SwapEndianItems(var Arr; ItemSize,Count: TMemSize); overload;
   width.
 }
 
-Function BT(Value: Int8; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
-Function BT(Value: Int16; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
-Function BT(Value: Int32; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
-Function BT(Value: Int64; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
+Function BT(Value: UInt8; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
+Function BT(Value: UInt16; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
+Function BT(Value: UInt32; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
+Function BT(Value: U64Type; Bit: Integer): Boolean; overload;{$IFDEF PurePascal}{$IFDEF CanInline} inline;{$ENDIF}{$ELSE} register; assembler;{$ENDIF}
 
-Function BT(Value: UInt8; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function BT(Value: UInt16; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function BT(Value: UInt32; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BT(Value: Int8; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BT(Value: Int16; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BT(Value: Int32; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
 {$IF Declared(NativeUInt64E)}
-Function BT(Value: UInt64; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BT(Value: Int64; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
 {$IFEND}
 
 {-------------------------------------------------------------------------------
@@ -794,6 +1017,8 @@ Function BT(Value: UInt64; Bit: Integer): Boolean; overload;{$IFDEF CanInline} i
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  BTS
+
   Sets the selected bit in the Value (to 1) and returns true when the bit was
   previously set, false when it was clear.
 
@@ -808,12 +1033,19 @@ Function BTS(var Value: UInt16; Bit: Integer): Boolean; overload;{$IFNDEF PurePa
 Function BTS(var Value: UInt32; Bit: Integer): Boolean; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function BTS(var Value: UInt64; Bit: Integer): Boolean; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 
+Function BTS(var Value: Int8; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BTS(var Value: Int16; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BTS(var Value: Int32; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BTS(var Value: Int64; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                             Bit test and reset (BTR)
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  BTR
+
   Resets the selected bit in the Value (to 0) and returns true when the bit was
   previously set, false when it was clear.
 
@@ -828,12 +1060,19 @@ Function BTR(var Value: UInt16; Bit: Integer): Boolean; overload;{$IFNDEF PurePa
 Function BTR(var Value: UInt32; Bit: Integer): Boolean; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function BTR(var Value: UInt64; Bit: Integer): Boolean; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 
+Function BTR(var Value: Int8; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BTR(var Value: Int16; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BTR(var Value: Int32; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BTR(var Value: Int64; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                           Bit test and complement (BTC)
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  BTC
+
   Complements the selected bit in the Value (swaps its state, 0 <-> 1) and
   returns true when the bit was previously set, false when it was clear.
 
@@ -848,12 +1087,19 @@ Function BTC(var Value: UInt16; Bit: Integer): Boolean; overload;{$IFNDEF PurePa
 Function BTC(var Value: UInt32; Bit: Integer): Boolean; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function BTC(var Value: UInt64; Bit: Integer): Boolean; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 
+Function BTC(var Value: Int8; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BTC(var Value: Int16; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BTC(var Value: Int32; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BTC(var Value: Int64; Bit: Integer): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                        Bit test and set to a given value
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  BitSetTo
+
   Sets value of the selected bit in the number given in Value to a NewValue and
   returns its previous state.
 
@@ -866,12 +1112,19 @@ Function BitSetTo(var Value: UInt16; Bit: Integer; NewValue: Boolean): Boolean; 
 Function BitSetTo(var Value: UInt32; Bit: Integer; NewValue: Boolean): Boolean; overload;
 Function BitSetTo(var Value: UInt64; Bit: Integer; NewValue: Boolean): Boolean; overload;
 
+Function BitSetTo(var Value: Int8; Bit: Integer; NewValue: Boolean): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BitSetTo(var Value: Int16; Bit: Integer; NewValue: Boolean): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BitSetTo(var Value: Int32; Bit: Integer; NewValue: Boolean): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BitSetTo(var Value: Int64; Bit: Integer; NewValue: Boolean): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                              Bit scan forward (BSF)
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  BSF
+
   Returns index of lowest set (1) bit in the passed number. If no bit is set,
   then -1 is returned.
 
@@ -881,7 +1134,14 @@ Function BitSetTo(var Value: UInt64; Bit: Integer; NewValue: Boolean): Boolean; 
 Function BSF(Value: UInt8): Integer; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function BSF(Value: UInt16): Integer; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function BSF(Value: UInt32): Integer; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
-Function BSF(Value: UInt64): Integer; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+Function BSF(Value: U64Type): Integer; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+Function BSF(Value: Int8): Integer; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BSF(Value: Int16): Integer; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BSF(Value: Int32): Integer; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function BSF(Value: Int64): Integer; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -889,6 +1149,8 @@ Function BSF(Value: UInt64): Integer; overload;{$IFNDEF PurePascal} register; as
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  BSR
+
   Returns index of highest set bit in the passed number. If no bit is set, then
   -1 is returned.
 
@@ -898,7 +1160,14 @@ Function BSF(Value: UInt64): Integer; overload;{$IFNDEF PurePascal} register; as
 Function BSR(Value: UInt8): Integer; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function BSR(Value: UInt16): Integer; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
 Function BSR(Value: UInt32): Integer; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
-Function BSR(Value: UInt64): Integer; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+Function BSR(Value: U64Type): Integer; overload;{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+
+Function BSR(Value: Int8): Integer; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BSR(Value: Int16): Integer; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function BSR(Value: Int32): Integer; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function BSR(Value: Int64): Integer; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -906,6 +1175,8 @@ Function BSR(Value: UInt64): Integer; overload;{$IFNDEF PurePascal} register; as
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  PopCount
+  
   Returns number of set (1) bits in the passed number. When no bit is set, it
   will return 0.
 
@@ -915,7 +1186,14 @@ Function BSR(Value: UInt64): Integer; overload;{$IFNDEF PurePascal} register; as
 Function PopCount(Value: UInt8): Integer; overload;
 Function PopCount(Value: UInt16): Integer; overload;
 Function PopCount(Value: UInt32): Integer; overload;
-Function PopCount(Value: UInt64): Integer; overload;
+Function PopCount(Value: U64Type): Integer; overload;
+
+Function PopCount(Value: Int8): Integer; overload;
+Function PopCount(Value: Int16): Integer; overload;
+Function PopCount(Value: Int32): Integer; overload;
+{$IF Declared(NativeUInt64E)}
+Function PopCount(Value: Int64): Integer; overload;
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -942,6 +1220,8 @@ procedure SetLowNibbleValue(var Value: UInt8; SetTo: TNibble);{$IFDEF CanInline}
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  GetFlagState
+
   When exact match is false, the following function will return true when at
   least one bit set in FlagBitmask is also set in the Value, false otherwise.
 
@@ -952,7 +1232,14 @@ procedure SetLowNibbleValue(var Value: UInt8; SetTo: TNibble);{$IFDEF CanInline}
 Function GetFlagState(Value,FlagBitmask: UInt8; ExactMatch: Boolean = False): Boolean; overload;
 Function GetFlagState(Value,FlagBitmask: UInt16; ExactMatch: Boolean = False): Boolean; overload;
 Function GetFlagState(Value,FlagBitmask: UInt32; ExactMatch: Boolean = False): Boolean; overload;
-Function GetFlagState(Value,FlagBitmask: UInt64; ExactMatch: Boolean = False): Boolean; overload;
+Function GetFlagState(Value,FlagBitmask: U64Type; ExactMatch: Boolean = False): Boolean; overload;
+
+Function GetFlagState(Value,FlagBitmask: Int8; ExactMatch: Boolean = False): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function GetFlagState(Value,FlagBitmask: Int16; ExactMatch: Boolean = False): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function GetFlagState(Value,FlagBitmask: Int32; ExactMatch: Boolean = False): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function GetFlagState(Value,FlagBitmask: Int64; ExactMatch: Boolean = False): Boolean; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -960,6 +1247,13 @@ Function GetFlagState(Value,FlagBitmask: UInt64; ExactMatch: Boolean = False): B
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  SetFlag
+  SetFlagValue
+  SetFlags_*
+  SetFlags
+  SetFlagsValue_*
+  SetFlagsValue
+
   Bits set in the FlagBitmask are also set (to 1) in the passed number and this
   resulting number is then returned. Bits not set in the mask are copied to the
   result without change.
@@ -976,7 +1270,14 @@ Function GetFlagState(Value,FlagBitmask: UInt64; ExactMatch: Boolean = False): B
 Function SetFlag(Value,FlagBitmask: UInt8): UInt8; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function SetFlag(Value,FlagBitmask: UInt16): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function SetFlag(Value,FlagBitmask: UInt32): UInt32; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function SetFlag(Value,FlagBitmask: UInt64): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function SetFlag(Value,FlagBitmask: U64Type): U64Type; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function SetFlag(Value,FlagBitmask: Int8): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function SetFlag(Value,FlagBitmask: Int16): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function SetFlag(Value,FlagBitmask: Int32): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function SetFlag(Value,FlagBitmask: Int64): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -985,26 +1286,50 @@ procedure SetFlagValue(var Value: UInt16; FlagBitmask: UInt16); overload;{$IFDEF
 procedure SetFlagValue(var Value: UInt32; FlagBitmask: UInt32); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure SetFlagValue(var Value: UInt64; FlagBitmask: UInt64); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure SetFlagValue(var Value: Int8; FlagBitmask: Int8); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SetFlagValue(var Value: Int16; FlagBitmask: Int16); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SetFlagValue(var Value: Int32; FlagBitmask: Int32); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SetFlagValue(var Value: Int64; FlagBitmask: Int64); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 //------------------------------------------------------------------------------
 
-Function SetFlags_8(Value: UInt8; Flags: array of UInt8): UInt8;
-Function SetFlags_16(Value: UInt16; Flags: array of UInt16): UInt16;
-Function SetFlags_32(Value: UInt32; Flags: array of UInt32): UInt32;
-Function SetFlags_64(Value: UInt64; Flags: array of UInt64): UInt64;
+Function SetFlags_8(Value: UInt8; Flags: array of UInt8): UInt8; overload;
+Function SetFlags_16(Value: UInt16; Flags: array of UInt16): UInt16; overload;
+Function SetFlags_32(Value: UInt32; Flags: array of UInt32): UInt32; overload;
+Function SetFlags_64(Value: U64Type; Flags: array of U64Type): U64Type; overload;
+
+Function SetFlags_8(Value: Int8; Flags: array of Int8): Int8; overload;
+Function SetFlags_16(Value: Int16; Flags: array of Int16): Int16; overload;
+Function SetFlags_32(Value: Int32; Flags: array of Int32): Int32; overload;
+{$IF Declared(NativeUInt64E)}
+Function SetFlags_64(Value: Int64; Flags: array of Int64): Int64; overload;
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
 Function SetFlags(Value: UInt8; Flags: array of UInt8): UInt8; overload;
 Function SetFlags(Value: UInt16; Flags: array of UInt16): UInt16; overload;
 Function SetFlags(Value: UInt32; Flags: array of UInt32): UInt32; overload;
-Function SetFlags(Value: UInt64; Flags: array of UInt64): UInt64; overload;
+Function SetFlags(Value: U64Type; Flags: array of U64Type): U64Type; overload;
+
+Function SetFlags(Value: Int8; Flags: array of Int8): Int8; overload;
+Function SetFlags(Value: Int16; Flags: array of Int16): Int16; overload;
+Function SetFlags(Value: Int32; Flags: array of Int32): Int32; overload;
+{$IF Declared(NativeUInt64E)}
+Function SetFlags(Value: Int64; Flags: array of Int64): Int64; overload;
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
-procedure SetFlagsValue_8(var Value: UInt8; Flags: array of UInt8);
-procedure SetFlagsValue_16(var Value: UInt16; Flags: array of UInt16);
-procedure SetFlagsValue_32(var Value: UInt32; Flags: array of UInt32);
-procedure SetFlagsValue_64(var Value: UInt64; Flags: array of UInt64);
+procedure SetFlagsValue_8(var Value: UInt8; Flags: array of UInt8); overload;
+procedure SetFlagsValue_16(var Value: UInt16; Flags: array of UInt16); overload;
+procedure SetFlagsValue_32(var Value: UInt32; Flags: array of UInt32); overload;
+procedure SetFlagsValue_64(var Value: UInt64; Flags: array of UInt64); overload;
+
+procedure SetFlagsValue_8(var Value: Int8; Flags: array of Int8); overload;
+procedure SetFlagsValue_16(var Value: Int16; Flags: array of Int16); overload;
+procedure SetFlagsValue_32(var Value: Int32; Flags: array of Int32); overload;
+procedure SetFlagsValue_64(var Value: Int64; Flags: array of Int64); overload;
 
 //------------------------------------------------------------------------------
 
@@ -1013,12 +1338,24 @@ procedure SetFlagsValue(var Value: UInt16; Flags: array of UInt16); overload;
 procedure SetFlagsValue(var Value: UInt32; Flags: array of UInt32); overload;
 procedure SetFlagsValue(var Value: UInt64; Flags: array of UInt64); overload;
 
+procedure SetFlagsValue(var Value: Int8; Flags: array of Int8); overload;
+procedure SetFlagsValue(var Value: Int16; Flags: array of Int16); overload;
+procedure SetFlagsValue(var Value: Int32; Flags: array of Int32); overload;
+procedure SetFlagsValue(var Value: Int64; Flags: array of Int64); overload;
+
 {-------------------------------------------------------------------------------
 ================================================================================
                                    Reset flag
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  ResetFlag
+  ResetFlagValue
+  ResetFlags_*
+  ResetFlags
+  ResetFlagsValue_*
+  ResetFlagsValue
+
   Bits set in the FlagBitmask are reset (to 0) in the passed number and this
   resulting number is then returned. Bits not set in the mask are copied to the
   result without change.
@@ -1035,7 +1372,14 @@ procedure SetFlagsValue(var Value: UInt64; Flags: array of UInt64); overload;
 Function ResetFlag(Value,FlagBitmask: UInt8): UInt8; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function ResetFlag(Value,FlagBitmask: UInt16): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function ResetFlag(Value,FlagBitmask: UInt32): UInt32; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function ResetFlag(Value,FlagBitmask: UInt64): UInt64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function ResetFlag(Value,FlagBitmask: U64Type): U64Type; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function ResetFlag(Value,FlagBitmask: Int8): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function ResetFlag(Value,FlagBitmask: Int16): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function ResetFlag(Value,FlagBitmask: Int32): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function ResetFlag(Value,FlagBitmask: Int64): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -1044,26 +1388,50 @@ procedure ResetFlagValue(var Value: UInt16; FlagBitmask: UInt16); overload;{$IFD
 procedure ResetFlagValue(var Value: UInt32; FlagBitmask: UInt32); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure ResetFlagValue(var Value: UInt64; FlagBitmask: UInt64); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure ResetFlagValue(var Value: Int8; FlagBitmask: Int8); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure ResetFlagValue(var Value: Int16; FlagBitmask: Int16); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure ResetFlagValue(var Value: Int32; FlagBitmask: Int32); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure ResetFlagValue(var Value: Int64; FlagBitmask: Int64); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 //------------------------------------------------------------------------------
 
-Function ResetFlags_8(Value: UInt8; Flags: array of UInt8): UInt8;
-Function ResetFlags_16(Value: UInt16; Flags: array of UInt16): UInt16;
-Function ResetFlags_32(Value: UInt32; Flags: array of UInt32): UInt32;
-Function ResetFlags_64(Value: UInt64; Flags: array of UInt64): UInt64;
+Function ResetFlags_8(Value: UInt8; Flags: array of UInt8): UInt8; overload;
+Function ResetFlags_16(Value: UInt16; Flags: array of UInt16): UInt16; overload;
+Function ResetFlags_32(Value: UInt32; Flags: array of UInt32): UInt32; overload;
+Function ResetFlags_64(Value: U64Type; Flags: array of U64Type): U64Type; overload;
+
+Function ResetFlags_8(Value: Int8; Flags: array of Int8): Int8; overload;
+Function ResetFlags_16(Value: Int16; Flags: array of Int16): Int16; overload;
+Function ResetFlags_32(Value: Int32; Flags: array of Int32): Int32; overload;
+{$IF Declared(NativeUInt64E)}
+Function ResetFlags_64(Value: Int64; Flags: array of Int64): Int64; overload;
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
 Function ResetFlags(Value: UInt8; Flags: array of UInt8): UInt8; overload;
 Function ResetFlags(Value: UInt16; Flags: array of UInt16): UInt16; overload;
 Function ResetFlags(Value: UInt32; Flags: array of UInt32): UInt32; overload;
-Function ResetFlags(Value: UInt64; Flags: array of UInt64): UInt64; overload;
+Function ResetFlags(Value: U64Type; Flags: array of U64Type): U64Type; overload;
+
+Function ResetFlags(Value: Int8; Flags: array of Int8): Int8; overload;
+Function ResetFlags(Value: Int16; Flags: array of Int16): Int16; overload;
+Function ResetFlags(Value: Int32; Flags: array of Int32): Int32; overload;
+{$IF Declared(NativeUInt64E)}
+Function ResetFlags(Value: Int64; Flags: array of Int64): Int64; overload;
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
-procedure ResetFlagsValue_8(var Value: UInt8; Flags: array of UInt8);
-procedure ResetFlagsValue_16(var Value: UInt16; Flags: array of UInt16);
-procedure ResetFlagsValue_32(var Value: UInt32; Flags: array of UInt32);
-procedure ResetFlagsValue_64(var Value: UInt64; Flags: array of UInt64);
+procedure ResetFlagsValue_8(var Value: UInt8; Flags: array of UInt8); overload;
+procedure ResetFlagsValue_16(var Value: UInt16; Flags: array of UInt16); overload;
+procedure ResetFlagsValue_32(var Value: UInt32; Flags: array of UInt32); overload;
+procedure ResetFlagsValue_64(var Value: UInt64; Flags: array of UInt64); overload;
+
+procedure ResetFlagsValue_8(var Value: Int8; Flags: array of Int8); overload;
+procedure ResetFlagsValue_16(var Value: Int16; Flags: array of Int16); overload;
+procedure ResetFlagsValue_32(var Value: Int32; Flags: array of Int32); overload;
+procedure ResetFlagsValue_64(var Value: Int64; Flags: array of Int64); overload;
 
 //------------------------------------------------------------------------------
 
@@ -1072,12 +1440,20 @@ procedure ResetFlagsValue(var Value: UInt16; Flags: array of UInt16); overload;
 procedure ResetFlagsValue(var Value: UInt32; Flags: array of UInt32); overload;
 procedure ResetFlagsValue(var Value: UInt64; Flags: array of UInt64); overload;
 
+procedure ResetFlagsValue(var Value: Int8; Flags: array of Int8); overload;
+procedure ResetFlagsValue(var Value: Int16; Flags: array of Int16); overload;
+procedure ResetFlagsValue(var Value: Int32; Flags: array of Int32); overload;
+procedure ResetFlagsValue(var Value: Int64; Flags: array of Int64); overload;
+
 {-------------------------------------------------------------------------------
 ================================================================================
                                  Set flag state
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  SetFlagState
+  SetFlagStateValue
+
   Sets or resets (depending on NewState; false = reset, true = set) all bits
   selected (set to 1) in FlagBitmask in the passed number Value and returns the
   result. Bits not set in the mask are copied without change.
@@ -1086,7 +1462,14 @@ procedure ResetFlagsValue(var Value: UInt64; Flags: array of UInt64); overload;
 Function SetFlagState(Value,FlagBitmask: UInt8; NewState: Boolean): UInt8; overload;
 Function SetFlagState(Value,FlagBitmask: UInt16; NewState: Boolean): UInt16; overload;
 Function SetFlagState(Value,FlagBitmask: UInt32; NewState: Boolean): UInt32; overload;
-Function SetFlagState(Value,FlagBitmask: UInt64; NewState: Boolean): UInt64; overload;
+Function SetFlagState(Value,FlagBitmask: U64Type; NewState: Boolean): U64Type; overload;
+
+Function SetFlagState(Value,FlagBitmask: Int8; NewState: Boolean): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function SetFlagState(Value,FlagBitmask: Int16; NewState: Boolean): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function SetFlagState(Value,FlagBitmask: Int32; NewState: Boolean): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function SetFlagState(Value,FlagBitmask: Int64; NewState: Boolean): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -1095,12 +1478,19 @@ procedure SetFlagStateValue(var Value: UInt16; FlagBitmask: UInt16; NewState: Bo
 procedure SetFlagStateValue(var Value: UInt32; FlagBitmask: UInt32; NewState: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure SetFlagStateValue(var Value: UInt64; FlagBitmask: UInt64; NewState: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure SetFlagStateValue(var Value: Int8; FlagBitmask: Int8; NewState: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SetFlagStateValue(var Value: Int16; FlagBitmask: Int16; NewState: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SetFlagStateValue(var Value: Int32; FlagBitmask: Int32; NewState: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SetFlagStateValue(var Value: Int64; FlagBitmask: Int64; NewState: Boolean); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                                     Get bits
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  GetBits
+
   Returns contiguous segment of bits from passed Value, selected by a bit range.
 
   When ShiftDown is true, the extracted bits are shifted down so that the first
@@ -1114,7 +1504,14 @@ procedure SetFlagStateValue(var Value: UInt64; FlagBitmask: UInt64; NewState: Bo
 Function GetBits(Value: UInt8; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt8; overload;
 Function GetBits(Value: UInt16; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt16; overload;
 Function GetBits(Value: UInt32; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt32; overload;
-Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt64; overload;
+Function GetBits(Value: U64Type; FromBit,ToBit: Integer; ShiftDown: Boolean = True): U64Type; overload;
+
+Function GetBits(Value: Int8; FromBit,ToBit: Integer; ShiftDown: Boolean = True): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function GetBits(Value: Int16; FromBit,ToBit: Integer; ShiftDown: Boolean = True): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function GetBits(Value: Int32; FromBit,ToBit: Integer; ShiftDown: Boolean = True): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function GetBits(Value: Int64; FromBit,ToBit: Integer; ShiftDown: Boolean = True): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -1122,6 +1519,9 @@ Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = Tru
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  SetBits
+  SetBitsValue
+
   Replaces contiguous segment of bits selected by range in Value by
   corresponding bits from the NewBits.
 
@@ -1138,7 +1538,14 @@ Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = Tru
 Function SetBits(Value,NewBits: UInt8; FromBit,ToBit: Integer; ShiftUp: Boolean = True): UInt8; overload;
 Function SetBits(Value,NewBits: UInt16; FromBit,ToBit: Integer; ShiftUp: Boolean = True): UInt16; overload;
 Function SetBits(Value,NewBits: UInt32; FromBit,ToBit: Integer; ShiftUp: Boolean = True): UInt32; overload;
-Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Integer; ShiftUp: Boolean = True): UInt64; overload;
+Function SetBits(Value,NewBits: U64Type; FromBit,ToBit: Integer; ShiftUp: Boolean = True): U64Type; overload;
+
+Function SetBits(Value,NewBits: Int8; FromBit,ToBit: Integer; ShiftUp: Boolean = True): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function SetBits(Value,NewBits: Int16; FromBit,ToBit: Integer; ShiftUp: Boolean = True): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function SetBits(Value,NewBits: Int32; FromBit,ToBit: Integer; ShiftUp: Boolean = True): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function SetBits(Value,NewBits: Int64; FromBit,ToBit: Integer; ShiftUp: Boolean = True): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -1147,19 +1554,34 @@ procedure SetBitsValue(var Value: UInt16; NewBits: UInt16; FromBit,ToBit: Intege
 procedure SetBitsValue(var Value: UInt32; NewBits: UInt32; FromBit,ToBit: Integer; ShiftUp: Boolean = True); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Integer; ShiftUp: Boolean = True); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure SetBitsValue(var Value: Int8; NewBits: Int8; FromBit,ToBit: Integer; ShiftUp: Boolean = True); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SetBitsValue(var Value: Int16; NewBits: Int16; FromBit,ToBit: Integer; ShiftUp: Boolean = True); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SetBitsValue(var Value: Int32; NewBits: Int32; FromBit,ToBit: Integer; ShiftUp: Boolean = True); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure SetBitsValue(var Value: Int64; NewBits: Int64; FromBit,ToBit: Integer; ShiftUp: Boolean = True); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                                   Reverse bits
 ================================================================================
 -------------------------------------------------------------------------------}
 {
-  Reverses all bits within a given number.
+  ReverseBits
+  ReverseBitsValue
+
+  Reverses (reflects) all bits within a given number.
 }
 
 Function ReverseBits(Value: UInt8): UInt8; overload;
 Function ReverseBits(Value: UInt16): UInt16; overload;
 Function ReverseBits(Value: UInt32): UInt32; overload;
-Function ReverseBits(Value: UInt64): UInt64; overload;
+Function ReverseBits(Value: U64Type): U64Type; overload;
+
+Function ReverseBits(Value: Int8): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function ReverseBits(Value: Int16): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function ReverseBits(Value: Int32): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function ReverseBits(Value: Int64): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -1168,12 +1590,19 @@ procedure ReverseBitsValue(var Value: UInt16); overload;{$IFDEF CanInline} inlin
 procedure ReverseBitsValue(var Value: UInt32); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure ReverseBitsValue(var Value: UInt64); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure ReverseBitsValue(var Value: Int8); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure ReverseBitsValue(var Value: Int16); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure ReverseBitsValue(var Value: Int32); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure ReverseBitsValue(var Value: Int64); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                                Leading zero count
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  LZCount
+
   Returns number of leading (most significant) zero bits (number of zero bits
   above the highest set bit). If the number is zero, it will return size of
   the number (in bits).
@@ -1184,7 +1613,14 @@ procedure ReverseBitsValue(var Value: UInt64); overload;{$IFDEF CanInline} inlin
 Function LZCount(Value: UInt8): Integer; overload;
 Function LZCount(Value: UInt16): Integer; overload;
 Function LZCount(Value: UInt32): Integer; overload;
-Function LZCount(Value: UInt64): Integer; overload;
+Function LZCount(Value: U64Type): Integer; overload;
+
+Function LZCount(Value: Int8): Integer; overload;
+Function LZCount(Value: Int16): Integer; overload;
+Function LZCount(Value: Int32): Integer; overload;
+{$IF Declared(NativeUInt64E)}
+Function LZCount(Value: Int64): Integer; overload;
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -1192,6 +1628,8 @@ Function LZCount(Value: UInt64): Integer; overload;
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  TZCount
+
   Returns number of trailing (least significant) zero bits (number of zero bits
   below the lowest set bit). If the number is zero, it will return size of the
   number (in bits).
@@ -1202,7 +1640,14 @@ Function LZCount(Value: UInt64): Integer; overload;
 Function TZCount(Value: UInt8): Integer; overload;
 Function TZCount(Value: UInt16): Integer; overload;
 Function TZCount(Value: UInt32): Integer; overload;
-Function TZCount(Value: UInt64): Integer; overload;
+Function TZCount(Value: U64Type): Integer; overload;
+
+Function TZCount(Value: Int8): Integer; overload;
+Function TZCount(Value: Int16): Integer; overload;
+Function TZCount(Value: Int32): Integer; overload;
+{$IF Declared(NativeUInt64E)}
+Function TZCount(Value: Int64): Integer; overload;
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -1210,6 +1655,8 @@ Function TZCount(Value: UInt64): Integer; overload;
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  ExtractBits
+
   Extracts contiguous segment of bits from given value, selected by a starting
   bit index and length of the segment.
   The bits are written to the result from lowest bit up. Bits above length are
@@ -1227,7 +1674,14 @@ Function TZCount(Value: UInt64): Integer; overload;
 Function ExtractBits(Value: UInt8; Start,Length: Integer): UInt8; overload;
 Function ExtractBits(Value: UInt16; Start,Length: Integer): UInt16; overload;
 Function ExtractBits(Value: UInt32; Start,Length: Integer): UInt32; overload;
-Function ExtractBits(Value: UInt64; Start,Length: Integer): UInt64; overload;
+Function ExtractBits(Value: U64Type; Start,Length: Integer): U64Type; overload;
+
+Function ExtractBits(Value: Int8; Start,Length: Integer): Int8; overload;
+Function ExtractBits(Value: Int16; Start,Length: Integer): Int16; overload;
+Function ExtractBits(Value: Int32; Start,Length: Integer): Int32; overload;
+{$IF Declared(NativeUInt64E)}
+Function ExtractBits(Value: Int64; Start,Length: Integer): Int64; overload;
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -1235,6 +1689,9 @@ Function ExtractBits(Value: UInt64; Start,Length: Integer): UInt64; overload;
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  DepositBits
+  DepositBitsValue
+
   Deposits contiguous segment of bits from parameter NewBits to a selected
   position (Start) in Value and returns it. Bits are taken from low-order
   positions (starting from bit 0).
@@ -1249,7 +1706,14 @@ Function ExtractBits(Value: UInt64; Start,Length: Integer): UInt64; overload;
 Function DepositBits(Value,NewBits: UInt8; Start,Length: Integer): UInt8; overload;
 Function DepositBits(Value,NewBits: UInt16; Start,Length: Integer): UInt16; overload;
 Function DepositBits(Value,NewBits: UInt32; Start,Length: Integer): UInt32; overload;
-Function DepositBits(Value,NewBits: UInt64; Start,Length: Integer): UInt64; overload;
+Function DepositBits(Value,NewBits: U64Type; Start,Length: Integer): U64Type; overload;
+
+Function DepositBits(Value,NewBits: Int8; Start,Length: Integer): Int8; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function DepositBits(Value,NewBits: Int16; Start,Length: Integer): Int16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function DepositBits(Value,NewBits: Int32; Start,Length: Integer): Int32; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IF Declared(NativeUInt64E)}
+Function DepositBits(Value,NewBits: Int64; Start,Length: Integer): Int64; overload;{$IFDEF CanInline} inline;{$ENDIF}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -1258,12 +1722,19 @@ procedure DepositBitsValue(var Value: UInt16; NewBits: UInt16; Start,Length: Int
 procedure DepositBitsValue(var Value: UInt32; NewBits: UInt32; Start,Length: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure DepositBitsValue(var Value: UInt64; NewBits: UInt64; Start,Length: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
 
+procedure DepositBitsValue(var Value: Int8; NewBits: Int8; Start,Length: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure DepositBitsValue(var Value: Int16; NewBits: Int16; Start,Length: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure DepositBitsValue(var Value: Int32; NewBits: Int32; Start,Length: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+procedure DepositBitsValue(var Value: Int64; NewBits: Int64; Start,Length: Integer); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
 {-------------------------------------------------------------------------------
 ================================================================================
                               Parallel bits extract
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  ParallelBitsExtract
+
   Extracts bits from value using a mask - bits that are set (to 1) in the mask
   are extracted, other bits are ignored. The extracted bits are written into
   result from the lowest bit (bit 0) up. Unused bits in the result are zeroed.
@@ -1274,7 +1745,14 @@ procedure DepositBitsValue(var Value: UInt64; NewBits: UInt64; Start,Length: Int
 Function ParallelBitsExtract(Value,Mask: UInt8): UInt8; overload;
 Function ParallelBitsExtract(Value,Mask: UInt16): UInt16; overload;
 Function ParallelBitsExtract(Value,Mask: UInt32): UInt32; overload;
-Function ParallelBitsExtract(Value,Mask: UInt64): UInt64; overload;
+Function ParallelBitsExtract(Value,Mask: U64Type): U64Type; overload;
+
+Function ParallelBitsExtract(Value,Mask: Int8): Int8; overload;
+Function ParallelBitsExtract(Value,Mask: Int16): Int16; overload;
+Function ParallelBitsExtract(Value,Mask: Int32): Int32; overload;
+{$IF Declared(NativeUInt64E)}
+Function ParallelBitsExtract(Value,Mask: Int64): Int64; overload;
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -1282,6 +1760,8 @@ Function ParallelBitsExtract(Value,Mask: UInt64): UInt64; overload;
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  ParallelBitsDeposit
+
   Deposits bits from value to result using a mask - it takes low order bits
   from value and puts them at locations in result corresponding to set bits
   in the mask, in the order they appear (so first bit from value is put into
@@ -1294,7 +1774,14 @@ Function ParallelBitsExtract(Value,Mask: UInt64): UInt64; overload;
 Function ParallelBitsDeposit(Value,Mask: UInt8): UInt8; overload;
 Function ParallelBitsDeposit(Value,Mask: UInt16): UInt16; overload;
 Function ParallelBitsDeposit(Value,Mask: UInt32): UInt32; overload;
-Function ParallelBitsDeposit(Value,Mask: UInt64): UInt64; overload;
+Function ParallelBitsDeposit(Value,Mask: U64Type): U64Type; overload;
+
+Function ParallelBitsDeposit(Value,Mask: Int8): Int8; overload;
+Function ParallelBitsDeposit(Value,Mask: Int16): Int16; overload;
+Function ParallelBitsDeposit(Value,Mask: Int32): Int32; overload;
+{$IF Declared(NativeUInt64E)}
+Function ParallelBitsDeposit(Value,Mask: Int64): Int64; overload;
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -1302,13 +1789,23 @@ Function ParallelBitsDeposit(Value,Mask: UInt64): UInt64; overload;
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  BitParity
+
   Bit parity returns true when the number contains an even number or zero set
   bits, false otherwise.
 }
+
 Function BitParity(Value: UInt8): Boolean; overload;
 Function BitParity(Value: UInt16): Boolean; overload;
 Function BitParity(Value: UInt32): Boolean; overload;
-Function BitParity(Value: UInt64): Boolean; overload;
+Function BitParity(Value: U64Type): Boolean; overload;
+
+Function BitParity(Value: Int8): Boolean; overload;
+Function BitParity(Value: Int16): Boolean; overload;
+Function BitParity(Value: Int32): Boolean; overload;
+{$IF Declared(NativeUInt64E)}
+Function BitParity(Value: Int64): Boolean; overload;
+{$IFEND}
 
 
 {===============================================================================
@@ -1325,6 +1822,11 @@ Function BitParity(Value: UInt64): Boolean; overload;
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  PtrAdvance
+  PtrAdvanceVar
+  AdvancePtr
+  AdvancePtrVar
+
   Following functions are to be used in situations where a pointer needs to be
   incremented or decremented by an arbitrary offset and doing it in-situ is not
   desirable or possible.
@@ -1352,6 +1854,9 @@ procedure AdvancePtrVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize); ove
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  PtrCompare
+  ComparePtr
+
   Compares addresses of two given pointers.
 
   If pointer A is smaller (the address is lower) than B, then a negative value
@@ -1363,6 +1868,8 @@ Function ComparePtr(A,B: Pointer): Integer;{$IFDEF CanInline} inline;{$ENDIF}
 
 //------------------------------------------------------------------------------
 {
+  TPtrRelation
+
   Used to select relation between two pointers, see description of function
   PtrCompareRel for more details.
 }
@@ -1372,6 +1879,9 @@ type
     relHigher,relNotHigher,relHigherOrSame,relNotHigherNorSame);
 
 {
+  PtrCompareRel
+  ComparePtrRel
+
   Checks whether the two given pointers are in the selected relation. When
   they are, then true is returned, when they are not, then false is returned.
 
@@ -1389,6 +1899,8 @@ Function ComparePtrRel(A,B: Pointer; Relation: TPtrRelation = relSame): Boolean;
 -------------------------------------------------------------------------------}
 type
 {
+  TMemoryAlignment
+
   This enum is used when selecting a desired alignment or probing for actual
   existing alignment.
 
@@ -1408,17 +1920,23 @@ type
 //------------------------------------------------------------------------------
 
 {
-  AlignmentBytes returns number of bytes corresponding to requested alignment.
+  AlignmentBytes
+
+  Returns number of bytes corresponding to requested alignment.
 }
 Function AlignmentBytes(Alignment: TMemoryAlignment): TMemSize;
 
 {
-  AlignmentBits returns number of bits corresponding to requested alignment.
+  AlignmentBits
+
+  Returns number of bits corresponding to requested alignment.
   This number will always be an integral multiple of 8.
 }
 Function AlignmentBits(Alignment: TMemoryAlignment): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
 
 {
+  AlignmentSwitch
+
   Switches type of alignment - that is, it will return corresponding bit
   alignment if byte alignment is passed and vice-versa.
 
@@ -1440,21 +1958,27 @@ Function AlignmentSwitch(Alignment: TMemoryAlignment): TMemoryAlignment;
 //------------------------------------------------------------------------------
 
 {
-  CheckAlignment returns true when the provided memory address is aligned
-  as indicated by Alignment parameter, false otherwise.
+  CheckAlignment
+  AlignmentCheck
+
+  Returns true when the provided memory address is aligned as indicated by
+  Alignment parameter, false otherwise.
 }
 Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
 Function AlignmentCheck(Address: Pointer; Alignment: TMemoryAlignment): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
 
 {
-  Misalignment returns distance, in bytes, from the closest properly aligned
-  (defined by parameter Alignment) address that is not higher than the passed
-  address.
+  Misalignment
+
+  Returns distance, in bytes, from the closest properly aligned (defined by
+  parameter Alignment) address that is not higher than the passed address.
   If the address is aligned, it will return zero.
 }
 Function Misalignment(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;{$IFDEF CanInline} inline;{$ENDIF}
 
 {
+  AlignmentOffset
+
   Returns number of bytes that needs to be added to Address to obtain a
   properly aligned memory address, effectively calculating:
 
@@ -1463,6 +1987,9 @@ Function Misalignment(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;{
 Function AlignmentOffset(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;
 
 {
+  ResolveAlignment
+  AlignmentResolve
+
   Returns highest alignment the passed address conforms to.
   Note that the actual alignment of the address migh be even higher, this
   function just returns highest value from TMemoryAlignment enum.
@@ -1479,10 +2006,12 @@ Function AlignmentResolve(Address: Pointer; ByteAlignments: Boolean = False): TM
 
 //------------------------------------------------------------------------------
 {
-  AlignedMemory checks provided memory address for requested alignment. When
-  the address is properly aligned, it is returned and nothing more is done.
-  When is is not properly aligned, then this functions will return closest
-  properly aligned memory address that is not lower than the provided address.
+  AlignedMemory
+
+  Checks provided memory address for requested alignment. When the address is
+  properly aligned, it is returned and nothing more is done. When is is not
+  properly aligned, then this functions will return closest properly aligned
+  memory address that is not lower than the provided address.
 
     WARNING - this function does NOT do any (re)allocation, it merely returns
               an aligned pointer closest to a given one.
@@ -1490,8 +2019,10 @@ Function AlignmentResolve(Address: Pointer; ByteAlignments: Boolean = False): TM
 Function AlignedMemory(Address: Pointer; Alignment: TMemoryAlignment): Pointer;{$IFDEF CanInline} inline;{$ENDIF}
 
 {
-  AlignMemory works the same as AlignedMemory, it just operates directly on a
-  passed variable.
+  AlignMemory
+
+  Works the same as AlignedMemory, it just operates directly on a passed
+  variable.
 }
 procedure AlignMemory(var Address: Pointer; Alignment: TMemoryAlignment);{$IFDEF CanInline} inline;{$ENDIF}
 
@@ -1515,6 +2046,8 @@ type
 
 //------------------------------------------------------------------------------
 {
+  CompareData
+
   Following functions are comparing data presented in two buffers or two arrays
   of bytes.
 
@@ -1577,6 +2110,8 @@ Function CompareData(const A; SizeA: TMemSize; const B; SizeB: TMemSize; Compare
 Function CompareData(A,B: array of UInt8; CompareMethod: TCompareMethod): Integer; overload;
 
 {
+  CompareData
+
   Following overloads are here only for the sake of backward compatibility.
   They call main implementation with a parameter CompareMethod set to cmSizeData
   when AllowSizeDiff is true, or cmEqSizeData when AllowSizeDiff is false);
@@ -1590,6 +2125,8 @@ Function CompareData(A,B: array of UInt8; AllowSizeDiff: Boolean = True): Intege
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  SameData
+
   If the two data samples differ in size, SameData will return false,
   irrespective of actual content.
   If both data have zero size, it will return true.
@@ -1605,6 +2142,8 @@ Function SameData(A,B: array of UInt8): Boolean; overload;
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  BufferShiftDown
+  
   Takes bytes at address Buffer + Shift and moves them down so the first moved
   byte is placed at the start of the buffer. Number of bytes shifted is equal
   to BufferSize - Shift (so that the entire rest of the buffer beyond Shift
@@ -1625,11 +2164,13 @@ procedure BufferShiftDown(var Buffer; BufferSize: TMemSize; Shift: TMemSize);
 ================================================================================
 -------------------------------------------------------------------------------}
 {
+  CopyBits
+
   Takes BitCount number of bits from the Source memory location and copies them
   into Destination memory location. This should not be used as a replacement
   for standard functions copying integral (whole) bytes, only when copying an
   arbitrary bit strings.
-  Also note that the bit count is strictly observed, meaning only the truly
+  Also note that the bit count is strictly honored, meaning only the truly
   copied bits are replacing bits in the destination (ie. when copying one bit,
   then only that bit is put into destination, other bits in destination parent
   byte are unaffected).
@@ -1661,7 +2202,7 @@ procedure CopyBits(Source,Destination: Pointer; SrcBitOffset,DstBitOffset,BitCou
   to support SSE2, and all existing processors that support 64 mode should also
   support this extensions.
 }
-procedure FillByte(var Dst; Count: TMemSize; Value: UInt8);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+procedure FillByte(var Dst; Count: TMemSize; Value: UInt8); {$IFNDEF PurePascal} register; assembler;{$ENDIF}
 
 {
   FillWord
@@ -1673,7 +2214,7 @@ procedure FillByte(var Dst; Count: TMemSize; Value: UInt8);{$IFNDEF PurePascal} 
 
     WARNING - count gives number of words (2-byte entities) to fill, not bytes!
 }
-procedure FillWord(var Dst; Count: TMemSize; Value: UInt16);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+procedure FillWord(var Dst; Count: TMemSize; Value: UInt16); {$IFNDEF PurePascal} register; assembler;{$ENDIF}
 
 {
   FillLong
@@ -1687,7 +2228,7 @@ procedure FillWord(var Dst; Count: TMemSize; Value: UInt16);{$IFNDEF PurePascal}
     WARNING - count gives number of long words (4-byte entities) to fill,
               not bytes!
 }
-procedure FillLong(var Dst; Count: TMemSize; Value: UInt32);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+procedure FillLong(var Dst; Count: TMemSize; Value: UInt32); {$IFNDEF PurePascal} register; assembler;{$ENDIF}
 
 {
   FillLong
@@ -1701,7 +2242,7 @@ procedure FillLong(var Dst; Count: TMemSize; Value: UInt32);{$IFNDEF PurePascal}
     WARNING - count gives number of quad words (8-byte entities) to fill,
               not bytes!
 }
-procedure FillQuad(var Dst; Count: TMemSize; Value: UInt64);{$IFNDEF PurePascal} register; assembler;{$ENDIF}
+procedure FillQuad(var Dst; Count: TMemSize; Value: UInt64); {$IFNDEF PurePascal} register; assembler;{$ENDIF}
 
 //------------------------------------------------------------------------------
 {
@@ -1712,7 +2253,7 @@ procedure FillQuad(var Dst; Count: TMemSize; Value: UInt64);{$IFNDEF PurePascal}
   It is equivalent to function FillByte except that it accepts pointer instead
   of untyped variable. In fact it internally calls the FillByte function.
 }
-procedure FillMemory(Mem: Pointer; Size: TMemSize; Value: UInt8);{$IFDEF CanInline} inline;{$ENDIF}
+procedure FillMemory(Mem: Pointer; Size: TMemSize; Value: UInt8); {$IFDEF CanInline} inline;{$ENDIF}
 
 //------------------------------------------------------------------------------
 {
@@ -1879,6 +2420,8 @@ type
 
 //------------------------------------------------------------------------------
 {
+  FindBytes
+
   Count denotes number of bytes in Bytes (byte sequence searched for), whereas
   argument Size gives size of the provided buffer (argument Buffer) that is to
   be searched/scanned.
@@ -2007,16 +2550,16 @@ Function LLDecodeFlags(Flags: UInt16): TBOStatusFlags;
 
   For more technical details, refer to x86(-64) CPU documentation.
 }
-Function LLCompareRaw(A,B: Int8): UInt16; overload; register; assembler;
-Function LLCompareRaw(A,B: Int16): UInt16; overload; register; assembler;
-Function LLCompareRaw(A,B: Int32): UInt16; overload; register; assembler;
-Function LLCompareRaw(A,B: Int64): UInt16; overload;{$IFDEF x64} register; assembler;{$ENDIF}
+Function LLCompareRaw(A,B: UInt8): UInt16; overload; register; assembler;
+Function LLCompareRaw(A,B: UInt16): UInt16; overload; register; assembler;
+Function LLCompareRaw(A,B: UInt32): UInt16; overload; register; assembler;
+Function LLCompareRaw(A,B: U64Type): UInt16; overload;{$IFDEF x64} register; assembler;{$ENDIF}
 
-Function LLCompareRaw(A,B: UInt8): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function LLCompareRaw(A,B: UInt16): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function LLCompareRaw(A,B: UInt32): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompareRaw(A,B: Int8): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompareRaw(A,B: Int16): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompareRaw(A,B: Int32): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
 {$IF Declared(NativeUInt64E)}
-Function LLCompareRaw(A,B: UInt64): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompareRaw(A,B: Int64): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
 {$IFEND}
 
 //------------------------------------------------------------------------------
@@ -2028,16 +2571,16 @@ Function LLCompareRaw(A,B: UInt64): UInt16; overload;{$IFDEF CanInline} inline;{
   present in the returned set, then the corresponding flag was set(1). When not
   present, then it was clear(0).
 }
-Function LLCompare(A,B: Int8): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function LLCompare(A,B: Int16): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function LLCompare(A,B: Int32): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function LLCompare(A,B: Int64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
-
 Function LLCompare(A,B: UInt8): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function LLCompare(A,B: UInt16): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function LLCompare(A,B: UInt32): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompare(A,B: U64Type): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function LLCompare(A,B: Int8): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompare(A,B: Int16): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompare(A,B: Int32): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
 {$IF Declared(NativeUInt64E)}
-Function LLCompare(A,B: UInt64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLCompare(A,B: Int64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
 {$IFEND}
 
 {$ENDIF}
@@ -2070,16 +2613,16 @@ Function LLCompare(A,B: UInt64): TBOStatusFlags; overload;{$IFDEF CanInline} inl
 
   For more technical details, refer to x86(-64) CPU documentation.
 }
-Function LLTestRaw(A,B: Int8): UInt16; overload; register; assembler;
-Function LLTestRaw(A,B: Int16): UInt16; overload; register; assembler;
-Function LLTestRaw(A,B: Int32): UInt16; overload; register; assembler;
-Function LLTestRaw(A,B: Int64): UInt16; overload;{$IFDEF x64} register; assembler;{$ENDIF}
+Function LLTestRaw(A,B: UInt8): UInt16; overload; register; assembler;
+Function LLTestRaw(A,B: UInt16): UInt16; overload; register; assembler;
+Function LLTestRaw(A,B: UInt32): UInt16; overload; register; assembler;
+Function LLTestRaw(A,B: U64Type): UInt16; overload;{$IFDEF x64} register; assembler;{$ENDIF}
 
-Function LLTestRaw(A,B: UInt8): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function LLTestRaw(A,B: UInt16): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function LLTestRaw(A,B: UInt32): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTestRaw(A,B: Int8): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTestRaw(A,B: Int16): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTestRaw(A,B: Int32): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
 {$IF Declared(NativeUInt64E)}
-Function LLTestRaw(A,B: UInt64): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTestRaw(A,B: Int64): UInt16; overload;{$IFDEF CanInline} inline;{$ENDIF}
 {$IFEND}
 
 //------------------------------------------------------------------------------
@@ -2091,16 +2634,16 @@ Function LLTestRaw(A,B: UInt64): UInt16; overload;{$IFDEF CanInline} inline;{$EN
   present in the returned set, then the corresponding flag was set(1). When not
   present, then it was clear(0).
 }
-Function LLTest(A,B: Int8): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function LLTest(A,B: Int16): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function LLTest(A,B: Int32): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
-Function LLTest(A,B: Int64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
-
 Function LLTest(A,B: UInt8): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function LLTest(A,B: UInt16): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
 Function LLTest(A,B: UInt32): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTest(A,B: U64Type): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function LLTest(A,B: Int8): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTest(A,B: Int16): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTest(A,B: Int32): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
 {$IF Declared(NativeUInt64E)}
-Function LLTest(A,B: UInt64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
+Function LLTest(A,B: Int64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;{$ENDIF}
 {$IFEND}
 
 {$ENDIF}
@@ -2163,25 +2706,32 @@ type
   TUIM_BitOps_Implementations = set of TUIM_BitOps_Implementation;
 
 //------------------------------------------------------------------------------
-
 {
+  UIM_BitOps_AvailableFuncImpl
+
   Returns which implementations are available for the selected function.
 }
 Function UIM_BitOps_AvailableFuncImpl(Func: TUIM_BitOps_Function): TUIM_BitOps_Implementations;
 
 {
+  UIM_BitOps_SupportedFuncImpl
+
   Returns which implementations are supported and can be safely selected for
   a given function.
 }
 Function UIM_BitOps_SupportedFuncImpl(Func: TUIM_BitOps_Function): TUIM_BitOps_Implementations;
 
 {
+  UIM_BitOps_GetFuncImpl
+
   Returns value indicating what implementation of the selected function is
   executed when calling the function.
 }
 Function UIM_BitOps_GetFuncImpl(Func: TUIM_BitOps_Function): TUIM_BitOps_Implementation;
 
 {
+  UIM_BitOps_SetFuncImpl
+
   Routes selected function to a selected implementation.
 
   Returned value is the previous routing.
@@ -2290,7 +2840,7 @@ end;
 ================================================================================
 -------------------------------------------------------------------------------}
 
-Function NumberToBitString(Number: UInt64; Bits: UInt8; BitStringFormat: TBitStringFormat): String;
+Function NumberToBitString(Number: U64Type; Bits: UInt8; BitStringFormat: TBitStringFormat): String;
 var
   i,SplitCnt: Integer;
 begin
@@ -2314,33 +2864,64 @@ For i := 1 to Pred(Bits div SplitCnt) do
   Result[(i * SplitCnt) + i] := BitStringFormat.SplitChar;
 end;
 
-//------------------------------------------------------------------------------
+//==============================================================================
 
 Function NumberToBitStr(Number: UInt8; BitStringFormat: TBitStringFormat): String;
 begin
-Result := NumberToBitString(Number,8,BitStringFormat);
+Result := NumberToBitString(U64Type(Number),8,BitStringFormat);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToBitStr(Number: UInt16; BitStringFormat: TBitStringFormat): String;
 begin
-Result := NumberToBitString(Number,16,BitStringFormat);
+Result := NumberToBitString(U64Type(Number),16,BitStringFormat);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToBitStr(Number: UInt32; BitStringFormat: TBitStringFormat): String;
 begin
-Result := NumberToBitString(Number,32,BitStringFormat);
+Result := NumberToBitString(U64Type(Number),32,BitStringFormat);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function NumberToBitStr(Number: UInt64; BitStringFormat: TBitStringFormat): String;
+Function NumberToBitStr(Number: U64Type; BitStringFormat: TBitStringFormat): String;
 begin
 Result := NumberToBitString(Number,64,BitStringFormat);
 end;
+
+//------------------------------------------------------------------------------
+
+Function NumberToBitStr(Number: Int8; BitStringFormat: TBitStringFormat): String;
+begin
+Result := NumberToBitString(U64Type(Number),8,BitStringFormat);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToBitStr(Number: Int16; BitStringFormat: TBitStringFormat): String;
+begin
+Result := NumberToBitString(U64Type(Number),16,BitStringFormat);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToBitStr(Number: Int32; BitStringFormat: TBitStringFormat): String;
+begin
+Result := NumberToBitString(U64Type(Number),32,BitStringFormat);
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToBitStr(Number: Int64; BitStringFormat: TBitStringFormat): String;
+begin
+Result := NumberToBitString(U64Type(Number),64,BitStringFormat);
+end;
+
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
@@ -2350,7 +2931,7 @@ var
 begin
 Format := DefBitStringFormat;
 Format.Split := Split;
-Result := NumberToBitStr(Number,Format);
+Result := NumberToBitString(U64Type(Number),8,Format);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2361,7 +2942,7 @@ var
 begin
 Format := DefBitStringFormat;
 Format.Split := Split;
-Result := NumberToBitStr(Number,Format);
+Result := NumberToBitString(U64Type(Number),16,Format);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2372,51 +2953,129 @@ var
 begin
 Format := DefBitStringFormat;
 Format.Split := Split;
-Result := NumberToBitStr(Number,Format);
+Result := NumberToBitString(U64Type(Number),32,Format);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function NumberToBitStr(Number: UInt64; Split: TBitStringSplit): String;
+Function NumberToBitStr(Number: U64Type; Split: TBitStringSplit): String;
 var
   Format: TBitStringFormat;
 begin
 Format := DefBitStringFormat;
 Format.Split := Split;
-Result := NumberToBitStr(Number,Format);
+Result := NumberToBitString(Number,64,Format);
 end;
+
+//------------------------------------------------------------------------------
+
+Function NumberToBitStr(Number: Int8; Split: TBitStringSplit): String;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;
+Result := NumberToBitString(U64Type(Number),8,Format);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToBitStr(Number: Int16; Split: TBitStringSplit): String;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;
+Result := NumberToBitString(U64Type(Number),16,Format);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToBitStr(Number: Int32; Split: TBitStringSplit): String;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;
+Result := NumberToBitString(U64Type(Number),32,Format);
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToBitStr(Number: Int64; Split: TBitStringSplit): String;
+var
+  Format: TBitStringFormat;
+begin
+Format := DefBitStringFormat;
+Format.Split := Split;
+Result := NumberToBitString(U64Type(Number),64,Format);
+end;
+
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
 Function NumberToBitStr(Number: UInt8): String;
 begin
-Result := NumberToBitString(Number,8,DefBitStringFormat);
+Result := NumberToBitString(U64Type(Number),8,DefBitStringFormat);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToBitStr(Number: UInt16): String;
 begin
-Result := NumberToBitString(Number,16,DefBitStringFormat);
+Result := NumberToBitString(U64Type(Number),16,DefBitStringFormat);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToBitStr(Number: UInt32): String;
 begin
-Result := NumberToBitString(Number,32,DefBitStringFormat);
+Result := NumberToBitString(U64Type(Number),32,DefBitStringFormat);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function NumberToBitStr(Number: UInt64): String;
+Function NumberToBitStr(Number: U64Type): String;
 begin
 Result := NumberToBitString(Number,64,DefBitStringFormat);
 end;
 
+//------------------------------------------------------------------------------
+
+Function NumberToBitStr(Number: Int8): String;
+begin
+Result := NumberToBitString(U64Type(Number),8,DefBitStringFormat);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToBitStr(Number: Int16): String;
+begin
+Result := NumberToBitString(U64Type(Number),16,DefBitStringFormat);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToBitStr(Number: Int32): String;
+begin
+Result := NumberToBitString(U64Type(Number),32,DefBitStringFormat);
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToBitStr(Number: Int64): String;
+begin
+Result := NumberToBitString(U64Type(Number),64,DefBitStringFormat);
+end;
+
+{$IFEND}    
+
 //==============================================================================
 
-Function BitStrToNumber(const BitString: String; BitStringFormat: TBitStringFormat): UInt64;
+Function BitStrToNumber(const BitString: String; BitStringFormat: TBitStringFormat): U64Type;
 var
   i:  Integer;
 begin
@@ -2435,9 +3094,9 @@ For i := 1 to Length(BitString) do
   end;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BitStrToNumber(const BitString: String; Split: TBitStringSplit): UInt64;
+Function BitStrToNumber(const BitString: String; Split: TBitStringSplit): U64Type;
 var
   Format: TBitStringFormat;
 begin
@@ -2446,14 +3105,56 @@ Format.Split := Split;
 Result := BitStrToNumber(BitString,Format);
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BitStrToNumber(const BitString: String): UInt64;
+Function BitStrToNumber(const BitString: String): U64Type;
 begin
 Result := BitStrToNumber(BitString,DefBitStringFormat);
 end;
 
 //------------------------------------------------------------------------------
+
+Function BitStrToUInt(const BitString: String; BitStringFormat: TBitStringFormat): UInt64;
+begin
+Result := UInt64(BitStrToNumber(BitString,BitStringFormat));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitStrToUInt(const BitString: String; Split: TBitStringSplit): UInt64;
+begin
+Result := UInt64(BitStrToNumber(BitString,Split));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitStrToUInt(const BitString: String): UInt64;
+begin
+Result := UInt64(BitStrToNumber(BitString));
+end;
+
+//------------------------------------------------------------------------------
+
+Function BitStrToInt(const BitString: String; BitStringFormat: TBitStringFormat): Int64;
+begin
+Result := Int64(BitStrToNumber(BitString,BitStringFormat));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitStrToInt(const BitString: String; Split: TBitStringSplit): Int64;
+begin
+Result := Int64(BitStrToNumber(BitString,Split));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitStrToInt(const BitString: String): Int64;
+begin
+Result := Int64(BitStrToNumber(BitString));
+end;
+
+//==============================================================================
 
 Function TryBitStrToNumber(const BitString: String; out Value: UInt8; BitStringFormat: TBitStringFormat): Boolean;
 begin
@@ -2494,11 +3195,39 @@ end;
 Function TryBitStrToNumber(const BitString: String; out Value: UInt64; BitStringFormat: TBitStringFormat): Boolean;
 begin
 try
-  Value := BitStrToNumber(BitString,BitStringFormat);
+  Value := UInt64(BitStrToNumber(BitString,BitStringFormat));
   Result := True;
 except
   Result := False;
 end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryBitStrToNumber(const BitString: String; out Value: Int8; BitStringFormat: TBitStringFormat): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,UInt8(Value),BitStringFormat);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToNumber(const BitString: String; out Value: Int16; BitStringFormat: TBitStringFormat): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,UInt16(Value),BitStringFormat);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToNumber(const BitString: String; out Value: Int32; BitStringFormat: TBitStringFormat): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,UInt32(Value),BitStringFormat);
+end; 
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToNumber(const BitString: String; out Value: Int64; BitStringFormat: TBitStringFormat): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,UInt64(Value),BitStringFormat);
 end;
 
 //------------------------------------------------------------------------------
@@ -2545,6 +3274,33 @@ Format.Split := Split;
 Result := TryBitStrToNumber(BitString,Value,Format);
 end;
 
+//------------------------------------------------------------------------------
+
+Function TryBitStrToNumber(const BitString: String; out Value: Int8; Split: TBitStringSplit): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,UInt8(Value),Split);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToNumber(const BitString: String; out Value: Int16; Split: TBitStringSplit): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,UInt16(Value),Split);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToNumber(const BitString: String; out Value: Int32; Split: TBitStringSplit): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,UInt32(Value),Split);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToNumber(const BitString: String; out Value: Int64; Split: TBitStringSplit): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,UInt64(Value),Split);
+end;
 
 //------------------------------------------------------------------------------
 
@@ -2576,15 +3332,43 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function BitStrToNumberDef(const BitString: String; Default: UInt64; BitStringFormat: TBitStringFormat): UInt64;
+Function TryBitStrToNumber(const BitString: String; out Value: Int8): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,UInt8(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToNumber(const BitString: String; out Value: Int16): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,UInt16(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToNumber(const BitString: String; out Value: Int32): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,UInt32(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryBitStrToNumber(const BitString: String; out Value: Int64): Boolean;
+begin
+Result := TryBitStrToNumber(BitString,UInt64(Value));
+end;
+
+//==============================================================================
+
+Function BitStrToNumberDef(const BitString: String; Default: U64Type; BitStringFormat: TBitStringFormat): U64Type;
 begin
 If not TryBitStrToNumber(BitString,Result,BitStringFormat) then
   Result := Default;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BitStrToNumberDef(const BitString: String; Default: UInt64; Split: TBitStringSplit): UInt64;
+Function BitStrToNumberDef(const BitString: String; Default: U64Type; Split: TBitStringSplit): U64Type;
 var
   Format: TBitStringFormat;
 begin
@@ -2594,13 +3378,37 @@ If not TryBitStrToNumber(BitString,Result,Format) then
   Result := Default;
 end;
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BitStrToNumberDef(const BitString: String; Default: UInt64): UInt64;
+Function BitStrToNumberDef(const BitString: String; Default: U64Type): U64Type;
 begin
 If not TryBitStrToNumber(BitString,Result,DefBitStringFormat) then
   Result := Default;
 end;
+
+{$IF Declared(NativeUInt64E)}
+//------------------------------------------------------------------------------
+
+Function BitStrToNumberDef(const BitString: String; Default: Int64; BitStringFormat: TBitStringFormat): Int64;
+begin
+Result := Int64(BitStrToNumberDef(BitString,U64Type(Default),BitStringFormat));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitStrToNumberDef(const BitString: String; Default: Int64; Split: TBitStringSplit): Int64;
+begin
+Result := Int64(BitStrToNumberDef(BitString,U64Type(Default),Split));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitStrToNumberDef(const BitString: String; Default: Int64): Int64;
+begin
+Result := Int64(BitStrToNumberDef(BitString,U64Type(Default)));
+end;
+
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -2608,7 +3416,7 @@ end;
 ================================================================================
 -------------------------------------------------------------------------------}
 
-Function NumberToOctString(Number: UInt64): String;
+Function NumberToOctString(Number: U64Type): String;
 var
   Len:  TStrOff;
 begin
@@ -2621,43 +3429,74 @@ while Number <> 0 do
     Inc(Len);
   end;
 // remove leading zeroes
-If len > 0 then
+If Len > 0 then
   Result := Copy(Result,Succ(Length(Result) - Len),Len)
 else
   Result := '0';
 end;
 
-//------------------------------------------------------------------------------
+//==============================================================================
 
 Function NumberToOctStr(Number: UInt8): String;
 begin
-Result := NumberToOctString(UInt64(Number));
+Result := NumberToOctString(U64Type(Number));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToOctStr(Number: UInt16): String;
 begin
-Result := NumberToOctString(UInt64(Number));
+Result := NumberToOctString(U64Type(Number));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function NumberToOctStr(Number: UInt32): String;
 begin
-Result := NumberToOctString(UInt64(Number));
+Result := NumberToOctString(U64Type(Number));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function NumberToOctStr(Number: UInt64): String;
+Function NumberToOctStr(Number: U64Type): String;
 begin
-Result := NumberToOctString(UInt64(Number));
+Result := NumberToOctString(U64Type(Number));
 end;
 
 //------------------------------------------------------------------------------
 
-Function OctStrToNumber(const OctString: String): UInt64;
+Function NumberToOctStr(Number: Int8): String;
+begin
+Result := NumberToOctString(U64Type(Number));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToOctStr(Number: Int16): String;
+begin
+Result := NumberToOctString(U64Type(Number));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToOctStr(Number: Int32): String;
+begin
+Result := NumberToOctString(U64Type(Number));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function NumberToOctStr(Number: Int64): String;
+begin
+Result := NumberToOctString(U64Type(Number));
+end;
+
+{$IFEND}
+
+//==============================================================================
+
+Function OctStrToNumber(const OctString: String): U64Type;
 var
   i:  TStrOff;
 begin
@@ -2665,21 +3504,43 @@ begin
 Result := 0;
 If (Length(OctString) > 0) and (Length(OctString) <= 22) then
   begin
-    For i := 1 to Length(OctString) do
+    For i := 1 to Pred(Length(OctString)) do
       If Ord(OctString[i]) in [Ord('0')..Ord('7')] then
-        begin
-          If (Result and $E000000000000000) = 0 then
-            Result := Result shl 3
-          else
-            raise EBOConversionError.CreateFmt('OctStrToNumber: "%s" is not a valid octal number.',[OctString]);
-          Result := Result or (Ord(OctString[i]) - Ord('0'));
-        end
-      else raise EBOInvalidCharacter.CreateFmt('OctStrToNumber: Unknown character (#%d) in octstring.',[Ord(OctString[i])]);
+        Result := (Result shl 3) or (Ord(OctString[i]) - Ord('0'))
+      else
+        raise EBOInvalidCharacter.CreateFmt('OctStrToNumber: Unknown character (#%d) in octstring.',[Ord(OctString[i])]);
+  {
+    Last character is processed separately to remove pointles testing of
+    highest three bits from the above cycle.
+  }
+    If Ord(OctString[Length(OctString)]) in [Ord('0')..Ord('7')] then
+      begin
+        If (Result and U64Type($E000000000000000)) = 0 then
+          Result := Result shl 3
+        else
+          raise EBOConversionError.CreateFmt('OctStrToNumber: "%s" is not a valid octal number.',[OctString]);
+        Result := Result or (Ord(OctString[Length(OctString)]) - Ord('0'));
+      end
+    else raise EBOInvalidCharacter.CreateFmt('OctStrToNumber: Unknown character (#%d) in octstring.',[Ord(OctString[Length(OctString)])]);
   end
 else raise EBOConversionError.CreateFmt('OctStrToNumber: "%s" is not a valid octal number.',[OctString]);
 end;
 
 //------------------------------------------------------------------------------
+
+Function OctStrToUInt(const OctString: String): UInt64;
+begin
+Result := UInt64(OctStrToNumber(OctString));
+end;
+
+//------------------------------------------------------------------------------
+
+Function OctStrToInt(const OctString: String): Int64;
+begin
+Result := Int64(OctStrToNumber(OctString));
+end;
+
+//==============================================================================
 
 Function TryOctStrToNumber(const OctString: String; out Value: UInt8): Boolean;
 begin
@@ -2729,11 +3590,48 @@ end;
 
 //------------------------------------------------------------------------------
 
-Function OctStrToNumberDef(const OctString: String; Default: UInt64): UInt64;
+Function TryOctStrToNumber(const OctString: String; out Value: Int8): Boolean;
+begin
+Result := TryOctStrToNumber(OctString,UInt8(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryOctStrToNumber(const OctString: String; out Value: Int16): Boolean;
+begin
+Result := TryOctStrToNumber(OctString,UInt16(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryOctStrToNumber(const OctString: String; out Value: Int32): Boolean;
+begin
+Result := TryOctStrToNumber(OctString,UInt32(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TryOctStrToNumber(const OctString: String; out Value: Int64): Boolean;
+begin
+Result := TryOctStrToNumber(OctString,UInt64(Value));
+end;
+
+//==============================================================================
+
+Function OctStrToNumberDef(const OctString: String; Default: U64Type): U64Type;
 begin
 If not TryOctStrToNumber(OctString,Result) then
   Result := Default;
 end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function OctStrToNumberDef(const OctString: String; Default: Int64): Int64;
+begin
+Result := Int64(OctStrToNumberDef(OctString,U64Type(Default)));
+end;
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -3505,7 +4403,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function ROL(Value: UInt64; Shift: Integer): UInt64;
+Function ROL(Value: U64Type; Shift: Integer): U64Type;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -3557,9 +4455,40 @@ end;
 {$ELSE}
 begin
 Shift := Shift and 63;
-Result := UInt64((Value shl Shift) or (Value shr (64 - Shift)));
+Result := U64Type((Value shl Shift) or (Value shr (64 - Shift)));
 end;
 {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function ROL(Value: Int8; Shift: Integer): Int8;
+begin
+Result := Int8(ROL(UInt8(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ROL(Value: Int16; Shift: Integer): Int16;
+begin
+Result := Int16(ROL(UInt16(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ROL(Value: Int32; Shift: Integer): Int32;
+begin
+Result := Int32(ROL(UInt32(Value),Shift));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ROL(Value: Int64; Shift: Integer): Int64;
+begin
+Result := Int64(ROL(U64Type(Value),Shift));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -3586,7 +4515,35 @@ end;
 
 procedure ROLValue(var Value: UInt64; Shift: Integer);
 begin
-Value := ROL(Value,Shift);
+Value := ROL(U64Type(Value),Shift);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure ROLValue(var Value: Int8; Shift: Integer);
+begin
+Value := Int8(ROL(UInt8(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ROLValue(var Value: Int16; Shift: Integer);
+begin
+Value := Int16(ROL(UInt16(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ROLValue(var Value: Int32; Shift: Integer);
+begin
+Value := Int32(ROL(UInt32(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ROLValue(var Value: Int64; Shift: Integer);
+begin
+Value := Int64(ROL(U64Type(Value),Shift));
 end;
 
 {-------------------------------------------------------------------------------
@@ -3670,7 +4627,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function ROR(Value: UInt64; Shift: Integer): UInt64;
+Function ROR(Value: U64Type; Shift: Integer): U64Type;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -3722,9 +4679,41 @@ end;
 {$ELSE}
 begin
 Shift := Shift and 63;
-Result := UInt64((Value shr Shift) or (Value shl (64 - Shift)));
+Result := U64Type((Value shr Shift) or (Value shl (64 - Shift)));
 end;
 {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function ROR(Value: Int8; Shift: Integer): Int8;
+begin
+Result := Int8(ROR(UInt8(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ROR(Value: Int16; Shift: Integer): Int16;
+begin
+Result := Int16(ROR(UInt16(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ROR(Value: Int32; Shift: Integer): Int32;
+begin
+Result := Int32(ROR(UInt32(Value),Shift));
+end;
+
+{$IF Declared(NativeUInt64E)}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ROR(Value: Int64; Shift: Integer): Int64;
+begin
+Result := Int64(ROR(U64Type(Value),Shift));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -3751,7 +4740,35 @@ end;
 
 procedure RORValue(var Value: UInt64; Shift: Integer);
 begin
-Value := ROR(Value,Shift);
+Value := ROR(U64Type(Value),Shift);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure RORValue(var Value: Int8; Shift: Integer);
+begin
+Value := Int8(ROR(UInt8(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RORValue(var Value: Int16; Shift: Integer);
+begin
+Value := Int16(ROR(UInt16(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RORValue(var Value: Int32; Shift: Integer);
+begin
+Value := Int32(ROR(UInt32(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RORValue(var Value: Int64; Shift: Integer);
+begin
+Value := Int64(ROR(U64Type(Value),Shift));
 end;
 
 {-------------------------------------------------------------------------------
@@ -3898,7 +4915,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function RCLCarry(Value: UInt64; Shift: Integer; var CF: Boolean): UInt64;
+Function RCLCarry(Value: U64Type; Shift: Integer; var CF: Boolean): U64Type;
 {$IFNDEF PurePascal}
 {$IFDEF x64}
 asm
@@ -4023,16 +5040,46 @@ Carry := CF;
 Result := Value;
 For i := 1 to Shift do
   begin
-    CF := (Result and UInt64($8000000000000000)) <> 0;
+    CF := (Result and U64Type($8000000000000000)) <> 0;
     If Carry then
-      Result := UInt64((Result shl 1) or UInt64(1))
+      Result := U64Type((Result shl 1) or U64Type(1))
     else
-      Result := UInt64(Result shl 1);
+      Result := U64Type(Result shl 1);
     Carry := CF;
   end;
 end;
 {$ENDIF}
 
+//------------------------------------------------------------------------------
+
+Function RCLCarry(Value: Int8; Shift: Integer; var CF: Boolean): Int8;
+begin
+Result := Int8(RCLCarry(UInt8(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function RCLCarry(Value: Int16; Shift: Integer; var CF: Boolean): Int16;
+begin
+Result := Int16(RCLCarry(UInt16(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function RCLCarry(Value: Int32; Shift: Integer; var CF: Boolean): Int32;
+begin
+Result := Int32(RCLCarry(UInt32(Value),Shift,CF));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function RCLCarry(Value: Int64; Shift: Integer; var CF: Boolean): Int64;
+begin
+Result := Int64(RCLCarry(U64Type(Value),Shift,CF));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -4066,13 +5113,56 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function RCL(Value: UInt64; Shift: Integer; CF: Boolean = False): UInt64;
+Function RCL(Value: U64Type; Shift: Integer; CF: Boolean = False): U64Type;
 var
   TempCF: Boolean;
 begin
 TempCF := CF;
 Result := RCLCarry(Value,Shift,TempCF);
 end;
+
+//------------------------------------------------------------------------------
+
+Function RCL(Value: Int8; Shift: Integer; CF: Boolean = False): Int8;
+var
+  TempCF: Boolean;
+begin
+TempCF := CF;
+Result := Int8(RCLCarry(UInt8(Value),Shift,TempCF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function RCL(Value: Int16; Shift: Integer; CF: Boolean = False): Int16;
+var
+  TempCF: Boolean;
+begin
+TempCF := CF;
+Result := Int16(RCLCarry(UInt16(Value),Shift,TempCF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function RCL(Value: Int32; Shift: Integer; CF: Boolean = False): Int32;
+var
+  TempCF: Boolean;
+begin
+TempCF := CF;
+Result := Int32(RCLCarry(UInt32(Value),Shift,TempCF));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function RCL(Value: Int64; Shift: Integer; CF: Boolean = False): Int64;
+var
+  TempCF: Boolean;
+begin
+TempCF := CF;
+Result := Int64(RCLCarry(U64Type(Value),Shift,TempCF));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -4099,7 +5189,35 @@ end;
 
 procedure RCLValueCarry(var Value: UInt64; Shift: Integer; var CF: Boolean);
 begin
-Value := RCLCarry(Value,Shift,CF);
+Value := RCLCarry(U64Type(Value),Shift,CF);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure RCLValueCarry(var Value: Int8; Shift: Integer; var CF: Boolean);
+begin
+Value := Int8(RCLCarry(UInt8(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RCLValueCarry(var Value: Int16; Shift: Integer; var CF: Boolean);
+begin
+Value := Int16(RCLCarry(UInt16(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RCLValueCarry(var Value: Int32; Shift: Integer; var CF: Boolean);
+begin
+Value := Int32(RCLCarry(UInt32(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RCLValueCarry(var Value: Int64; Shift: Integer; var CF: Boolean);
+begin
+Value := Int64(RCLCarry(U64Type(Value),Shift,CF));
 end;
 
 //==============================================================================
@@ -4127,7 +5245,35 @@ end;
 
 procedure RCLValue(var Value: UInt64; Shift: Integer; CF: Boolean = False);
 begin
-Value := RCL(Value,Shift,CF);
+Value := RCL(U64Type(Value),Shift,CF);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure RCLValue(var Value: Int8; Shift: Integer; CF: Boolean = False);
+begin
+Value := Int8(RCL(UInt8(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RCLValue(var Value: Int16; Shift: Integer; CF: Boolean = False);
+begin
+Value := Int16(RCL(UInt16(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RCLValue(var Value: Int32; Shift: Integer; CF: Boolean = False);
+begin
+Value := Int32(RCL(UInt32(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RCLValue(var Value: Int64; Shift: Integer; CF: Boolean = False);
+begin
+Value := Int64(RCL(U64Type(Value),Shift,CF));
 end;
 
 {-------------------------------------------------------------------------------
@@ -4274,7 +5420,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function RCRCarry(Value: UInt64; Shift: Integer; var CF: Boolean): UInt64;
+Function RCRCarry(Value: U64Type; Shift: Integer; var CF: Boolean): U64Type;
 {$IFNDEF PurePascal}
 {$IFDEF x64}
 asm
@@ -4400,13 +5546,44 @@ For i := 1 to Shift do
   begin
     CF := (Result and 1) <> 0;
     If Carry then
-      Result := UInt64((Result shr 1) or UInt64($8000000000000000))
+      Result := U64Type((Result shr 1) or U64Type($8000000000000000))
     else
-      Result := UInt64(Result shr 1);
+      Result := U64Type(Result shr 1);
     Carry := CF;
   end;
 end;
 {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function RCRCarry(Value: Int8; Shift: Integer; var CF: Boolean): Int8;
+begin
+Result := Int8(RCRCarry(UInt8(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function RCRCarry(Value: Int16; Shift: Integer; var CF: Boolean): Int16;
+begin
+Result := Int16(RCRCarry(UInt16(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function RCRCarry(Value: Int32; Shift: Integer; var CF: Boolean): Int32;
+begin
+Result := Int32(RCRCarry(UInt32(Value),Shift,CF));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function RCRCarry(Value: Int64; Shift: Integer; var CF: Boolean): Int64;
+begin
+Result := Int64(RCRCarry(U64Type(Value),Shift,CF));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -4440,13 +5617,56 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function RCR(Value: UInt64; Shift: Integer; CF: Boolean = False): UInt64;
+Function RCR(Value: U64Type; Shift: Integer; CF: Boolean = False): U64Type;
 var
   TempCF: Boolean;
 begin
 TempCF := CF;
-Result := RCRCarry(Value,Shift,TempCF);
+Result := RCRCarry(U64Type(Value),Shift,TempCF);
 end;
+
+//------------------------------------------------------------------------------
+
+Function RCR(Value: Int8; Shift: Integer; CF: Boolean = False): Int8;
+var
+  TempCF: Boolean;
+begin
+TempCF := CF;
+Result := Int8(RCRCarry(UInt8(Value),Shift,TempCF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function RCR(Value: Int16; Shift: Integer; CF: Boolean = False): Int16;
+var
+  TempCF: Boolean;
+begin
+TempCF := CF;
+Result := Int16(RCRCarry(UInt16(Value),Shift,TempCF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function RCR(Value: Int32; Shift: Integer; CF: Boolean = False): Int32;
+var
+  TempCF: Boolean;
+begin
+TempCF := CF;
+Result := Int32(RCRCarry(UInt32(Value),Shift,TempCF));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function RCR(Value: Int64; Shift: Integer; CF: Boolean = False): Int64;
+var
+  TempCF: Boolean;
+begin
+TempCF := CF;
+Result := Int64(RCRCarry(U64Type(Value),Shift,TempCF));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -4473,7 +5693,35 @@ end;
 
 procedure RCRValueCarry(var Value: UInt64; Shift: Integer; var CF: Boolean);
 begin
-Value := RCRCarry(Value,Shift,CF);
+Value := RCRCarry(U64Type(Value),Shift,CF);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure RCRValueCarry(var Value: Int8; Shift: Integer; var CF: Boolean);
+begin
+Value := Int8(RCRCarry(UInt8(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RCRValueCarry(var Value: Int16; Shift: Integer; var CF: Boolean);
+begin
+Value := Int16(RCRCarry(UInt16(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RCRValueCarry(var Value: Int32; Shift: Integer; var CF: Boolean);
+begin
+Value := Int32(RCRCarry(UInt32(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RCRValueCarry(var Value: Int64; Shift: Integer; var CF: Boolean);
+begin
+Value := Int64(RCRCarry(U64Type(Value),Shift,CF));
 end;
 
 //==============================================================================
@@ -4501,7 +5749,35 @@ end;
 
 procedure RCRValue(var Value: UInt64; Shift: Integer; CF: Boolean = False);
 begin
-Value := RCR(Value,Shift,CF);
+Value := RCR(U64Type(Value),Shift,CF);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure RCRValue(var Value: Int8; Shift: Integer; CF: Boolean = False);
+begin
+Value := Int8(RCR(UInt8(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RCRValue(var Value: Int16; Shift: Integer; CF: Boolean = False);
+begin
+Value := Int16(RCR(UInt16(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RCRValue(var Value: Int32; Shift: Integer; CF: Boolean = False);
+begin
+Value := Int32(RCR(UInt32(Value),Shift,CF));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure RCRValue(var Value: Int64; Shift: Integer; CF: Boolean = False);
+begin
+Value := Int64(RCR(U64Type(Value),Shift,CF));
 end;
 
 {-------------------------------------------------------------------------------
@@ -4594,7 +5870,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function SAL(Value: UInt64; Shift: Integer): UInt64;
+Function SAL(Value: U64Type; Shift: Integer): U64Type;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -4642,9 +5918,40 @@ begin
   software implementation just nulls the result for large shifts (64+), which
   does not conform to Intel's documentation of SHL/SAL instruction.
 }
-Result := UInt64(Value shl UInt8(Shift and 63));
+Result := U64Type(Value shl UInt8(Shift and 63));
 end;
 {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function SAL(Value: Int8; Shift: Integer): Int8;
+begin
+Result := Int8(SAL(UInt8(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SAL(Value: Int16; Shift: Integer): Int16;
+begin
+Result := Int16(SAL(UInt16(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SAL(Value: Int32; Shift: Integer): Int32;
+begin
+Result := Int32(SAL(UInt32(Value),Shift));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SAL(Value: Int64; Shift: Integer): Int64;
+begin
+Result := Int64(SAL(U64Type(Value),Shift));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -4671,7 +5978,35 @@ end;
 
 procedure SALValue(var Value: UInt64; Shift: Integer);
 begin
-Value := SAL(Value,Shift);
+Value := SAL(U64Type(Value),Shift);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SALValue(var Value: Int8; Shift: Integer);
+begin
+Value := Int8(SAL(UInt8(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SALValue(var Value: Int16; Shift: Integer);
+begin
+Value := Int16(SAL(UInt16(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SALValue(var Value: Int32; Shift: Integer);
+begin
+Value := Int32(SAL(UInt32(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SALValue(var Value: Int64; Shift: Integer);
+begin
+Value := Int64(SAL(U64Type(Value),Shift));
 end;
 
 {-------------------------------------------------------------------------------
@@ -4788,7 +6123,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function SAR(Value: UInt64; Shift: Integer): UInt64;
+Function SAR(Value: U64Type; Shift: Integer): U64Type;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -4843,14 +6178,45 @@ begin
 Shift := Shift and 63;
 If Shift <> 0 then
   begin
-    If (Value and UInt64($8000000000000000)) <> 0 then
-      Result := UInt64((Value shr Shift) or (UInt64($FFFFFFFFFFFFFFFF) shl (64 - Shift)))
+    If (Value and U64Type($8000000000000000)) <> 0 then
+      Result := U64Type((Value shr Shift) or (U64Type($FFFFFFFFFFFFFFFF) shl (64 - Shift)))
     else
-      Result := UInt64(Value shr Shift);
+      Result := U64Type(Value shr Shift);
   end
 else Result := Value;
 end;
 {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function SAR(Value: Int8; Shift: Integer): Int8;
+begin
+Result := Int8(SAR(UInt8(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SAR(Value: Int16; Shift: Integer): Int16;
+begin
+Result := Int16(SAR(UInt16(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SAR(Value: Int32; Shift: Integer): Int32;
+begin
+Result := Int32(SAR(UInt32(Value),Shift));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SAR(Value: Int64; Shift: Integer): Int64;
+begin
+Result := Int64(SAR(U64Type(Value),Shift));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -4877,7 +6243,35 @@ end;
 
 procedure SARValue(var Value: UInt64; Shift: Integer);
 begin
-Value := SAR(Value,Shift);
+Value := SAR(U64Type(Value),Shift);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SARValue(var Value: Int8; Shift: Integer);
+begin
+Value := Int8(SAR(UInt8(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SARValue(var Value: Int16; Shift: Integer);
+begin
+Value := Int16(SAR(UInt16(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SARValue(var Value: Int32; Shift: Integer);
+begin
+Value := Int32(SAR(UInt32(Value),Shift));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SARValue(var Value: Int64; Shift: Integer);
+begin
+Value := Int64(SAR(U64Type(Value),Shift));
 end;
 
 {-------------------------------------------------------------------------------
@@ -4927,7 +6321,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function EndianSwap(Value: UInt64): UInt64;
+Function EndianSwap(Value: U64Type): U64Type;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -4953,6 +6347,30 @@ end;
 
 //------------------------------------------------------------------------------
 
+Function EndianSwap(Value: Int16): Int16;
+begin
+Result := Int16(EndianSwap(UInt16(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function EndianSwap(Value: Int32): Int32;
+begin
+Result := Int32(EndianSwap(UInt32(Value)));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function EndianSwap(Value: Int64): Int64;
+begin
+Result := Int64(EndianSwap(U64Type(Value)));
+end;
+
+{$IFEND}
+
+//------------------------------------------------------------------------------
+
 Function SwapEndian(Value: UInt16): UInt16;
 begin
 Result := EndianSwap(Value);
@@ -4967,10 +6385,34 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function SwapEndian(Value: UInt64): UInt64;
+Function SwapEndian(Value: U64Type): U64Type;
 begin
 Result := EndianSwap(Value);
 end;
+
+//------------------------------------------------------------------------------
+
+Function SwapEndian(Value: Int16): Int16;
+begin
+Result := Int16(EndianSwap(UInt16(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SwapEndian(Value: Int32): Int32;
+begin
+Result := Int32(EndianSwap(UInt32(Value)));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SwapEndian(Value: Int64): Int64;
+begin
+Result := Int64(EndianSwap(U64Type(Value)));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -4990,7 +6432,28 @@ end;
 
 procedure EndianSwapValue(var Value: UInt64);
 begin
-Value := EndianSwap(Value);
+Value := EndianSwap(U64Type(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure EndianSwapValue(var Value: Int16);
+begin
+Value := Int16(EndianSwap(UInt16(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure EndianSwapValue(var Value: Int32);
+begin
+Value := Int32(EndianSwap(UInt32(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure EndianSwapValue(var Value: Int64);
+begin
+Value := Int64(EndianSwap(U64Type(Value)));
 end;
 
 //------------------------------------------------------------------------------
@@ -5011,7 +6474,28 @@ end;
 
 procedure SwapEndianValue(var Value: UInt64);
 begin
-Value := EndianSwap(Value);
+Value := EndianSwap(U64Type(Value));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SwapEndianValue(var Value: Int16);
+begin
+Value := Int16(EndianSwap(UInt16(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SwapEndianValue(var Value: Int32);
+begin
+Value := Int32(EndianSwap(UInt32(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SwapEndianValue(var Value: Int64);
+begin
+Value := Int64(EndianSwap(U64Type(Value)));
 end;
 
 //==============================================================================
@@ -5595,7 +7079,7 @@ end;
 ================================================================================
 -------------------------------------------------------------------------------}
 
-Function BT(Value: Int8; Bit: Integer): Boolean;
+Function BT(Value: UInt8; Bit: Integer): Boolean;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -5620,7 +7104,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BT(Value: Int16; Bit: Integer): Boolean;
+Function BT(Value: UInt16; Bit: Integer): Boolean;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -5642,7 +7126,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BT(Value: Int32; Bit: Integer): Boolean;
+Function BT(Value: UInt32; Bit: Integer): Boolean;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -5664,7 +7148,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BT(Value: Int64; Bit: Integer): Boolean;
+Function BT(Value: U64Type; Bit: Integer): Boolean;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -5696,31 +7180,31 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BT(Value: UInt8; Bit: Integer): Boolean;
+Function BT(Value: Int8; Bit: Integer): Boolean;
 begin
-Result := BT(Int8(Value),Bit);
+Result := BT(UInt8(Value),Bit);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BT(Value: UInt16; Bit: Integer): Boolean;
+Function BT(Value: Int16; Bit: Integer): Boolean;
 begin
-Result := BT(Int16(Value),Bit);
+Result := BT(UInt16(Value),Bit);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BT(Value: UInt32; Bit: Integer): Boolean;
+Function BT(Value: Int32; Bit: Integer): Boolean;
 begin
-Result := BT(Int32(Value),Bit);
+Result := BT(UInt32(Value),Bit);
 end;
 
 {$IF Declared(NativeUInt64E)}
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BT(Value: UInt64; Bit: Integer): Boolean;
+Function BT(Value: Int64; Bit: Integer): Boolean;
 begin
-Result := BT(Int64(Value),Bit);
+Result := BT(U64Type(Value),Bit);
 end;
 
 {$IFEND}
@@ -5853,6 +7337,34 @@ Value := UInt64(Value or (UInt64(1) shl Bit));
 end;
 {$ENDIF}
 
+//------------------------------------------------------------------------------
+
+Function BTS(var Value: Int8; Bit: Integer): Boolean;
+begin
+Result := BTS(UInt8(Value),Bit);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BTS(var Value: Int16; Bit: Integer): Boolean;
+begin
+Result := BTS(UInt16(Value),Bit);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BTS(var Value: Int32; Bit: Integer): Boolean;
+begin
+Result := BTS(UInt32(Value),Bit);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BTS(var Value: Int64; Bit: Integer): Boolean;
+begin
+Result := BTS(UInt64(Value),Bit);
+end;
+
 {-------------------------------------------------------------------------------
 ================================================================================
                             Bit test and reset (BTR)
@@ -5979,6 +7491,34 @@ Result := ((Value shr Bit) and 1) <> 0;
 Value := UInt64(Value and not(UInt64(1) shl Bit));
 end;
 {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function BTR(var Value: Int8; Bit: Integer): Boolean;
+begin
+Result := BTR(UInt8(Value),Bit);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BTR(var Value: Int16; Bit: Integer): Boolean;
+begin
+Result := BTR(UInt16(Value),Bit);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BTR(var Value: Int32; Bit: Integer): Boolean;
+begin
+Result := BTR(UInt32(Value),Bit);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BTR(var Value: Int64; Bit: Integer): Boolean;
+begin
+Result := BTR(UInt64(Value),Bit);
+end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -6107,6 +7647,34 @@ Value := UInt64(Value xor (UInt64(1) shl Bit));
 end;
 {$ENDIF}
 
+//------------------------------------------------------------------------------
+
+Function BTC(var Value: Int8; Bit: Integer): Boolean;
+begin
+Result := BTC(UInt8(Value),Bit);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BTC(var Value: Int16; Bit: Integer): Boolean;
+begin
+Result := BTC(UInt16(Value),Bit);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BTC(var Value: Int32; Bit: Integer): Boolean;
+begin
+Result := BTC(UInt32(Value),Bit);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BTC(var Value: Int64; Bit: Integer): Boolean;
+begin
+Result := BTC(UInt64(Value),Bit);
+end;
+
 {-------------------------------------------------------------------------------
 ================================================================================
                        Bit test and set to a given value
@@ -6141,6 +7709,34 @@ Function BitSetTo(var Value: UInt64; Bit: Integer; NewValue: Boolean): Boolean;
 begin
 If NewValue then Result := BTS(Value,Bit)
   else Result := BTR(Value,Bit);
+end;
+
+//------------------------------------------------------------------------------
+
+Function BitSetTo(var Value: Int8; Bit: Integer; NewValue: Boolean): Boolean;
+begin
+Result := BitSetTo(UInt8(Value),Bit,NewValue);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitSetTo(var Value: Int16; Bit: Integer; NewValue: Boolean): Boolean;
+begin
+Result := BitSetTo(UInt16(Value),Bit,NewValue);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitSetTo(var Value: Int32; Bit: Integer; NewValue: Boolean): Boolean;
+begin
+Result := BitSetTo(UInt32(Value),Bit,NewValue);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitSetTo(var Value: Int64; Bit: Integer; NewValue: Boolean): Boolean;
+begin
+Result := BitSetTo(UInt64(Value),Bit,NewValue);
 end;
 
 {-------------------------------------------------------------------------------
@@ -6261,7 +7857,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BSF(Value: UInt64): Integer;
+Function BSF(Value: U64Type): Integer;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -6301,6 +7897,37 @@ For i := 0 to 63 do
     end;
 end;
 {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function BSF(Value: Int8): Integer;
+begin
+Result := BSF(UInt8(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BSF(Value: Int16): Integer;
+begin
+Result := BSF(UInt16(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BSF(Value: Int32): Integer;
+begin
+Result := BSF(UInt32(Value));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BSF(Value: Int64): Integer;
+begin
+Result := BSF(U64Type(Value));
+end;
+
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -6421,7 +8048,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BSR(Value: UInt64): Integer;
+Function BSR(Value: U64Type): Integer;
 {$IFNDEF PurePascal}
 asm
 {$IFDEF x64}
@@ -6462,6 +8089,37 @@ For i := 63 downto 0 do
     end;
 end;
 {$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function BSR(Value: Int8): Integer;
+begin
+Result := BSR(UInt8(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BSR(Value: Int16): Integer;
+begin
+Result := BSR(UInt16(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BSR(Value: Int32): Integer;
+begin
+Result := BSR(UInt32(Value));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BSR(Value: Int64): Integer;
+begin
+Result := BSR(U64Type(Value));
+end;
+
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -6536,7 +8194,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Fce_PopCount_64_Pas(Value: UInt64): Integer; register;
+Function Fce_PopCount_64_Pas(Value: U64Type): Integer; register;
 {$IFDEF UseLookupTable}
 begin
 {$IFDEF CPU64bit}
@@ -6550,12 +8208,12 @@ Result := Fce_PopCount_32_Pas(Int64Rec(Value).Lo) + Fce_PopCount_32_Pas(Int64Rec
 end;
 {$ELSE}
 begin
-Value := (Value and UInt64($5555555555555555)) + ((Value shr 1) and UInt64($5555555555555555));
-Value := (Value and UInt64($3333333333333333)) + ((Value shr 2) and UInt64($3333333333333333));
-Value := (Value and UInt64($0F0F0F0F0F0F0F0F)) + ((Value shr 4) and UInt64($0F0F0F0F0F0F0F0F));
-Value := (Value and UInt64($00FF00FF00FF00FF)) + ((Value shr 8) and UInt64($00FF00FF00FF00FF));
-Value := (Value and UInt64($0000FFFF0000FFFF)) + ((Value shr 16) and UInt64($0000FFFF0000FFFF));
-Value := (Value and UInt64($00000000FFFFFFFF)) + ((Value shr 32) and UInt64($00000000FFFFFFFF));
+Value := (Value and U64Type($5555555555555555)) + ((Value shr 1) and U64Type($5555555555555555));
+Value := (Value and U64Type($3333333333333333)) + ((Value shr 2) and U64Type($3333333333333333));
+Value := (Value and U64Type($0F0F0F0F0F0F0F0F)) + ((Value shr 4) and U64Type($0F0F0F0F0F0F0F0F));
+Value := (Value and U64Type($00FF00FF00FF00FF)) + ((Value shr 8) and U64Type($00FF00FF00FF00FF));
+Value := (Value and U64Type($0000FFFF0000FFFF)) + ((Value shr 16) and U64Type($0000FFFF0000FFFF));
+Value := (Value and U64Type($00000000FFFFFFFF)) + ((Value shr 32) and U64Type($00000000FFFFFFFF));
 Result := Integer(Value);
 end;
 {$ENDIF}
@@ -6622,7 +8280,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Fce_PopCount_64_Asm(Value: UInt64): Integer; register; assembler;
+Function Fce_PopCount_64_Asm(Value: U64Type): Integer; register; assembler;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -6651,13 +8309,12 @@ end;
 
 {$ENDIF}
 
-//==============================================================================
-
+//==============================================================================       
 var
   Var_PopCount_8: Function(Value: UInt8): Integer; register = Fce_PopCount_8_Pas;
   Var_PopCount_16: Function(Value: UInt16): Integer; register = Fce_PopCount_16_Pas;
   Var_PopCount_32: Function(Value: UInt32): Integer; register = Fce_PopCount_32_Pas;
-  Var_PopCount_64: Function(Value: UInt64): Integer; register = Fce_PopCount_64_Pas;
+  Var_PopCount_64: Function(Value: U64Type): Integer; register = Fce_PopCount_64_Pas;
 
 //------------------------------------------------------------------------------
 
@@ -6682,10 +8339,41 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function PopCount(Value: UInt64): Integer;
+Function PopCount(Value: U64Type): Integer;
 begin
 Result := Var_PopCount_64(Value);
 end;
+
+//------------------------------------------------------------------------------
+
+Function PopCount(Value: Int8): Integer;
+begin
+Result := Var_PopCount_8(UInt8(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function PopCount(Value: Int16): Integer;
+begin
+Result := Var_PopCount_16(UInt16(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function PopCount(Value: Int32): Integer;
+begin
+Result := Var_PopCount_32(UInt32(Value));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function PopCount(Value: Int64): Integer;
+begin
+Result := Var_PopCount_64(U64Type(Value));
+end;
+
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -6769,13 +8457,44 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function GetFlagState(Value,FlagBitmask: UInt64; ExactMatch: Boolean = False): Boolean;
+Function GetFlagState(Value,FlagBitmask: U64Type; ExactMatch: Boolean = False): Boolean;
 begin
 If ExactMatch then
   Result := (Value and FlagBitmask) = FlagBitmask
 else
   Result := (Value and FlagBitmask) <> 0;
 end;
+
+//------------------------------------------------------------------------------
+
+Function GetFlagState(Value,FlagBitmask: Int8; ExactMatch: Boolean = False): Boolean;
+begin
+Result := GetFlagState(UInt8(Value),UInt8(FlagBitmask),ExactMatch);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function GetFlagState(Value,FlagBitmask: Int16; ExactMatch: Boolean = False): Boolean;
+begin
+Result := GetFlagState(UInt16(Value),UInt16(FlagBitmask),ExactMatch);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function GetFlagState(Value,FlagBitmask: Int32; ExactMatch: Boolean = False): Boolean;
+begin
+Result := GetFlagState(UInt32(Value),UInt32(FlagBitmask),ExactMatch);
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function GetFlagState(Value,FlagBitmask: Int64; ExactMatch: Boolean = False): Boolean;
+begin
+Result := GetFlagState(U64Type(Value),U64Type(FlagBitmask),ExactMatch);
+end;
+
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -6804,10 +8523,41 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function SetFlag(Value,FlagBitmask: UInt64): UInt64;
+Function SetFlag(Value,FlagBitmask: U64Type): U64Type;
 begin
 Result := Value or FlagBitmask;
 end;
+
+//------------------------------------------------------------------------------
+
+Function SetFlag(Value,FlagBitmask: Int8): Int8;
+begin
+Result := Int8(SetFlag(UInt8(Value),UInt8(FlagBitmask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetFlag(Value,FlagBitmask: Int16): Int16;
+begin
+Result := Int16(SetFlag(UInt16(Value),UInt16(FlagBitmask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetFlag(Value,FlagBitmask: Int32): Int32;
+begin
+Result := Int32(SetFlag(UInt32(Value),UInt32(FlagBitmask)));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetFlag(Value,FlagBitmask: Int64): Int64;
+begin
+Result := Int64(SetFlag(U64Type(Value),U64Type(FlagBitmask)));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -6834,7 +8584,35 @@ end;
 
 procedure SetFlagValue(var Value: UInt64; FlagBitmask: UInt64);
 begin
-Value := SetFlag(Value,FlagBitmask);
+Value := UInt64(SetFlag(U64Type(Value),U64Type(FlagBitmask)));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SetFlagValue(var Value: Int8; FlagBitmask: Int8);
+begin
+Value := Int8(SetFlag(UInt8(Value),UInt8(FlagBitmask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetFlagValue(var Value: Int16; FlagBitmask: Int16);
+begin
+Value := Int16(SetFlag(UInt16(Value),UInt16(FlagBitmask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetFlagValue(var Value: Int32; FlagBitmask: Int32);
+begin
+Value := Int32(SetFlag(UInt32(Value),UInt32(FlagBitmask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetFlagValue(var Value: Int64; FlagBitmask: Int64);
+begin
+Value := Int64(SetFlag(U64Type(Value),U64Type(FlagBitmask)));
 end;
 
 //==============================================================================
@@ -6878,9 +8656,9 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function SetFlags_64(Value: UInt64; Flags: array of UInt64): UInt64;
+Function SetFlags_64(Value: U64Type; Flags: array of U64Type): U64Type;
 var
-  TempBitmask:  UInt64;
+  TempBitmask:  U64Type;
   i:            Integer;
 begin
 TempBitmask := 0;
@@ -6888,6 +8666,61 @@ For i := Low(Flags) to High(flags) do
   TempBitmask := TempBitmask or Flags[i];
 Result := SetFlag(Value,TempBitmask);
 end;
+
+//------------------------------------------------------------------------------
+
+Function SetFlags_8(Value: Int8; Flags: array of Int8): Int8;
+var
+  TempBitmask:  UInt8;
+  i:            Integer;
+begin
+TempBitmask := 0;
+For i := Low(Flags) to High(flags) do
+  TempBitmask := TempBitmask or UInt8(Flags[i]);
+Result := Int8(SetFlag(UInt8(Value),TempBitmask));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetFlags_16(Value: Int16; Flags: array of Int16): Int16;
+var
+  TempBitmask:  UInt16;
+  i:            Integer;
+begin
+TempBitmask := 0;
+For i := Low(Flags) to High(flags) do
+  TempBitmask := TempBitmask or UInt16(Flags[i]);
+Result := Int16(SetFlag(UInt16(Value),TempBitmask));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetFlags_32(Value: Int32; Flags: array of Int32): Int32;
+var
+  TempBitmask:  UInt32;
+  i:            Integer;
+begin
+TempBitmask := 0;
+For i := Low(Flags) to High(flags) do
+  TempBitmask := TempBitmask or UInt32(Flags[i]);
+Result := Int32(SetFlag(UInt32(Value),TempBitmask));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetFlags_64(Value: Int64; Flags: array of Int64): Int64;
+var
+  TempBitmask:  U64Type;
+  i:            Integer;
+begin
+TempBitmask := 0;
+For i := Low(Flags) to High(flags) do
+  TempBitmask := TempBitmask or U64Type(Flags[i]);
+Result := Int64(SetFlag(U64Type(Value),TempBitmask));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -6912,10 +8745,41 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function SetFlags(Value: UInt64; Flags: array of UInt64): UInt64;
+Function SetFlags(Value: U64Type; Flags: array of U64Type): U64Type;
 begin
 Result := SetFlags_64(Value,Flags);
 end;
+
+//------------------------------------------------------------------------------
+
+Function SetFlags(Value: Int8; Flags: array of Int8): Int8;
+begin
+Result := SetFlags_8(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetFlags(Value: Int16; Flags: array of Int16): Int16;
+begin
+Result := SetFlags_16(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetFlags(Value: Int32; Flags: array of Int32): Int32;
+begin
+Result := SetFlags_32(Value,Flags);
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetFlags(Value: Int64; Flags: array of Int64): Int64;
+begin
+Result := SetFlags_64(Value,Flags);
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -6941,6 +8805,50 @@ end;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure SetFlagsValue_64(var Value: UInt64; Flags: array of UInt64);
+{$IF Declared(NativeUInt64E)}
+begin
+Value := SetFlags_64(Value,Flags);
+end;
+{$ELSE}
+var
+  TempFlags:  array of U64Type;
+  i:          Integer;
+begin
+TempFlags := nil;
+If Length(Flags) > 0 then
+  begin
+    SetLength(TempFlags,Length(Flags));
+    For i := Low(Flags) to High(Flags) do
+      TempFlags[i] := U64Type(Flags[i]);
+  end;
+Value := UInt64(SetFlags_64(U64Type(Value),TempFlags));
+end;
+{$IFEND}
+
+//------------------------------------------------------------------------------
+
+procedure SetFlagsValue_8(var Value: Int8; Flags: array of Int8);
+begin
+Value := SetFlags_8(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetFlagsValue_16(var Value: Int16; Flags: array of Int16);
+begin
+Value := SetFlags_16(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetFlagsValue_32(var Value: Int32; Flags: array of Int32);
+begin
+Value := SetFlags_32(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetFlagsValue_64(var Value: Int64; Flags: array of Int64);
 begin
 Value := SetFlags_64(Value,Flags);
 end;
@@ -6973,6 +8881,34 @@ begin
 SetFlagsValue_64(Value,Flags);
 end;
 
+//------------------------------------------------------------------------------
+
+procedure SetFlagsValue(var Value: Int8; Flags: array of Int8);
+begin
+SetFlagsValue_8(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetFlagsValue(var Value: Int16; Flags: array of Int16);
+begin
+SetFlagsValue_16(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetFlagsValue(var Value: Int32; Flags: array of Int32);
+begin
+SetFlagsValue_32(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetFlagsValue(var Value: Int64; Flags: array of Int64);
+begin
+SetFlagsValue_64(Value,Flags);
+end;
+
 {-------------------------------------------------------------------------------
 ================================================================================
                                    Reset flag
@@ -7000,10 +8936,41 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function ResetFlag(Value,FlagBitmask: UInt64): UInt64;
+Function ResetFlag(Value,FlagBitmask: U64Type): U64Type;
 begin
 Result := Value and not FlagBitmask;
 end;
+
+//------------------------------------------------------------------------------
+
+Function ResetFlag(Value,FlagBitmask: Int8): Int8;
+begin
+Result := Int8(ResetFlag(UInt8(Value),UInt8(FlagBitmask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ResetFlag(Value,FlagBitmask: Int16): Int16;
+begin
+Result := Int16(ResetFlag(UInt16(Value),UInt16(FlagBitmask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ResetFlag(Value,FlagBitmask: Int32): Int32;
+begin
+Result := Int32(ResetFlag(UInt32(Value),UInt32(FlagBitmask)));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ResetFlag(Value,FlagBitmask: Int64): Int64;
+begin
+Result := Int64(ResetFlag(U64Type(Value),U64Type(FlagBitmask)));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -7030,7 +8997,35 @@ end;
 
 procedure ResetFlagValue(var Value: UInt64; FlagBitmask: UInt64);
 begin
-Value := ResetFlag(Value,FlagBitmask);
+Value := UInt64(ResetFlag(U64Type(Value),U64Type(FlagBitmask)));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure ResetFlagValue(var Value: Int8; FlagBitmask: Int8);
+begin
+Value := Int8(ResetFlag(UInt8(Value),UInt8(FlagBitmask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ResetFlagValue(var Value: Int16; FlagBitmask: Int16);
+begin
+Value := Int16(ResetFlag(UInt16(Value),UInt16(FlagBitmask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ResetFlagValue(var Value: Int32; FlagBitmask: Int32);
+begin
+Value := Int32(ResetFlag(UInt32(Value),UInt32(FlagBitmask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ResetFlagValue(var Value: Int64; FlagBitmask: Int64);
+begin
+Value := Int64(ResetFlag(U64Type(Value),U64Type(FlagBitmask)));
 end;
 
 //==============================================================================
@@ -7074,9 +9069,9 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function ResetFlags_64(Value: UInt64; Flags: array of UInt64): UInt64;
+Function ResetFlags_64(Value: U64Type; Flags: array of U64Type): U64Type;
 var
-  TempBitmask:  UInt64;
+  TempBitmask:  U64Type;
   i:            Integer;
 begin
 TempBitmask := 0;
@@ -7084,6 +9079,61 @@ For i := Low(Flags) to High(flags) do
   TempBitmask := TempBitmask or Flags[i];
 Result := ResetFlag(Value,TempBitmask);
 end;
+
+//------------------------------------------------------------------------------
+
+Function ResetFlags_8(Value: Int8; Flags: array of Int8): Int8;
+var
+  TempBitmask:  UInt8;
+  i:            Integer;
+begin
+TempBitmask := 0;
+For i := Low(Flags) to High(flags) do
+  TempBitmask := TempBitmask or UInt8(Flags[i]);
+Result := Int8(ResetFlag(UInt8(Value),TempBitmask));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ResetFlags_16(Value: Int16; Flags: array of Int16): Int16;
+var
+  TempBitmask:  UInt16;
+  i:            Integer;
+begin
+TempBitmask := 0;
+For i := Low(Flags) to High(flags) do
+  TempBitmask := TempBitmask or UInt16(Flags[i]);
+Result := Int16(ResetFlag(UInt16(Value),TempBitmask));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ResetFlags_32(Value: Int32; Flags: array of Int32): Int32;
+var
+  TempBitmask:  UInt32;
+  i:            Integer;
+begin
+TempBitmask := 0;
+For i := Low(Flags) to High(flags) do
+  TempBitmask := TempBitmask or UInt32(Flags[i]);
+Result := Int32(ResetFlag(UInt32(Value),TempBitmask));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ResetFlags_64(Value: Int64; Flags: array of Int64): Int64;
+var
+  TempBitmask:  U64Type;
+  i:            Integer;
+begin
+TempBitmask := 0;
+For i := Low(Flags) to High(flags) do
+  TempBitmask := TempBitmask or U64Type(Flags[i]);
+Result := Int64(ResetFlag(U64Type(Value),TempBitmask));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -7107,10 +9157,41 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function ResetFlags(Value: UInt64; Flags: array of UInt64): UInt64;
+Function ResetFlags(Value: U64Type; Flags: array of U64Type): U64Type;
 begin
 Result := ResetFlags_64(Value,Flags);
 end;
+
+//------------------------------------------------------------------------------
+
+Function ResetFlags(Value: Int8; Flags: array of Int8): Int8;
+begin
+Result := ResetFlags_8(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ResetFlags(Value: Int16; Flags: array of Int16): Int16;
+begin
+Result := ResetFlags_16(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ResetFlags(Value: Int32; Flags: array of Int32): Int32;
+begin
+Result := ResetFlags_32(Value,Flags);
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ResetFlags(Value: Int64; Flags: array of Int64): Int64;
+begin
+Result := ResetFlags_64(Value,Flags);
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -7136,6 +9217,50 @@ end;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ResetFlagsValue_64(var Value: UInt64; Flags: array of UInt64);
+{$IF Declared(NativeUInt64E)}
+begin
+Value := ResetFlags_64(Value,Flags);
+end;
+{$ELSE}
+var
+  TempFlags:  array of U64Type;
+  i:          Integer;
+begin
+TempFlags := nil;
+If Length(Flags) > 0 then
+  begin
+    SetLength(TempFlags,Length(Flags));
+    For i := Low(Flags) to High(Flags) do
+      TempFlags[i] := U64Type(Flags[i]);
+  end;
+Value := UInt64(ResetFlags_64(U64Type(Value),TempFlags));
+end;
+{$IFEND}
+
+//------------------------------------------------------------------------------
+
+procedure ResetFlagsValue_8(var Value: Int8; Flags: array of Int8);
+begin
+Value := ResetFlags_8(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ResetFlagsValue_16(var Value: Int16; Flags: array of Int16);
+begin
+Value := ResetFlags_16(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ResetFlagsValue_32(var Value: Int32; Flags: array of Int32);
+begin
+Value := ResetFlags_32(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ResetFlagsValue_64(var Value: Int64; Flags: array of Int64);
 begin
 Value := ResetFlags_64(Value,Flags);
 end;
@@ -7164,6 +9289,34 @@ end;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 procedure ResetFlagsValue(var Value: UInt64; Flags: array of UInt64);
+begin
+ResetFlagsValue_64(Value,Flags);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure ResetFlagsValue(var Value: Int8; Flags: array of Int8);
+begin
+ResetFlagsValue_8(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ResetFlagsValue(var Value: Int16; Flags: array of Int16);
+begin
+ResetFlagsValue_16(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ResetFlagsValue(var Value: Int32; Flags: array of Int32);
+begin
+ResetFlagsValue_32(Value,Flags);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ResetFlagsValue(var Value: Int64; Flags: array of Int64);
 begin
 ResetFlagsValue_64(Value,Flags);
 end;
@@ -7204,13 +9357,44 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function SetFlagState(Value,FlagBitmask: UInt64; NewState: Boolean): UInt64;
+Function SetFlagState(Value,FlagBitmask: U64Type; NewState: Boolean): U64Type;
 begin
 If NewState then
   Result := SetFlag(Value,FlagBitmask)
 else
   Result := ResetFlag(Value,FlagBitmask);
 end;
+
+//------------------------------------------------------------------------------
+
+Function SetFlagState(Value,FlagBitmask: Int8; NewState: Boolean): Int8;
+begin
+Result := Int8(SetFlagState(UInt8(Value),UInt8(FlagBitmask),NewState));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetFlagState(Value,FlagBitmask: Int16; NewState: Boolean): Int16;
+begin
+Result := Int16(SetFlagState(UInt16(Value),UInt16(FlagBitmask),NewState));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetFlagState(Value,FlagBitmask: Int32; NewState: Boolean): Int32;
+begin
+Result := Int32(SetFlagState(UInt32(Value),UInt32(FlagBitmask),NewState));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetFlagState(Value,FlagBitmask: Int64; NewState: Boolean): Int64;
+begin
+Result := Int64(SetFlagState(U64Type(Value),U64Type(FlagBitmask),NewState));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -7237,7 +9421,35 @@ end;
 
 procedure SetFlagStateValue(var Value: UInt64; FlagBitmask: UInt64; NewState: Boolean);
 begin
-Value := SetFlagState(Value,FlagBitmask,NewState);
+Value := UInt64(SetFlagState(U64Type(Value),U64Type(FlagBitmask),NewState));
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SetFlagStateValue(var Value: Int8; FlagBitmask: Int8; NewState: Boolean);
+begin
+Value := Int8(SetFlagState(UInt8(Value),UInt8(FlagBitmask),NewState));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetFlagStateValue(var Value: Int16; FlagBitmask: Int16; NewState: Boolean);
+begin
+Value := Int16(SetFlagState(UInt16(Value),UInt16(FlagBitmask),NewState));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetFlagStateValue(var Value: Int32; FlagBitmask: Int32; NewState: Boolean);
+begin
+Value := Int32(SetFlagState(UInt32(Value),UInt32(FlagBitmask),NewState));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetFlagStateValue(var Value: Int64; FlagBitmask: Int64; NewState: Boolean);
+begin
+Value := Int64(SetFlagState(U64Type(Value),U64Type(FlagBitmask),NewState));
 end;
 
 {-------------------------------------------------------------------------------
@@ -7273,12 +9485,43 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function GetBits(Value: UInt64; FromBit,ToBit: Integer; ShiftDown: Boolean = True): UInt64;
+Function GetBits(Value: U64Type; FromBit,ToBit: Integer; ShiftDown: Boolean = True): U64Type;
 begin
-Result := Value and UInt64((UInt64($FFFFFFFFFFFFFFFF) shl (FromBit and 63)) and (UInt64($FFFFFFFFFFFFFFFF) shr (63 - (ToBit and 63))));
+Result := Value and U64Type((U64Type($FFFFFFFFFFFFFFFF) shl (FromBit and 63)) and (U64Type($FFFFFFFFFFFFFFFF) shr (63 - (ToBit and 63))));
 If ShiftDown then
   Result := Result shr (FromBit and 63);
 end;
+
+//------------------------------------------------------------------------------
+
+Function GetBits(Value: Int8; FromBit,ToBit: Integer; ShiftDown: Boolean = True): Int8;
+begin
+Result := Int8(GetBits(UInt8(Value),FromBit,ToBit,ShiftDown));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function GetBits(Value: Int16; FromBit,ToBit: Integer; ShiftDown: Boolean = True): Int16;
+begin
+Result := Int16(GetBits(UInt16(Value),FromBit,ToBit,ShiftDown));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function GetBits(Value: Int32; FromBit,ToBit: Integer; ShiftDown: Boolean = True): Int32;
+begin
+Result := Int32(GetBits(UInt32(Value),FromBit,ToBit,ShiftDown));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function GetBits(Value: Int64; FromBit,ToBit: Integer; ShiftDown: Boolean = True): Int64;
+begin
+Result := Int64(GetBits(U64Type(Value),FromBit,ToBit,ShiftDown));
+end;
+
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -7322,15 +9565,46 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function SetBits(Value,NewBits: UInt64; FromBit,ToBit: Integer; ShiftUp: Boolean = True): UInt64;
+Function SetBits(Value,NewBits: U64Type; FromBit,ToBit: Integer; ShiftUp: Boolean = True): U64Type;
 var
-  Mask: UInt64;
+  Mask: U64Type;
 begin
 If ShiftUp then
-  NewBits := UInt64(NewBits shl (FromBit and 63));
-Mask := UInt64((UInt64($FFFFFFFFFFFFFFFF) shl (FromBit and 63)) and (UInt64($FFFFFFFFFFFFFFFF) shr (63 - (ToBit and 63))));
+  NewBits := U64Type(NewBits shl (FromBit and 63));
+Mask := U64Type((U64Type($FFFFFFFFFFFFFFFF) shl (FromBit and 63)) and (U64Type($FFFFFFFFFFFFFFFF) shr (63 - (ToBit and 63))));
 Result := (Value and not Mask) or (NewBits and Mask);
 end;
+
+//------------------------------------------------------------------------------
+
+Function SetBits(Value,NewBits: Int8; FromBit,ToBit: Integer; ShiftUp: Boolean = True): Int8;
+begin
+Result := Int8(SetBits(UInt8(Value),UInt8(NewBits),FromBit,ToBit,ShiftUp));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetBits(Value,NewBits: Int16; FromBit,ToBit: Integer; ShiftUp: Boolean = True): Int16;
+begin
+Result := Int16(SetBits(UInt16(Value),UInt16(NewBits),FromBit,ToBit,ShiftUp));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetBits(Value,NewBits: Int32; FromBit,ToBit: Integer; ShiftUp: Boolean = True): Int32;
+begin
+Result := Int32(SetBits(UInt32(Value),UInt32(NewBits),FromBit,ToBit,ShiftUp));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SetBits(Value,NewBits: Int64; FromBit,ToBit: Integer; ShiftUp: Boolean = True): Int64;
+begin
+Result := Int64(SetBits(U64Type(Value),U64Type(NewBits),FromBit,ToBit,ShiftUp));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -7358,6 +9632,34 @@ end;
 procedure SetBitsValue(var Value: UInt64; NewBits: UInt64; FromBit,ToBit: Integer; ShiftUp: Boolean = True);
 begin
 Value := SetBits(Value,NewBits,FromBit,ToBit,ShiftUp);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure SetBitsValue(var Value: Int8; NewBits: Int8; FromBit,ToBit: Integer; ShiftUp: Boolean = True);
+begin
+Value := Int8(SetBits(UInt8(Value),UInt8(NewBits),FromBit,ToBit,ShiftUp));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetBitsValue(var Value: Int16; NewBits: Int16; FromBit,ToBit: Integer; ShiftUp: Boolean = True);
+begin
+Value := Int16(SetBits(UInt16(Value),UInt16(NewBits),FromBit,ToBit,ShiftUp));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetBitsValue(var Value: Int32; NewBits: Int32; FromBit,ToBit: Integer; ShiftUp: Boolean = True);
+begin
+Value := Int32(SetBits(UInt32(Value),UInt32(NewBits),FromBit,ToBit,ShiftUp));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure SetBitsValue(var Value: Int64; NewBits: Int64; FromBit,ToBit: Integer; ShiftUp: Boolean = True);
+begin
+Value := Int64(SetBits(U64Type(Value),U64Type(NewBits),FromBit,ToBit,ShiftUp));
 end;
 
 {-------------------------------------------------------------------------------
@@ -7412,11 +9714,42 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function ReverseBits(Value: UInt64): UInt64;
+Function ReverseBits(Value: U64Type): U64Type;
 begin
 Int64Rec(Result).Hi := ReverseBits(Int64Rec(Value).Lo);
 Int64Rec(Result).Lo := ReverseBits(Int64Rec(Value).Hi);
 end;
+
+//------------------------------------------------------------------------------
+
+Function ReverseBits(Value: Int8): Int8;
+begin
+Result := Int8(ReverseBits(UInt8(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ReverseBits(Value: Int16): Int16;
+begin
+Result := Int16(ReverseBits(UInt16(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ReverseBits(Value: Int32): Int32;
+begin
+Result := Int32(ReverseBits(UInt32(Value)));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ReverseBits(Value: Int64): Int64;
+begin
+Result := Int64(ReverseBits(U64Type(Value)));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -7444,6 +9777,34 @@ end;
 procedure ReverseBitsValue(var Value: UInt64);
 begin
 Value := ReverseBits(Value);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure ReverseBitsValue(var Value: Int8);
+begin
+Value := Int8(ReverseBits(UInt8(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ReverseBitsValue(var Value: Int16);
+begin
+Value := Int16(ReverseBits(UInt16(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ReverseBitsValue(var Value: Int32);
+begin
+Value := Int32(ReverseBits(UInt32(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure ReverseBitsValue(var Value: Int64);
+begin
+Value := Int64(ReverseBits(U64Type(Value)));
 end;
 
 {-------------------------------------------------------------------------------
@@ -7497,13 +9858,13 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Fce_LZCount_64_Pas(Value: UInt64): Integer; register;
+Function Fce_LZCount_64_Pas(Value: U64Type): Integer; register;
 var
   i:  Integer;
 begin
 Result := 64;
 For i := 0 to 63 do
-  If (Value and (UInt64($8000000000000000) shr i)) <> 0 then
+  If (Value and (U64Type($8000000000000000) shr i)) <> 0 then
     begin
       Result := i;
       Break{For i};
@@ -7573,7 +9934,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Fce_LZCount_64_Asm(Value: UInt64): Integer; register; assembler;
+Function Fce_LZCount_64_Asm(Value: U64Type): Integer; register; assembler;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -7614,12 +9975,11 @@ end;
 {$ENDIF}
 
 //==============================================================================
-
 var
   Var_LZCount_8: Function(Value: UInt8): Integer; register = Fce_LZCount_8_Pas;
   Var_LZCount_16: Function(Value: UInt16): Integer; register = Fce_LZCount_16_Pas;
   Var_LZCount_32: Function(Value: UInt32): Integer; register = Fce_LZCount_32_Pas;
-  Var_LZCount_64: Function(Value: UInt64): Integer; register = Fce_LZCount_64_Pas;
+  Var_LZCount_64: Function(Value: U64Type): Integer; register = Fce_LZCount_64_Pas;
 
 //------------------------------------------------------------------------------
 
@@ -7644,10 +10004,41 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LZCount(Value: UInt64): Integer;
+Function LZCount(Value: U64Type): Integer;
 begin
 Result := Var_LZCount_64(Value);
 end;
+
+//------------------------------------------------------------------------------
+
+Function LZCount(Value: Int8): Integer;
+begin
+Result := Int8(Var_LZCount_8(UInt8(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LZCount(Value: Int16): Integer;
+begin
+Result := Int16(Var_LZCount_16(UInt16(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LZCount(Value: Int32): Integer;
+begin
+Result := Int32(Var_LZCount_32(UInt32(Value)));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LZCount(Value: Int64): Integer;
+begin
+Result := Int64(Var_LZCount_64(U64Type(Value)));
+end;
+
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -7700,7 +10091,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Fce_TZCount_64_Pas(Value: UInt64): Integer; register;
+Function Fce_TZCount_64_Pas(Value: U64Type): Integer; register;
 var
   i:  Integer;
 begin
@@ -7776,7 +10167,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Fce_TZCount_64_Asm(Value: UInt64): Integer; register; assembler;
+Function Fce_TZCount_64_Asm(Value: U64Type): Integer; register; assembler;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -7817,12 +10208,11 @@ end;
 {$ENDIF}
 
 //==============================================================================
-
 var
   Var_TZCount_8: Function(Value: UInt8): Integer; register = Fce_TZCount_8_Pas;
   Var_TZCount_16: Function(Value: UInt16): Integer; register = Fce_TZCount_16_Pas;
   Var_TZCount_32: Function(Value: UInt32): Integer; register = Fce_TZCount_32_Pas;
-  Var_TZCount_64: Function(Value: UInt64): Integer; register = Fce_TZCount_64_Pas;
+  Var_TZCount_64: Function(Value: U64Type): Integer; register = Fce_TZCount_64_Pas;
 
 //------------------------------------------------------------------------------
 
@@ -7847,10 +10237,41 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function TZCount(Value: UInt64): Integer;
+Function TZCount(Value: U64Type): Integer;
 begin
 Result := Var_TZCount_64(Value);
 end;
+
+//------------------------------------------------------------------------------
+
+Function TZCount(Value: Int8): Integer;
+begin
+Result := Int8(Var_TZCount_8(UInt8(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TZCount(Value: Int16): Integer;
+begin
+Result := Int16(Var_TZCount_16(UInt16(Value)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TZCount(Value: Int32): Integer;
+begin
+Result := Int32(Var_TZCount_32(UInt32(Value)));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function TZCount(Value: Int64): Integer;
+begin
+Result := Int64(Var_TZCount_64(U64Type(Value)));
+end;
+
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -7902,14 +10323,14 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Fce_ExtractBits_64_Pas(Value: UInt64; Start,Length: Integer): UInt64; register;
+Function Fce_ExtractBits_64_Pas(Value: U64Type; Start,Length: Integer): U64Type; register;
 begin
 If UInt8(Start) <= 63 then
   begin
     If UInt8(Length) <= 63 then
-      Result := UInt64(Value shr UInt8(Start)) and UInt64(Int64(UInt64(1) shl UInt8(Length)) - 1)
+      Result := U64Type(Value shr UInt8(Start)) and U64Type(Int64(U64Type(1) shl UInt8(Length)) - 1)
     else
-      Result := UInt64(Value shr UInt8(Start)) and UInt64($FFFFFFFFFFFFFFFF);
+      Result := U64Type(Value shr UInt8(Start)) and U64Type($FFFFFFFFFFFFFFFF);
   end
 else Result := 0;
 end;
@@ -7997,7 +10418,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Fce_ExtractBits_64_Asm(Value: UInt64; Start,Length: Integer): UInt64; register; assembler;
+Function Fce_ExtractBits_64_Asm(Value: U64Type; Start,Length: Integer): U64Type; register; assembler;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -8095,12 +10516,11 @@ end;
 {$ENDIF}
 
 //==============================================================================
-
 var
   Var_ExtractBits_8: Function(Value: UInt8; Start,Length: Integer): UInt8; register = Fce_ExtractBits_8_Pas;
   Var_ExtractBits_16: Function(Value: UInt16; Start,Length: Integer): UInt16; register = Fce_ExtractBits_16_Pas;
   Var_ExtractBits_32: Function(Value: UInt32; Start,Length: Integer): UInt32; register = Fce_ExtractBits_32_Pas;
-  Var_ExtractBits_64: Function(Value: UInt64; Start,Length: Integer): UInt64; register = Fce_ExtractBits_64_Pas;
+  Var_ExtractBits_64: Function(Value: U64Type; Start,Length: Integer): U64Type; register = Fce_ExtractBits_64_Pas;
 
 //------------------------------------------------------------------------------
 
@@ -8125,11 +10545,41 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function ExtractBits(Value: UInt64; Start,Length: Integer): UInt64;
+Function ExtractBits(Value: U64Type; Start,Length: Integer): U64Type;
 begin
 Result := Var_ExtractBits_64(Value,Start,Length);
 end;
 
+//------------------------------------------------------------------------------
+
+Function ExtractBits(Value: Int8; Start,Length: Integer): Int8;
+begin
+Result := Int8(Var_ExtractBits_8(UInt8(Value),Start,Length));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ExtractBits(Value: Int16; Start,Length: Integer): Int16;
+begin
+Result := Int16(Var_ExtractBits_16(UInt16(Value),Start,Length));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ExtractBits(Value: Int32; Start,Length: Integer): Int32;
+begin
+Result := Int32(Var_ExtractBits_32(UInt32(Value),Start,Length));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ExtractBits(Value: Int64; Start,Length: Integer): Int64;
+begin
+Result := Int64(Var_ExtractBits_64(U64Type(Value),Start,Length));
+end;
+
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -8200,24 +10650,55 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function DepositBits(Value,NewBits: UInt64; Start,Length: Integer): UInt64;
+Function DepositBits(Value,NewBits: U64Type; Start,Length: Integer): U64Type;
 var
-  Mask: UInt64;
+  Mask: U64Type;
 begin
 If UInt8(Start) <= 63 then
   begin
     If UInt8(Length) > 0 then
       begin
         Length := UInt8(Length);
-        Mask := UInt64(UInt64($FFFFFFFFFFFFFFFF) shl Start);
+        Mask := U64Type(U64Type($FFFFFFFFFFFFFFFF) shl Start);
         If Start + Length <= 64 then
-          Mask := Mask and (UInt64($FFFFFFFFFFFFFFFF) shr (64 - (Start + Length)));
-        Result := (Value and not Mask) or (UInt64(NewBits shl Start) and Mask);
+          Mask := Mask and (U64Type($FFFFFFFFFFFFFFFF) shr (64 - (Start + Length)));
+        Result := (Value and not Mask) or (U64Type(NewBits shl Start) and Mask);
       end
     else Result := Value;        
   end
 else Result := Value;
 end;
+
+//------------------------------------------------------------------------------
+
+Function DepositBits(Value,NewBits: Int8; Start,Length: Integer): Int8;
+begin
+Result := Int8(DepositBits(UInt8(Value),UInt8(NewBits),Start,Length));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function DepositBits(Value,NewBits: Int16; Start,Length: Integer): Int16;
+begin
+Result := Int16(DepositBits(UInt16(Value),UInt16(NewBits),Start,Length));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function DepositBits(Value,NewBits: Int32; Start,Length: Integer): Int32;
+begin
+Result := Int32(DepositBits(UInt32(Value),UInt32(NewBits),Start,Length));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function DepositBits(Value,NewBits: Int64; Start,Length: Integer): Int64;
+begin
+Result := Int64(DepositBits(U64Type(Value),U64Type(NewBits),Start,Length));
+end;
+
+{$IFEND}
 
 //==============================================================================
 
@@ -8245,6 +10726,34 @@ end;
 procedure DepositBitsValue(var Value: UInt64; NewBits: UInt64; Start,Length: Integer);
 begin
 Value := DepositBits(Value,NewBits,Start,Length);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure DepositBitsValue(var Value: Int8; NewBits: Int8; Start,Length: Integer);
+begin
+Value := Int8(DepositBits(UInt8(Value),UInt8(NewBits),Start,Length));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure DepositBitsValue(var Value: Int16; NewBits: Int16; Start,Length: Integer);
+begin
+Value := Int16(DepositBits(UInt16(Value),UInt16(NewBits),Start,Length));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure DepositBitsValue(var Value: Int32; NewBits: Int32; Start,Length: Integer);
+begin
+Value := Int32(DepositBits(UInt32(Value),UInt32(NewBits),Start,Length));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+procedure DepositBitsValue(var Value: Int64; NewBits: Int64; Start,Length: Integer);
+begin
+Value := Int64(DepositBits(U64Type(Value),U64Type(NewBits),Start,Length));
 end;
 
 
@@ -8290,14 +10799,14 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Fce_ParallelBitsExtract_64_Pas(Value,Mask: UInt64): UInt64; register;
+Function Fce_ParallelBitsExtract_64_Pas(Value,Mask: U64Type): U64Type; register;
 var
   i:  Integer;
 begin
 Result := 0;
 For i := 63 downto 0 do
   If ((Mask shr i) and 1) <> 0 then
-    Result := UInt64(Result shl 1) or UInt64((Value shr i) and 1);
+    Result := U64Type(Result shl 1) or U64Type((Value shr i) and 1);
 end;
 
 //==============================================================================
@@ -8361,7 +10870,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Fce_ParallelBitsExtract_64_Asm(Value,Mask: UInt64): UInt64; register; assembler;
+Function Fce_ParallelBitsExtract_64_Asm(Value,Mask: U64Type): U64Type; register; assembler;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -8410,12 +10919,11 @@ end;
 {$ENDIF}
 
 //==============================================================================
-
 var
   Var_ParallelBitsExtract_8: Function(Value,Mask: UInt8): UInt8; register = Fce_ParallelBitsExtract_8_Pas;
   Var_ParallelBitsExtract_16: Function(Value,Mask: UInt16): UInt16; register = Fce_ParallelBitsExtract_16_Pas;
   Var_ParallelBitsExtract_32: Function(Value,Mask: UInt32): UInt32; register = Fce_ParallelBitsExtract_32_Pas;
-  Var_ParallelBitsExtract_64: Function(Value,Mask: UInt64): UInt64; register = Fce_ParallelBitsExtract_64_Pas;
+  Var_ParallelBitsExtract_64: Function(Value,Mask: U64Type): U64Type; register = Fce_ParallelBitsExtract_64_Pas;
 
 //------------------------------------------------------------------------------
 
@@ -8440,10 +10948,41 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function ParallelBitsExtract(Value,Mask: UInt64): UInt64;
+Function ParallelBitsExtract(Value,Mask: U64Type): U64Type;
 begin
 Result := Var_ParallelBitsExtract_64(Value,Mask);
 end;
+
+//------------------------------------------------------------------------------
+
+Function ParallelBitsExtract(Value,Mask: Int8): Int8;
+begin
+Result := Int8(ParallelBitsExtract(UInt8(Value),UInt8(Mask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ParallelBitsExtract(Value,Mask: Int16): Int16;
+begin
+Result := Int16(ParallelBitsExtract(UInt16(Value),UInt16(Mask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ParallelBitsExtract(Value,Mask: Int32): Int32;
+begin
+Result := Int32(ParallelBitsExtract(UInt32(Value),UInt32(Mask)));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ParallelBitsExtract(Value,Mask: Int64): Int64;
+begin
+Result := Int64(ParallelBitsExtract(U64Type(Value),U64Type(Mask)));
+end;
+
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -8502,7 +11041,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Fce_ParallelBitsDeposit_64_Pas(Value,Mask: UInt64): UInt64; register;
+Function Fce_ParallelBitsDeposit_64_Pas(Value,Mask: U64Type): U64Type; register;
 var
   i:  Integer;
 begin
@@ -8511,7 +11050,7 @@ For i := 0 to 63 do
   begin
     If ((Mask shr i) and 1) <> 0 then
       begin
-        Result := Result or UInt64(UInt64(Value and 1) shl i);
+        Result := Result or U64Type(U64Type(Value and 1) shl i);
         Value := Value shr 1;
       end;
   end;
@@ -8578,7 +11117,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function Fce_ParallelBitsDeposit_64_Asm(Value,Mask: UInt64): UInt64; register; assembler;
+Function Fce_ParallelBitsDeposit_64_Asm(Value,Mask: U64Type): U64Type; register; assembler;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -8622,12 +11161,11 @@ end;
 {$ENDIF}
 
 //==============================================================================
-
 var
   Var_ParallelBitsDeposit_8: Function(Value,Mask: UInt8): UInt8; register = Fce_ParallelBitsDeposit_8_Pas;
   Var_ParallelBitsDeposit_16: Function(Value,Mask: UInt16): UInt16; register = Fce_ParallelBitsDeposit_16_Pas;
   Var_ParallelBitsDeposit_32: Function(Value,Mask: UInt32): UInt32; register = Fce_ParallelBitsDeposit_32_Pas;
-  Var_ParallelBitsDeposit_64: Function(Value,Mask: UInt64): UInt64; register = Fce_ParallelBitsDeposit_64_Pas;
+  Var_ParallelBitsDeposit_64: Function(Value,Mask: U64Type): U64Type; register = Fce_ParallelBitsDeposit_64_Pas;
 
 //------------------------------------------------------------------------------
 
@@ -8652,10 +11190,41 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function ParallelBitsDeposit(Value,Mask: UInt64): UInt64;
+Function ParallelBitsDeposit(Value,Mask: U64Type): U64Type;
 begin
 Result := Var_ParallelBitsDeposit_64(Value,Mask);
 end;
+
+//------------------------------------------------------------------------------
+
+Function ParallelBitsDeposit(Value,Mask: Int8): Int8;
+begin
+Result := Int8(Var_ParallelBitsDeposit_8(UInt8(Value),UInt8(Mask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ParallelBitsDeposit(Value,Mask: Int16): Int16;
+begin
+Result := Int16(Var_ParallelBitsDeposit_16(UInt16(Value),UInt16(Mask)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ParallelBitsDeposit(Value,Mask: Int32): Int32;
+begin
+Result := Int32(Var_ParallelBitsDeposit_32(UInt32(Value),UInt32(Mask)));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function ParallelBitsDeposit(Value,Mask: Int64): Int64;
+begin
+Result := Int64(Var_ParallelBitsDeposit_64(U64Type(Value),U64Type(Mask)));
+end;
+
+{$IFEND}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -8696,7 +11265,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function BitParity(Value: UInt64): Boolean;
+Function BitParity(Value: U64Type): Boolean;
 begin
 Value := Value xor (Value shr 32);
 Value := Value xor (Value shr 16);
@@ -8706,6 +11275,37 @@ Value := Value xor (Value shr 2);
 Value := Value xor (Value shr 1);
 Result := (Value and 1) = 0;
 end;
+
+//------------------------------------------------------------------------------
+
+Function BitParity(Value: Int8): Boolean;
+begin
+Result := BitParity(UInt8(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitParity(Value: Int16): Boolean;
+begin
+Result := BitParity(UInt16(Value));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitParity(Value: Int32): Boolean;
+begin
+Result := BitParity(UInt32(Value));
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function BitParity(Value: Int64): Boolean;
+begin
+Result := BitParity(U64Type(Value));
+end;
+
+{$IFEND}
 
 
 {===============================================================================
@@ -9453,7 +12053,7 @@ end;
 procedure BufferShiftDown(var Buffer; BufferSize: TMemSize; Shift: TMemSize);
 begin
 If (Shift > 0) and (Shift < BufferSize) then
-  Move(PtrAdvance(Addr(Buffer),Shift)^,Buffer,BufferSize - Shift);
+  MoveMemory(@Buffer,PtrAdvance(Addr(Buffer),Shift),BufferSize - Shift);
 end;
 
 {-------------------------------------------------------------------------------
@@ -9489,20 +12089,20 @@ If (Source <> Destination) and (BitCount > 0) then
             protected againts overwrites, therefore it is used instead of
             custom code.
           }
-            System.Move(Source^,Destination^,BitCount shr 3);
+            MoveMemory(Destination,Source,BitCount shr 3);
           end
         else
           begin
             // source cannot be overwritten, do normal forward copy...
             // first full bytes...
-            System.Move(Source^,Destination^,BitCount shr 3);
+            MoveMemory(Destination,Source,BitCount shr 3);
             DestTemp := PtrAdvance(Destination,BitCount shr 3);
             // ...and now the rest
             PUInt8(DestTemp)^ := (PUInt8(DestTemp)^ and not Mask) or
               (PUInt8(PtrAdvance(Source,BitCount shr 3))^ and Mask);
           end;
       end
-    else System.Move(Source^,Destination^,BitCount shr 3);
+    else MoveMemory(Destination,Source,BitCount shr 3);
   end;
 end;
 
@@ -9920,7 +12520,7 @@ If Count > 0 then
 end;
 {$ENDIF}
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//------------------------------------------------------------------------------
 
 procedure FillWord(var Dst; Count: TMemSize; Value: UInt16);
 {$IFNDEF PurePascal}
@@ -10077,7 +12677,7 @@ If Count > 0 then
 end;
 {$ENDIF}
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//------------------------------------------------------------------------------
 
 procedure FillLong(var Dst; Count: TMemSize; Value: UInt32);
 {$IFNDEF PurePascal}
@@ -10223,7 +12823,7 @@ If Count > 0 then
 end;
 {$ENDIF}
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//------------------------------------------------------------------------------
 
 procedure FillQuad(var Dst; Count: TMemSize; Value: UInt64);
 {$IFNDEF PurePascal}
@@ -10354,7 +12954,7 @@ If Count > 0 then
 end;
 {$ENDIF}
 
-//------------------------------------------------------------------------------
+//==============================================================================
 
 procedure FillMemory(Mem: Pointer; Size: TMemSize; Value: UInt8);
 begin
@@ -10365,7 +12965,7 @@ end;
 
 procedure ZeroMemory(Mem: Pointer; Size: TMemSize);
 begin
-FillByte(Mem^,Size,0);
+FillByte(Mem^,Size,UInt8(0));
 end;
 
 {-------------------------------------------------------------------------------
@@ -10610,7 +13210,7 @@ If Size > 0 then
       For i := 1 to MemSizeMin(Pred(SizeOf(UInt32)),Size) do
         begin
           Temp := 0;
-          Move(WorkPtr^,Temp,i);
+          MoveMemory(@Temp,WorkPtr,i);
         {$IFDEF ENDIAN_BIG}
           If Temp = UInt32(Value shl (8 * (SizeOf(UInt32) - i))) then
         {$ELSE}
@@ -10638,7 +13238,7 @@ If Size > 0 then
       For i := MemSizeMin(Pred(SizeOf(UInt32)),Size) downto 1 do
         begin
           Temp := 0;
-          Move(WorkPtr^,Temp,i);
+          MoveMemory(@Temp,WorkPtr,i);
         {$IFDEF ENDIAN_BIG}
           If Temp = Value and UInt32(UInt32(-1) shl (8 * (SizeOf(UInt32) - i))) then
         {$ELSE}
@@ -10674,7 +13274,7 @@ If Size > 0 then
       For i := 1 to MemSizeMin(Pred(SizeOf(UInt64)),Size) do
         begin
           Temp := 0;
-          Move(WorkPtr^,Temp,i);
+          MoveMemory(@Temp,WorkPtr,i);
         {$IFDEF ENDIAN_BIG}
           If Temp = UInt64(Value shl (8 * (SizeOf(UInt64) - i))) then
         {$ELSE}
@@ -10702,7 +13302,7 @@ If Size > 0 then
       For i := MemSizeMin(Pred(SizeOf(UInt64)),Size) downto 1 do
         begin
           Temp := 0;
-          Move(WorkPtr^,Temp,i);
+          MoveMemory(@Temp,WorkPtr,i);
         {$IFDEF ENDIAN_BIG}
           If Temp = Value and UInt64(UInt64(-1) shl (8 * (SizeOf(UInt64) - i))) then
         {$ELSE}
@@ -10876,20 +13476,18 @@ If Flags and BO_FLAG_OVERFLOW <> 0 then
 end;
 
 {$IFNDEF PurePascal}
-//------------------------------------------------------------------------------
+//==============================================================================
+const
+  BO_FLAG_MASK_CMP  = $08D5;
 
-Function Int64Sign(I: Int64): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
+Function U64Sign(I: U64Type): Boolean;{$IFDEF CanInline} inline;{$ENDIF}
 begin
 Result := BT(I,63);
 end;
 
 //------------------------------------------------------------------------------
-const
-  BO_FLAG_MASK_CMP  = $08D5;
 
-//------------------------------------------------------------------------------
-
-Function LLCompareRaw(A,B: Int8): UInt16;
+Function LLCompareRaw(A,B: UInt8): UInt16;
 {
   Arguments/result register use (64b/32b/16b/8b values):
 
@@ -10918,7 +13516,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLCompareRaw(A,B: Int16): UInt16;
+Function LLCompareRaw(A,B: UInt16): UInt16;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -10939,7 +13537,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLCompareRaw(A,B: Int32): UInt16;
+Function LLCompareRaw(A,B: UInt32): UInt16;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -10962,7 +13560,7 @@ end;
 
 {$IFDEF OverflowChecks}{$Q-}{$ENDIF}  // for A - B
 
-Function LLCompareRaw(A,B: Int64): UInt16;
+Function LLCompareRaw(A,B: U64Type): UInt16;
 {$IFDEF x64}
 asm
 {$IFDEF Windows}
@@ -10978,18 +13576,24 @@ end;
 var
   SgnA: Boolean;  // true means negative
   SgnB: Boolean;
-  Temp: Int64;
+  Temp: U64Type;
   SgnT: Boolean;
 begin
-SgnA := Int64Sign(A);
-SgnB := Int64Sign(B);
+SgnA := U64Sign(A);
+SgnB := U64Sign(B);
 Temp := A - B;
-SgnT := Int64Sign(Temp);
+SgnT := U64Sign(Temp);
 Result := 0;
+{$IF Declared(NativeUInt64E)}
+// U64Type = UInt64
+SetFlagStateValue(Result,BO_FLAG_CARRY,A < B);
+{$ELSE}
+// U64Type = Int64
 If SgnA = SgnB then
   SetFlagStateValue(Result,BO_FLAG_CARRY,A < B)
 else
   SetFlagStateValue(Result,BO_FLAG_CARRY,A > B);
+{$IFEND}
 SetFlagStateValue(Result,BO_FLAG_PARITY,BitParity(UInt8(Temp)));
 SetFlagStateValue(Result,BO_FLAG_AUXCARRY,(A and $F) < (B and $F));
 SetFlagStateValue(Result,BO_FLAG_ZERO,Temp = 0);
@@ -11000,92 +13604,92 @@ end;
 
 {$IFDEF OverflowChecks}{$Q+}{$ENDIF}
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//------------------------------------------------------------------------------
 
-Function LLCompareRaw(A,B: UInt8): UInt16;
+Function LLCompareRaw(A,B: Int8): UInt16;
 begin
-Result := LLCompareRaw(Int8(A),Int8(B));
+Result := LLCompareRaw(UInt8(A),UInt8(B));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLCompareRaw(A,B: UInt16): UInt16;
+Function LLCompareRaw(A,B: Int16): UInt16;
 begin
-Result := LLCompareRaw(Int16(A),Int16(B));
+Result := LLCompareRaw(UInt16(A),UInt16(B));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLCompareRaw(A,B: UInt32): UInt16;
+Function LLCompareRaw(A,B: Int32): UInt16;
 begin
-Result := LLCompareRaw(Int32(A),Int32(B));
+Result := LLCompareRaw(UInt32(A),UInt32(B));
 end;
 
 {$IF Declared(NativeUInt64E)}
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLCompareRaw(A,B: UInt64): UInt16;
+Function LLCompareRaw(A,B: Int64): UInt16;
 begin
-Result := LLCompareRaw(Int64(A),Int64(B));
+Result := LLCompareRaw(U64Type(A),U64Type(B));
 end;
 
 {$IFEND}
 
-//------------------------------------------------------------------------------
-
-Function LLCompare(A,B: Int8): TBOStatusFlags;
-begin
-Result := LLDecodeFlags(LLCompareRaw(A,B));
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function LLCompare(A,B: Int16): TBOStatusFlags;
-begin
-Result := LLDecodeFlags(LLCompareRaw(A,B));
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function LLCompare(A,B: Int32): TBOStatusFlags;
-begin
-Result := LLDecodeFlags(LLCompareRaw(A,B));
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function LLCompare(A,B: Int64): TBOStatusFlags;
-begin
-Result := LLDecodeFlags(LLCompareRaw(A,B));
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//==============================================================================
 
 Function LLCompare(A,B: UInt8): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLCompareRaw(Int8(A),Int8(B)));
+Result := LLDecodeFlags(LLCompareRaw(A,B));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function LLCompare(A,B: UInt16): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLCompareRaw(Int16(A),Int16(B)));
+Result := LLDecodeFlags(LLCompareRaw(A,B));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function LLCompare(A,B: UInt32): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLCompareRaw(Int32(A),Int32(B)));
+Result := LLDecodeFlags(LLCompareRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompare(A,B: U64Type): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLCompareRaw(A,B));
+end;
+
+//------------------------------------------------------------------------------
+
+Function LLCompare(A,B: Int8): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLCompareRaw(UInt8(A),UInt8(B)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompare(A,B: Int16): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLCompareRaw(UInt16(A),UInt16(B)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLCompare(A,B: Int32): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLCompareRaw(UInt32(A),UInt32(B)));
 end;
 
 {$IF Declared(NativeUInt64E)}
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLCompare(A,B: UInt64): TBOStatusFlags;
+Function LLCompare(A,B: Int64): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLCompareRaw(Int64(A),Int64(B)));
+Result := LLDecodeFlags(LLCompareRaw(U64Type(A),U64Type(B)));
 end;
 
 {$IFEND}
@@ -11103,7 +13707,7 @@ const
 
 //------------------------------------------------------------------------------
 
-Function LLTestRaw(A,B: Int8): UInt16;
+Function LLTestRaw(A,B: UInt8): UInt16;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -11124,7 +13728,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLTestRaw(A,B: Int16): UInt16;
+Function LLTestRaw(A,B: UInt16): UInt16;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -11145,7 +13749,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLTestRaw(A,B: Int32): UInt16;
+Function LLTestRaw(A,B: UInt32): UInt16;
 asm
 {$IFDEF x64}
   {$IFDEF Windows}
@@ -11166,7 +13770,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLTestRaw(A,B: Int64): UInt16;
+Function LLTestRaw(A,B: U64Type): UInt16;
 {$IFDEF x64}
 asm
 {$IFDEF Windows}
@@ -11180,102 +13784,102 @@ asm
 end;
 {$ELSE}
 var
-  Temp: Int64;
+  Temp: U64Type;
 begin
 Temp := A and B;
 Result := 0;
 SetFlagStateValue(Result,BO_FLAG_PARITY,BitParity(UInt8(Temp)));
 SetFlagStateValue(Result,BO_FLAG_ZERO,Temp = 0);
-SetFlagStateValue(Result,BO_FLAG_SIGN,Int64Sign(Temp));
+SetFlagStateValue(Result,BO_FLAG_SIGN,U64Sign(Temp));
 end;
 {$ENDIF}
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//------------------------------------------------------------------------------
 
-Function LLTestRaw(A,B: UInt8): UInt16;
+Function LLTestRaw(A,B: Int8): UInt16;
 begin
-Result := LLTestRaw(Int8(A),Int8(B));
+Result := LLTestRaw(UInt8(A),UInt8(B));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLTestRaw(A,B: UInt16): UInt16;
+Function LLTestRaw(A,B: Int16): UInt16;
 begin
-Result := LLTestRaw(Int16(A),Int16(B));
+Result := LLTestRaw(UInt16(A),UInt16(B));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLTestRaw(A,B: UInt32): UInt16;
+Function LLTestRaw(A,B: Int32): UInt16;
 begin
-Result := LLTestRaw(Int32(A),Int32(B));
+Result := LLTestRaw(UInt32(A),UInt32(B));
 end;
 
 {$IF Declared(NativeUInt64E)}
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLTestRaw(A,B: UInt64): UInt16;
+Function LLTestRaw(A,B: Int64): UInt16;
 begin
-Result := LLTestRaw(Int64(A),Int64(B));
+Result := LLTestRaw(U64Type(A),U64Type(B));
 end;
 
 {$IFEND}
 
-//------------------------------------------------------------------------------
-
-Function LLTest(A,B: Int8): TBOStatusFlags;
-begin
-Result := LLDecodeFlags(LLTestRaw(A,B));
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function LLTest(A,B: Int16): TBOStatusFlags;
-begin
-Result := LLDecodeFlags(LLTestRaw(A,B));
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function LLTest(A,B: Int32): TBOStatusFlags;
-begin
-Result := LLDecodeFlags(LLTestRaw(A,B));
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-Function LLTest(A,B: Int64): TBOStatusFlags;
-begin
-Result := LLDecodeFlags(LLTestRaw(A,B));
-end;
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//==============================================================================
 
 Function LLTest(A,B: UInt8): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLTestRaw(Int8(A),Int8(B)));
+Result := LLDecodeFlags(LLTestRaw(A,B));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function LLTest(A,B: UInt16): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLTestRaw(Int16(A),Int16(B)));
+Result := LLDecodeFlags(LLTestRaw(A,B));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function LLTest(A,B: UInt32): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLTestRaw(Int32(A),Int32(B)));
+Result := LLDecodeFlags(LLTestRaw(A,B));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTest(A,B: U64Type): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLTestRaw(A,B));
+end;
+
+//------------------------------------------------------------------------------
+
+Function LLTest(A,B: Int8): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLTestRaw(UInt8(A),UInt8(B)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTest(A,B: Int16): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLTestRaw(UInt16(A),UInt16(B)));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function LLTest(A,B: Int32): TBOStatusFlags;
+begin
+Result := LLDecodeFlags(LLTestRaw(UInt32(A),UInt32(B)));
 end;
 
 {$IF Declared(NativeUInt64E)}
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function LLTest(A,B: UInt64): TBOStatusFlags;
+Function LLTest(A,B: Int64): TBOStatusFlags;
 begin
-Result := LLDecodeFlags(LLTestRaw(Int64(A),Int64(B)));
+Result := LLDecodeFlags(LLTestRaw(U64Type(A),U64Type(B)));
 end;
 
 {$IFEND}
