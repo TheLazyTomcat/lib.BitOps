@@ -2677,8 +2677,8 @@ Function LLTest(A,B: Int64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;
   These functions have both implementations (pascal and assembly) compiled, and
   which will be used is selected at unit initialization, after checking CPU for
   required extensions.
-  Before unit initialization, all the functions are routed to default
-  implementation (pascal).
+  Before unit initialization, all the functions are routed to default (pascal)
+  implementation.
 
   When such function is called, the selected implementation is called via an
   internal global variable which holds pointer to the implementation. Within
@@ -2687,9 +2687,10 @@ Function LLTest(A,B: Int64): TBOStatusFlags; overload;{$IFDEF CanInline} inline;
   Following types and functions are here to obtain information about which
   implementation is currently selected and to provide a mean of changing it.
 
-  WARNING - be wery careful when changing the selected implementation, as there
-            is absolutely no thread-safety protection (the variables are global,
-            initialized only once and not expected to be ever changed)
+    WARNING - be wery careful when changing the selected implementation, as
+              there is absolutely no thread-safety protection (the variables
+              are global, initialized only once and not expected to be ever
+              changed).
 }
 type
   TUIM_BitOps_Function = (
@@ -2725,7 +2726,7 @@ Function UIM_BitOps_SupportedFuncImpl(Func: TUIM_BitOps_Function): TUIM_BitOps_I
   UIM_BitOps_GetFuncImpl
 
   Returns value indicating what implementation of the selected function is
-  executed when calling the function.
+  executed (ie. which is selected) when calling the function.
 }
 Function UIM_BitOps_GetFuncImpl(Func: TUIM_BitOps_Function): TUIM_BitOps_Implementation;
 
@@ -2741,11 +2742,11 @@ Function UIM_BitOps_GetFuncImpl(Func: TUIM_BitOps_Function): TUIM_BitOps_Impleme
 
   WARNING - when selecting imNone as an implementation for some function, the
             routing is set to nil, and because the routing mechanism, for the
-            sake of speed, does not check validity, it will result in an
+            sake of performance, does not check validity, it will result in an
             exception when calling this function
 
-  WANRING - when selecting unsupported implementation, calling the function will
-            almost certainly result in an system exception (invalid
+  WANRING - when selecting unsupported implementation, calling the function
+            will almost certainly result in an system exception (invalid
             instruction).
 }
 Function UIM_BitOps_SetFuncImpl(Func: TUIM_BitOps_Function; NewImpl: TUIM_BitOps_Implementation): TUIM_BitOps_Implementation;
@@ -13979,8 +13980,7 @@ end;
                                       UIM
 
 --------------------------------------------------------------------------------
-===============================================================================}
-
+===============================================================================}  
 {-------------------------------------------------------------------------------
 ================================================================================
                          Unit implementation management
@@ -13991,84 +13991,36 @@ var
 
 //------------------------------------------------------------------------------
 
-{$IFNDEF ASM_Extensions}{$IFDEF FPCDWM}{$PUSH}W5024{$ENDIF}{$ENDIF}
-Function UIM_CheckASMSupport(Func: TUIM_BitOps_Function): Boolean;
-begin
-Result := False;
-{$IFDEF ASM_Extensions}
-with TSimpleCPUID.Create do
-try
-  case Func of
-    fnPopCount8,fnPopCount16,fnPopCount32,fnPopCount64:
-      Result := Info.SupportedExtensions.POPCNT;
-    fnLZCount8,fnLZCount16,fnLZCount32,fnLZCount64:
-      Result := Info.ExtendedProcessorFeatures.LZCNT;
-    fnTZCount8,fnTZCount16,fnTZCount32,fnTZCount64,
-    fnExtractBits8,fnExtractBits16,fnExtractBits32,fnExtractBits64:
-      Result := Info.ProcessorFeatures.BMI1;
-    fnParallelBitsExtract8,fnParallelBitsExtract16,fnParallelBitsExtract32,
-    fnParallelBitsDeposit8,fnParallelBitsDeposit16,fnParallelBitsDeposit32:
-      Result := Info.ProcessorFeatures.BMI2;
-    fnParallelBitsExtract64:
-      Result := Info.ProcessorFeatures.BMI2{$IFNDEF x64} and Info.SupportedExtensions.POPCNT{$ENDIF};
-    fnParallelBitsDeposit64:
-      Result := Info.ProcessorFeatures.BMI2{$IFNDEF x64} and Info.SupportedExtensions.POPCNT and Info.ProcessorFeatures.CMOV{$ENDIF};
-  else
-    raise EBOUnknownFunction.CreateFmt('UIM_CheckASMSupport: Unknown function (%d).',[Ord(Func)]);
-  end;
-finally
-  Free;
-end;
-{$ENDIF}
-end;
-{$IFNDEF ASM_Extensions}{$IFDEF FPCDWM}{$POP}{$ENDIF}{$ENDIF}
-
-//==============================================================================
-
 Function UIM_BitOps_AvailableFuncImpl(Func: TUIM_BitOps_Function): TUIM_BitOps_Implementations;
+var
+  i:  Integer;
 begin
-case Func of
-  fnPopCount8,fnPopCount16,fnPopCount32,fnPopCount64,
-  fnLZCount8,fnLZCount16,fnLZCount32,fnLZCount64,
-  fnTZCount8,fnTZCount16,fnTZCount32,fnTZCount64,
-  fnExtractBits8,fnExtractBits16,fnExtractBits32,fnExtractBits64,
-  fnParallelBitsExtract8,fnParallelBitsExtract16,fnParallelBitsExtract32,fnParallelBitsExtract64,
-  fnParallelBitsDeposit8,fnParallelBitsDeposit16,fnParallelBitsDeposit32,fnParallelBitsDeposit64:
-    Result := [imNone,imPascal{$IFDEF ASM_Extensions},imAssembly{$ENDIF}];
-else
-  raise EBOUnknownFunction.CreateFmt('UIM_BitOps_AvailableFuncImpl: Unknown function (%d).',[Ord(Func)]);
-end;
+Result := [];
+with varImplManager.RoutingFindObj(TUIMIdentifier(Func)) do
+  For i := LowIndex to HighIndex do
+    If ifAvailable in Implementations[i].ImplementationFlags then
+      Include(Result,TUIM_BitOps_Implementation(Implementations[i].ImplementationID));
 end;
 
 //------------------------------------------------------------------------------
 
 Function UIM_BitOps_SupportedFuncImpl(Func: TUIM_BitOps_Function): TUIM_BitOps_Implementations;
+var
+  i:  Integer;
 begin
-Result := [imNone,imPascal];
-case Func of
-  fnPopCount8,fnPopCount16,fnPopCount32,fnPopCount64,
-  fnLZCount8,fnLZCount16,fnLZCount32,fnLZCount64,
-  fnTZCount8,fnTZCount16,fnTZCount32,fnTZCount64,
-  fnExtractBits8,fnExtractBits16,fnExtractBits32,fnExtractBits64,
-  fnParallelBitsExtract8,fnParallelBitsExtract16,fnParallelBitsExtract32,fnParallelBitsExtract64,
-  fnParallelBitsDeposit8,fnParallelBitsDeposit16,fnParallelBitsDeposit32,fnParallelBitsDeposit64:
-    If UIM_CheckASMSupport(Func) then
-      Include(Result,imAssembly);
-else
-  raise EBOUnknownFunction.CreateFmt('UIM_BitOps_SupportedFuncImpl: Unknown function (%d).',[Ord(Func)]);
-end;
+Result := [];
+with varImplManager.RoutingFindObj(TUIMIdentifier(Func)) do
+  For i := LowIndex to HighIndex do
+    // testing whether the two are subset of flags, meaning both must be there
+    If [ifAvailable,ifSupported] <= Implementations[i].ImplementationFlags then
+      Include(Result,TUIM_BitOps_Implementation(Implementations[i].ImplementationID));
 end;
 
 //------------------------------------------------------------------------------
 
 Function UIM_BitOps_GetFuncImpl(Func: TUIM_BitOps_Function): TUIM_BitOps_Implementation;
-var
-  SelectedImplID: TUIMIdentifier;
 begin
-If varImplManager.RoutingFindObj(TUIMIdentifier(Func)).Selected(SelectedImplID) then
-  Result := TUIM_BitOps_Implementation(SelectedImplID)
-else
-  raise EBONoImplementation.Create('UIM_BitOps_GetFuncImpl: No implementation selected.');
+Result := TUIM_BitOps_Implementation(varImplManager.RoutingFindObj(TUIMIdentifier(Func)).Selected)
 end;
 
 //------------------------------------------------------------------------------
@@ -14086,61 +14038,196 @@ end;
 -------------------------------------------------------------------------------}
 
 procedure UnitInitialize;
-const
-  NilPtr:   Pointer = nil;
-  ImplsVar: array[TUIM_BitOps_Function] of PPointer = (
-    @@Var_PopCount_8,@@Var_PopCount_16,@@Var_PopCount_32,@@Var_PopCount_64,
-    @@Var_LZCount_8,@@Var_LZCount_16,@@Var_LZCount_32,@@Var_LZCount_64,
-    @@Var_TZCount_8,@@Var_TZCount_16,@@Var_TZCount_32,@@Var_TZCount_64,
-    @@Var_ExtractBits_8,@@Var_ExtractBits_16,@@Var_ExtractBits_32,@@Var_ExtractBits_64,
-    @@Var_ParallelBitsExtract_8,@@Var_ParallelBitsExtract_16,@@Var_ParallelBitsExtract_32,@@Var_ParallelBitsExtract_64,
-    @@Var_ParallelBitsDeposit_8,@@Var_ParallelBitsDeposit_16,@@Var_ParallelBitsDeposit_32,@@Var_ParallelBitsDeposit_64);
-  ImplsPas: array[TUIM_BitOps_Function] of Pointer = (
-    @Fce_PopCount_8_Pas,@Fce_PopCount_16_Pas,@Fce_PopCount_32_Pas,@Fce_PopCount_64_Pas,
-    @Fce_LZCount_8_Pas,@Fce_LZCount_16_Pas,@Fce_LZCount_32_Pas,@Fce_LZCount_64_Pas,
-    @Fce_TZCount_8_Pas,@Fce_TZCount_16_Pas,@Fce_TZCount_32_Pas,@Fce_TZCount_64_Pas,
-    @Fce_ExtractBits_8_Pas,@Fce_ExtractBits_16_Pas,@Fce_ExtractBits_32_Pas,@Fce_ExtractBits_64_Pas,
-    @Fce_ParallelBitsExtract_8_Pas,@Fce_ParallelBitsExtract_16_Pas,@Fce_ParallelBitsExtract_32_Pas,@Fce_ParallelBitsExtract_64_Pas,
-    @Fce_ParallelBitsDeposit_8_Pas,@Fce_ParallelBitsDeposit_16_Pas,@Fce_ParallelBitsDeposit_32_Pas,@Fce_ParallelBitsDeposit_64_Pas);
 {$IFDEF ASM_Extensions}
-  ImplsAsm: array[TUIM_BitOps_Function] of Pointer = (
-    @Fce_PopCount_8_Asm,@Fce_PopCount_16_Asm,@Fce_PopCount_32_Asm,@Fce_PopCount_64_Asm,
-    @Fce_LZCount_8_Asm,@Fce_LZCount_16_Asm,@Fce_LZCount_32_Asm,@Fce_LZCount_64_Asm,
-    @Fce_TZCount_8_Asm,@Fce_TZCount_16_Asm,@Fce_TZCount_32_Asm,@Fce_TZCount_64_Asm,
-    @Fce_ExtractBits_8_Asm,@Fce_ExtractBits_16_Asm,@Fce_ExtractBits_32_Asm,@Fce_ExtractBits_64_Asm,
-    @Fce_ParallelBitsExtract_8_Asm,@Fce_ParallelBitsExtract_16_Asm,@Fce_ParallelBitsExtract_32_Asm,@Fce_ParallelBitsExtract_64_Asm,
-    @Fce_ParallelBitsDeposit_8_Asm,@Fce_ParallelBitsDeposit_16_Asm,@Fce_ParallelBitsDeposit_32_Asm,@Fce_ParallelBitsDeposit_64_Asm);
+type
+  TUIMSuppGrp = (sgPOPCNT,sgLZCNT,sgBMI1,sgBMI2,sgBEXT64,sgBDEP64);
+var
+  Support: array[TUIMSuppGrp] of Boolean;
 {$ENDIF}
 var
   i:  TUIM_BitOps_Function;
 begin
 varImplManager := TImplementationManager.Create;
-For i := Low(TUIM_BitOps_Function) to High(TUIM_BitOps_Function) do
-  begin
-    with varImplManager.RoutingAddObj(TUIMIdentifier(i),ImplsVar[i]^) do
-      begin
-        Add(TUIMIdentifier(imNone),NilPtr);
-        Add(TUIMIdentifier(imPascal),ImplsPas[i],[ifSelect]);
-      {$IFDEF ASM_Extensions}
-        Add(TUIMIdentifier(imAssembly),ImplsAsm[i]);
-      {$ELSE}
-        AddAlias(TUIMIdentifier(imPascal),TUIMIdentifier(imAssembly));
-      {$ENDIF}
-      end;
-    If UIM_CheckASMSupport(i) then
-      UIM_BitOps_SetFuncImpl(i,imAssembly)
-  end;
 {$IFNDEF PurePascal}
+// discern what is supported on current system
 with TSimpleCPUID.Create do
 try
 {$IFDEF x64}
   If not Info.SupportedExtensions.SSE2 then
     raise EBOUnsupportedPlatform.Create('UnitInitialize: SSE2 extension is required for x86-64 system.');
 {$ENDIF}
+{$IFDEF ASM_Extensions}
+  Support[sgPOPCNT] := Info.SupportedExtensions.POPCNT;
+  Support[sgLZCNT]  := Info.ExtendedProcessorFeatures.LZCNT;
+  Support[sgBMI1]   := Info.ProcessorFeatures.BMI1;
+  Support[sgBMI2]   := Info.ProcessorFeatures.BMI2;
+  Support[sgBEXT64] := Info.ProcessorFeatures.BMI2{$IFNDEF x64} and
+    Info.SupportedExtensions.POPCNT{$ENDIF};
+  Support[sgBDEP64] := Info.ProcessorFeatures.BMI2{$IFNDEF x64} and
+    Info.SupportedExtensions.POPCNT and Info.ProcessorFeatures.CMOV{$ENDIF};;
+{$ENDIF}
 finally
   Free;
 end;
 {$ENDIF}
+// fill routing list and select default implementations (pascal)
+// popcount
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnPopCount8),@Var_PopCount_8,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_PopCount_8_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_PopCount_8_Asm,Support[sgPOPCNT]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_PopCount_8_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnPopCount16),@Var_PopCount_16,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_PopCount_16_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_PopCount_16_Asm,Support[sgPOPCNT]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_PopCount_16_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnPopCount32),@Var_PopCount_32,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_PopCount_32_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_PopCount_32_Asm,Support[sgPOPCNT]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_PopCount_32_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnPopCount64),@Var_PopCount_64,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_PopCount_64_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_PopCount_64_Asm,Support[sgPOPCNT]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_PopCount_64_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+// lzcount
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnLZCount8),@Var_LZCount_8,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_LZCount_8_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_LZCount_8_Asm,Support[sgLZCNT]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_LZCount_8_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnLZCount16),@Var_LZCount_16,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_LZCount_16_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_LZCount_16_Asm,Support[sgLZCNT]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_LZCount_16_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnLZCount32),@Var_LZCount_32,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_LZCount_32_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_LZCount_32_Asm,Support[sgLZCNT]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_LZCount_32_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnLZCount64),@Var_LZCount_64,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_LZCount_64_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_LZCount_64_Asm,Support[sgLZCNT]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_LZCount_64_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+// tzcount
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnTZCount8),@Var_TZCount_8,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_TZCount_8_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_TZCount_8_Asm,Support[sgBMI1]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_TZCount_8_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnTZCount16),@Var_TZCount_16,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_TZCount_16_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_TZCount_16_Asm,Support[sgBMI1]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_TZCount_16_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnTZCount32),@Var_TZCount_32,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_TZCount_32_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_TZCount_32_Asm,Support[sgBMI1]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_TZCount_32_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnTZCount64),@Var_TZCount_64,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_TZCount_64_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_TZCount_64_Asm,Support[sgBMI1]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_TZCount_64_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+// extractbits
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnExtractBits8),@Var_ExtractBits_8,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_ExtractBits_8_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ExtractBits_8_Asm,Support[sgBMI1]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ExtractBits_8_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnExtractBits16),@Var_ExtractBits_16,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_ExtractBits_16_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ExtractBits_16_Asm,Support[sgBMI1]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ExtractBits_16_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnExtractBits32),@Var_ExtractBits_32,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_ExtractBits_32_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ExtractBits_32_Asm,Support[sgBMI1]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ExtractBits_32_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnExtractBits64),@Var_ExtractBits_64,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_ExtractBits_64_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ExtractBits_64_Asm,Support[sgBMI1]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ExtractBits_64_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+// parallelbitsextract
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnParallelBitsExtract8),@Var_ParallelBitsExtract_8,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_ParallelBitsExtract_8_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsExtract_8_Asm,Support[sgBMI2]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsExtract_8_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnParallelBitsExtract16),@Var_ParallelBitsExtract_16,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_ParallelBitsExtract_16_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsExtract_16_Asm,Support[sgBMI2]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsExtract_16_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnParallelBitsExtract32),@Var_ParallelBitsExtract_32,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_ParallelBitsExtract_32_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsExtract_32_Asm,Support[sgBMI2]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsExtract_32_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnParallelBitsExtract64),@Var_ParallelBitsExtract_64,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_ParallelBitsExtract_64_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsExtract_64_Asm,Support[sgBEXT64]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsExtract_64_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+// parallelbitsdeposit
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnParallelBitsDeposit8),@Var_ParallelBitsDeposit_8,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_ParallelBitsDeposit_8_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsDeposit_8_Asm,Support[sgBMI2]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsDeposit_8_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnParallelBitsDeposit16),@Var_ParallelBitsDeposit_16,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_ParallelBitsDeposit_16_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsDeposit_16_Asm,Support[sgBMI2]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsDeposit_16_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnParallelBitsDeposit32),@Var_ParallelBitsDeposit_32,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_ParallelBitsDeposit_32_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsDeposit_32_Asm,Support[sgBMI2]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsDeposit_32_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+AddRoutingSelect(varImplManager,TUIMIdentifier(fnParallelBitsDeposit64),@Var_ParallelBitsDeposit_64,[
+  ImplInfo(TUIMIdentifier(imNone),NilPtr),
+  ImplInfo(TUIMIdentifier(imPascal),@Fce_ParallelBitsDeposit_64_Pas),{$IFDEF ASM_Extensions}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsDeposit_64_Asm,Support[sgBDEP64]){$ELSE}
+  ImplInfo(TUIMIdentifier(imAssembly),@Fce_ParallelBitsDeposit_64_Pas,False){$ENDIF}],
+  TUIMIdentifier(imPascal));
+{
+  Now traverse all functions and select assembly implementation where available
+  and supported.
+}
+For i := Low(TUIM_BitOps_Function) to High(TUIM_BitOps_Function) do
+  If imAssembly in UIM_BitOps_SupportedFuncImpl(i) then
+    UIM_BitOps_SetFuncImpl(i,imAssembly);
 end;
 
 //------------------------------------------------------------------------------
