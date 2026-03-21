@@ -107,8 +107,6 @@ unit BitOps;
   {$IFNDEF PurePascal}
     {$ASMMODE Intel}
   {$ENDIF}
-  {$DEFINE FPC_DisableWarns}
-  {$MACRO ON}
 {$ELSE}
   {$IF CompilerVersion >= 17} // Delphi 2005+
     {$DEFINE CanInline}
@@ -1817,6 +1815,46 @@ Function BitParity(Value: Int64): Boolean; overload;
 
 {-------------------------------------------------------------------------------
 ================================================================================
+                               Pointer conversions
+================================================================================
+-------------------------------------------------------------------------------}
+{
+  PtrToInt
+  Ptr2Int
+  PtrToUInt
+  Ptr2UInt
+
+  IntToPtr
+  Int2Ptr
+  UIntToPtr
+  UInt2Ptr
+
+  Set of funtions to be used when converting between pointers and pointer-sized
+  integers. They are intended for in-line conversions where they should replace
+  direct type castings, which usually produce warnings in some compilers (FPC).
+
+  They are written in a way as to minimize overhead - they are inlined where
+  possible, where not possible and if use of assembly is allowed, they are
+  implemented in minimal assembly code (no operation in x87 - only a call and
+  immediate return, one MOV instruction in x64).
+}
+
+Function PtrToInt(Ptr: Pointer): PtrInt;{$IFDEF CanInline} inline;{$ELSE}{$IFNDEF PurePascal} register; assembler;{$ENDIF}{$ENDIF}
+Function Ptr2Int(Ptr: Pointer): PtrInt;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function PtrToUInt(Ptr: Pointer): PtrUInt;{$IFDEF CanInline} inline;{$ELSE}{$IFNDEF PurePascal} register; assembler;{$ENDIF}{$ENDIF}
+Function Ptr2UInt(Ptr: Pointer): PtrUInt;{$IFDEF CanInline} inline;{$ENDIF}
+
+//------------------------------------------------------------------------------
+
+Function IntToPtr(I: PtrInt): Pointer;{$IFDEF CanInline} inline;{$ELSE}{$IFNDEF PurePascal} register; assembler;{$ENDIF}{$ENDIF}
+Function Int2Ptr(I: PtrInt): Pointer;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function UIntToPtr(U: PtrUInt): Pointer;{$IFDEF CanInline} inline;{$ELSE}{$IFNDEF PurePascal} register; assembler;{$ENDIF}{$ENDIF}
+Function UInt2Ptr(U: PtrUInt): Pointer;{$IFDEF CanInline} inline;{$ENDIF}
+
+{-------------------------------------------------------------------------------
+================================================================================
                            Pointer arithmetic helpers
 ================================================================================
 -------------------------------------------------------------------------------}
@@ -2796,12 +2834,6 @@ implementation
 
 uses
   BasicUIM{$IFNDEF PurePascal}, SimpleCPUID{$ENDIF};
-
-{$IFDEF FPC_DisableWarns}
-  {$DEFINE FPCDWM}
-  {$DEFINE W4055:={$WARN 4055 OFF}} // Conversion between ordinals and pointers is not portable
-  {$DEFINE W5024:={$WARN 5024 OFF}} // Parameter "$1" not used
-{$ENDIF}
 
 {$IFNDEF FPC}
 const
@@ -11426,6 +11458,124 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
+                               Pointer conversions
+================================================================================
+-------------------------------------------------------------------------------}
+
+Function PtrToInt(Ptr: Pointer): PtrInt;
+{$IF not Defined(CanInline) and not Defined(PurePascal)}
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    MOV   RAX, RCX
+  {$ELSE}
+    MOV   RAX, RDI
+  {$ENDIF}
+{$ELSE}
+    // do nothing, Ptr is in EAX where we also return the result
+{$ENDIF}
+end;
+{$ELSE}
+var
+  Overlay: Pointer absolute Result;
+begin
+Overlay := Ptr;
+end;
+{$IFEND}
+
+//------------------------------------------------------------------------------
+
+Function Ptr2Int(Ptr: Pointer): PtrInt;
+begin
+Result := PtrToInt(Ptr);
+end;
+
+//------------------------------------------------------------------------------
+
+Function PtrToUInt(Ptr: Pointer): PtrUInt;
+{$IF not Defined(CanInline) and not Defined(PurePascal)}
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    MOV   RAX, RCX
+  {$ELSE}
+    MOV   RAX, RDI
+  {$ENDIF}
+{$ENDIF}
+end;
+{$ELSE}
+var
+  Overlay: Pointer absolute Result;
+begin
+Overlay := Ptr;
+end;
+{$IFEND}
+
+//------------------------------------------------------------------------------
+
+Function Ptr2UInt(Ptr: Pointer): PtrUInt;
+begin
+Result := PtrToUInt(Ptr);
+end;
+
+//==============================================================================
+
+Function IntToPtr(I: PtrInt): Pointer;
+{$IF not Defined(CanInline) and not Defined(PurePascal)}
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    MOV   RAX, RCX
+  {$ELSE}
+    MOV   RAX, RDI
+  {$ENDIF}
+{$ENDIF}
+end;
+{$ELSE}
+var
+  Overlay: PtrInt absolute Result;
+begin
+Overlay := I;
+end;
+{$IFEND}
+
+//------------------------------------------------------------------------------
+
+Function Int2Ptr(I: PtrInt): Pointer;
+begin
+Result := IntToPtr(I);
+end;
+
+//------------------------------------------------------------------------------
+
+Function UIntToPtr(U: PtrUInt): Pointer;
+{$IF not Defined(CanInline) and not Defined(PurePascal)}
+asm
+{$IFDEF x64}
+  {$IFDEF Windows}
+    MOV   RAX, RCX
+  {$ELSE}
+    MOV   RAX, RDI
+  {$ENDIF}
+{$ENDIF}
+end;
+{$ELSE}
+var
+  Overlay: PtrUInt absolute Result;
+begin
+Overlay := U;
+end;
+{$IFEND}
+
+//------------------------------------------------------------------------------
+
+Function UInt2Ptr(U: PtrUInt): Pointer;
+begin
+Result := IntToPtr(U);
+end;
+
+{-------------------------------------------------------------------------------
+================================================================================
                            Pointer arithmetic helpers
 ================================================================================
 -------------------------------------------------------------------------------}
@@ -11434,18 +11584,14 @@ end;
 
 Function PtrAdvance(Ptr: Pointer; Offset: TMemOffset): Pointer;
 begin
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-Result := Pointer(PtrUInt(Ptr) + PtrUInt(Offset));
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
+Result := UIntToPtr(PtrToUInt(Ptr) + PtrUInt(Offset));
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function PtrAdvance(Ptr: Pointer; Count: Integer; Stride: TMemSize): Pointer;
 begin
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-Result := Pointer(PtrUInt(Ptr) + PtrUInt(PtrInt(Count) * PtrInt(Stride)));
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
+Result := UIntToPtr(PtrToUInt(Ptr) + PtrUInt(PtrInt(Count) * PtrInt(Stride)));
 end;
 
 {$IFDEF OverflowChecks}{$Q+}{$ENDIF}
@@ -11500,14 +11646,12 @@ end;
 
 Function PtrCompare(A,B: Pointer): Integer;
 begin
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-If PtrUInt(A) < PtrUInt(B) then
+If PtrToUInt(A) < PtrToUInt(B) then
   Result := -1
-else If PtrUInt(A) > PtrUInt(B) then
+else If PtrToUInt(A) > PtrToUInt(B) then
   Result := +1
 else
   Result := 0;
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
@@ -11521,19 +11665,17 @@ end;
 
 Function PtrCompareRel(A,B: Pointer; Relation: TPtrRelation = relSame): Boolean;
 begin
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 // to improve performance, do not use PtrCompare and do everything in-place
 case Relation of
-  relSame:                      Result := PtrUInt(A) = PtrUInt(B);
-  relNotSame:                   Result := PtrUInt(A) <> PtrUInt(B);
-  relLower,relNotHigherNorSame: Result := PtrUInt(A) < PtrUInt(B);
-  relNotLower,relHigherOrSame:  Result := PtrUInt(A) >= PtrUInt(B);
-  relLowerOrSame,relNotHigher:  Result := PtrUInt(A) <= PtrUInt(B);
-  relNotLowerNorSame,relHigher: Result := PtrUInt(A) > PtrUInt(B);
+  relSame:                      Result := PtrToUInt(A) = PtrToUInt(B);
+  relNotSame:                   Result := PtrToUInt(A) <> PtrToUInt(B);
+  relLower,relNotHigherNorSame: Result := PtrToUInt(A) < PtrToUInt(B);
+  relNotLower,relHigherOrSame:  Result := PtrToUInt(A) >= PtrToUInt(B);
+  relLowerOrSame,relNotHigher:  Result := PtrToUInt(A) <= PtrToUInt(B);
+  relNotLowerNorSame,relHigher: Result := PtrToUInt(A) > PtrToUInt(B);
 else
   raise EBOInvalidValue.CreateFmt('PtrCompareRel: Unknown relation (%d).',[Ord(Relation)]);
 end;
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
 end;
 
 //------------------------------------------------------------------------------
@@ -11625,9 +11767,7 @@ end;
 
 Function CheckAlignment(Address: Pointer; Alignment: TMemoryAlignment): Boolean;
 begin
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-Result := (PtrUInt(Address) and PtrUInt(Pred(AlignmentBytes(Alignment)))) = 0;
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
+Result := (PtrToUInt(Address) and PtrUInt(Pred(AlignmentBytes(Alignment)))) = 0;
 end;
 
 //------------------------------------------------------------------------------
@@ -11641,9 +11781,7 @@ end;
 
 Function Misalignment(Address: Pointer; Alignment: TMemoryAlignment): TMemSize;
 begin
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-Result := TMemSize(PtrUInt(Address) - (PtrUInt(Address) and not PtrUInt(Pred(AlignmentBytes(Alignment)))));
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
+Result := TMemSize(PtrToUInt(Address) - (PtrToUInt(Address) and not PtrUInt(Pred(AlignmentBytes(Alignment)))));
 end;
 
 //------------------------------------------------------------------------------
@@ -11684,9 +11822,7 @@ var
 begin
 Result := maNone;
 For i := HighAlignment downto LowAlignment do
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-  If (PtrUInt(Address) and PtrUInt(Pred(AlignmentBytes(i)))) = 0 then
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
+  If (PtrToUInt(Address) and PtrUInt(Pred(AlignmentBytes(i)))) = 0 then
     begin
       Result := i;
       Break{For i};
@@ -11708,9 +11844,7 @@ var
 begin
 // to remove a need for two calls to AlignmentBytes...
 AlignBytes := AlignmentBytes(Alignment);
-{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-Result := Pointer((PtrUInt(Address) + PtrUInt(Pred(AlignBytes))) and not PtrUInt(Pred(AlignBytes)));
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
+Result := UintToPtr((PtrToUInt(Address) + PtrUInt(Pred(AlignBytes))) and not PtrUInt(Pred(AlignBytes)));
 end;
 
 //------------------------------------------------------------------------------
@@ -12105,10 +12239,8 @@ If Length(A) = Length(B) then
       begin
        If Length(A) > 128 then
           begin
-          {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
-            APacked := PtrUInt(@A[1]) - PtrUInt(@A[0]) <= 1;
-            BPacked := PtrUInt(@B[1]) - PtrUInt(@B[0]) <= 1;
-          {$IFDEF FPCDWM}{$POP}{$ENDIF}
+            APacked := PtrToUInt(@A[1]) - PtrToUInt(@A[0]) <= 1;
+            BPacked := PtrToUInt(@B[1]) - PtrToUInt(@B[0]) <= 1;
           end
         else
           begin
