@@ -196,15 +196,14 @@ type
 type
   EBOException = class({$IFDEF UseAuxExceptions}EAEGeneralException{$ELSE}Exception{$ENDIF});
 
-  EBOUnknownFunction     = class(EBOException);
-  EBONoImplementation    = class(EBOException);
-  EBOInvalidValue        = class(EBOException);
-  EBOUnsupportedPlatform = class(EBOException);
+  EBOInvalidValue         = class(EBOException);
+  EBOSizeMismatch         = class(EBOException);
+  EBOUninitializedContext = class(EBOException);
+  EBOUnsupportedPlatform  = class(EBOException);  
 
   EBOConversionError  = class(EBOException);
   EBOInvalidCharacter = class(EBOConversionError);
   EBOBufferTooSmall   = class(EBOConversionError);
-  EBOSizeMismatch     = class(EBOConversionError);
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -2297,6 +2296,47 @@ procedure MoveMemory(Dst,Src: Pointer; Size: TMemSize);
                                   Memory search
 ================================================================================
 -------------------------------------------------------------------------------}
+{$message 'rework'}
+type
+  TMemSearchResult = (srNotFound,srFound,srFoundPartialLead,srFoundPartialTrail);
+
+  TMemSearchOptions = set of (soReverseSearch,soSkipOverlaps,soBytesLocalCopy,
+    soUseStartPosition,soMatchPartial,soMatchPartialLead,soMatchPartialTrail);
+
+type
+  TMemSearchContext = record
+    LastResult:     TMemSearchResult;
+    LastPosition:   TMemOffset;
+    LastOccurence:  Pointer;
+    Internals:      Pointer;  // do not touch this
+  end;
+  PMemSearchContext = ^TMemSearchContext;
+
+//------------------------------------------------------------------------------
+
+Function MemoryFindFirst(Value: UInt8; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
+Function MemoryFindFirst(Value: UInt16; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
+Function MemoryFindFirst(Value: UInt32; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
+Function MemoryFindFirst(Value: U64Type; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
+
+Function MemoryFindFirst(Value: Int8; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
+Function MemoryFindFirst(Value: Int16; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
+Function MemoryFindFirst(Value: Int32; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
+{$IF Declared(NativeUInt64E)}
+Function MemoryFindFirst(Value: Int64; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
+{$IFEND}
+
+Function MemoryFindFirst(const Bytes; Count: TMemSize; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
+Function MemoryFindFirst(const Bytes: array of UInt8; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
+
+//------------------------------------------------------------------------------
+
+Function MemoryFindNext(var Context: TMemSearchContext): Boolean;
+
+//------------------------------------------------------------------------------
+
+procedure MemoryFindClose(var Context: TMemSearchContext);
+
 {
   Following functions are searching provided buffer or memory location for a
   given data (byte sequence or integral value).
@@ -2337,14 +2377,14 @@ procedure MoveMemory(Dst,Src: Pointer; Size: TMemSize);
                                 positive distance of start of the data from
                                 start of the provided buffer.
 
-      srFoundLeadPartial      - A partial match with the requested data was
+      srFoundPartialLead      - A partial match with the requested data was
                                 found at the start of the buffer (see option
-                                soLeadPartialMatch for more details). Position
+                                soPartialLeadMatch for more details). Position
                                 contains a negative distance from the start of
                                 buffer to imagined start of the data.
 
-      srFoundTrailPartial     - Partial match was found at the end of the
-                                provided buffer (see option soTrailPartialMatch
+      srFoundPartialTrail     - Partial match was found at the end of the
+                                provided buffer (see option soPartialTrailMatch
                                 for more details). Position contains positive
                                 distance from buffer start to start of the
                                 patially matching byte sequence.
@@ -2357,7 +2397,7 @@ procedure MoveMemory(Dst,Src: Pointer; Size: TMemSize);
     where if any of the enumerated values is present, its corresponding option
     is activated, when not present, the option is deactivated.
 
-      soLeadPartialMatch
+      soPartialLeadMatch
 
         If this option is activated, then the function will check leading bytes
         of the provided buffer for a partial match with the given sequence or
@@ -2378,9 +2418,9 @@ procedure MoveMemory(Dst,Src: Pointer; Size: TMemSize);
         memory buffer starting with byte sequence $22 $11 $AA $5B $00 ... .
         This will return position -2.
 
-      soTrailPartialMatch
+      soPartialTrailMatch
 
-        This is similar to soLeadPartialMatch, except it tries to match
+        This is similar to soPartialLeadMatch, except it tries to match
         trailing bytes of the buffer. If match is found, then it returns a
         positive position which will be above normally returned values, that
         is, larger than (Size - SizeOf(Value)) or (Size - Count), corresponding
@@ -2395,8 +2435,8 @@ procedure MoveMemory(Dst,Src: Pointer; Size: TMemSize);
 
       soPartialMatch
 
-        Including this option is equivalent to including both soLeadPartialMatch
-        and soTrailPartialMatch.
+        Including this option is equivalent to including both soPartialLeadMatch
+        and soPartialTrailMatch.
 
       soAbsolutePosition
 
@@ -2412,10 +2452,11 @@ procedure MoveMemory(Dst,Src: Pointer; Size: TMemSize);
     value lies across the buffers boundary - you can use these settings to
     search for such occurences.
 }
+(*
 type
-  TBOSearchResult = (srNotFound,srFound,srFoundLeadPartial,srFoundTrailPartial);
+  TBOSearchResult = (srNotFound,srFound,srFoundPartialLead,srFoundPartialTrail);
 
-  TBOSearchOptions = set of (soLeadPartialMatch,soTrailPartialMatch,soPartialMatch,
+  TBOSearchOptions = set of (soPartialLeadMatch,soPartialTrailMatch,soPartialMatch,
                              soAbsolutePosition);
 
 //------------------------------------------------------------------------------
@@ -2487,7 +2528,7 @@ Function FindByte(Value: UInt8; Memory: Pointer; Size: TMemSize): TMemOffset; ov
 Function FindWord(Value: UInt16; Memory: Pointer; Size: TMemSize; LeadingPartialMatch: Boolean = False; TrailingPartialMatch: Boolean = False): TMemOffset; overload;
 Function FindLong(Value: UInt32; Memory: Pointer; Size: TMemSize; LeadingPartialMatch: Boolean = False; TrailingPartialMatch: Boolean = False): TMemOffset; overload;
 Function FindQuad(Value: UInt64; Memory: Pointer; Size: TMemSize; LeadingPartialMatch: Boolean = False; TrailingPartialMatch: Boolean = False): TMemOffset; overload;
-
+*)
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -2819,6 +2860,72 @@ end;
 //------------------------------------------------------------------------------
 
 Function MemSizeMax(A,B: TMemSize): TMemSize;{$IFDEF CanInline} inline; {$ENDIF}
+begin
+If A > B then
+  Result := A
+else
+  Result := B;
+end;
+
+//------------------------------------------------------------------------------
+
+Function MemOffsetMin(A,B: TMemOffset): TMemOffset;{$IFDEF CanInline} inline; {$ENDIF}
+begin
+If A < B then
+  Result := A
+else
+  Result := B;
+end;
+
+//------------------------------------------------------------------------------
+
+Function MemOffsetMax(A,B: TMemOffset): TMemOffset;{$IFDEF CanInline} inline; {$ENDIF}
+begin
+If A > B then
+  Result := A
+else
+  Result := B;
+end;
+
+//------------------------------------------------------------------------------
+
+Function MemOffsetIfThen(Condition: Boolean; OnTrue: TMemOffset; OnFalse: TMemOffset = 0): TMemOffset;{$IFDEF CanInline} inline; {$ENDIF}
+begin
+If Condition then
+  Result := OnTrue
+else
+  Result := OnFalse;
+end;
+
+//------------------------------------------------------------------------------
+
+Function MemOffsetLimit(Offset,Low,High: TMemOffset): TMemOffset;{$IFDEF CanInline} inline; {$ENDIF}
+begin
+If Low <= High then
+  begin
+    If Offset < Low then
+      Result := Low
+    else If Offset > High then
+      Result := High
+    else
+      Result := Offset;
+  end
+else raise EBOInvalidValue.Create('MemOffsetLimit: Low limit is higher than high limit.');
+end;
+
+//------------------------------------------------------------------------------
+
+Function IntegerMin(A,B: Integer): Integer;{$IFDEF CanInline} inline; {$ENDIF}
+begin
+If A < B then
+  Result := A
+else
+  Result := B;
+end;
+
+//------------------------------------------------------------------------------
+
+Function IntegerMax(A,B: Integer): Integer;{$IFDEF CanInline} inline; {$ENDIF}
 begin
 If A > B then
   Result := A
@@ -11785,26 +11892,6 @@ end;
 
 Function CompareData(A,B: array of UInt8; CompareMethod: TCompareMethod): Integer;
 
-  Function IntegerMin(A,B: Integer): Integer;{$IFDEF CanInline} inline; {$ENDIF}
-  begin
-    If A < B then
-      Result := A
-    else
-      Result := B;
-  end;
-
-//--  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --
-
-  Function IntegerMax(A,B: Integer): Integer;{$IFDEF CanInline} inline; {$ENDIF}
-  begin
-    If A > B then
-      Result := A
-    else
-      Result := B;
-  end;
-
-//--  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --
-
   Function CompareItems: Integer;
   var
     i:  Integer;
@@ -13086,448 +13173,1117 @@ end;
                                   Memory search
 ================================================================================
 -------------------------------------------------------------------------------}
+type
+  TMemSearchContextInternals = record
+    Parameters:     record
+      Buffer:         Pointer;
+      Size:           TMemOffset;
+      Options:        TMemSearchOptions;
+      StartPosition:  TMemOffset;
+      case ValueType: (scvtUInt8,scvtUInt16,scvtUInt32,scvtUInt64,scvtBytes) of
+        scvtUInt8:      (Value8:  UInt8);
+        scvtUInt16:     (Value16: UInt16);
+        scvtUInt32:     (Value32: UInt32);
+        scvtUInt64:     (Value64: U64Type);
+        scvtBytes:      (Bytes:   Pointer;
+                         Count:   TMemOffset);
+    end;
+    CurrentOffset:  TMemOffset;
+    SearchDone:     Boolean;
+  end;
+  PMemSearchContextInternals = ^TMemSearchContextInternals;
+
 {-------------------------------------------------------------------------------
     Memory search - auxiliary functions
 -------------------------------------------------------------------------------}
 
-Function PrepSearchOpts(LeadingPartialMatch,TrailingPartialMatch: Boolean): TBOSearchOptions;
+Function MemSearchOptionsProcess(const Options: TMemSearchOptions): TMemSearchOptions;
 begin
-Result := [];
-If LeadingPartialMatch then
-  Include(Result,soLeadPartialMatch);
-If TrailingPartialMatch then
-  Include(Result,soTrailPartialMatch);
+Result := Options;
+If soMatchPartial in Result then
+  Result := Result + [soMatchPartialLead,soMatchPartialTrail];
 end;
 
-{-------------------------------------------------------------------------------
-    Memory search - main implementation
--------------------------------------------------------------------------------}
+//------------------------------------------------------------------------------
 
-Function FindBytes(const Bytes; Count: TMemSize; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult;
+procedure MemSearchContextInit(out Context: TMemSearchContext);
+begin
+ZeroMemory(@Context,SizeOf(TMemSearchContext));
+Context.Internals := New(PMemSearchContextInternals);
+end;
 
-  Function SameBytes(A,B: PByte; Cnt: TMemSize): Boolean;
+//------------------------------------------------------------------------------
+
+procedure MemSearchContextResultsInit(var Context: TMemSearchContext);
+begin
+Context.LastResult := srNotFound;
+Context.LastPosition := 0;
+Context.LastOccurence := nil;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure MemSearchContextFinal(var Context: TMemSearchContext);
+begin
+If Assigned(Context.Internals) then
+  begin
+    with PMemSearchContextInternals(Context.Internals)^.Parameters do
+      If (ValueType = scvtBytes) and (soBytesLocalCopy in Options) then
+        FreeMem(Bytes,Count);
+    Dispose(PMemSearchContextInternals(Context.Internals));
+  end;
+ZeroMemory(@Context,SizeOf(TMemSearchContext));
+end;
+
+//------------------------------------------------------------------------------
+
+Function MemSearchSameBytes(A,B: PUInt8; Count: TMemOffset): Boolean;
+var
+  i:  TMemOffset;
+begin
+If Count > 0 then
   begin
     Result := True;
-    while Cnt > 0 do
+    For i := 1 to Count do
       begin
         If A^ <> B^ then
           begin
             Result := False;
-            Break{while...};
+            Break{For i};
           end;
-        Dec(Cnt);
         Inc(A);
         Inc(B);
       end;
-  end;
-
-var
-  BytesWorkPtr:   Pointer;
-  BufferWorkPtr:  Pointer;
-  BytesRemaining: TMemSize;
-  i:              TMemSize;
-begin
-Position := -1;
-Result := srNotFound;
-// sanity checks
-If Count > TMemSize(High(TMemOffset)) then
-  raise EBOInvalidValue.Create('FindBytes: Too many bytes to search for.');
-If Size > TMemSize(High(TMemOffset)) then
-  raise EBOInvalidValue.Create('FindBytes: Memory buffer too large.');
-If (Count > 0) and (Size > 0) then
-  case Count of
-    // call optimized routines for small data
-    1:  Result := FindByte(UInt8(Bytes),Buffer,Size,Position,Options);
-    2:  Result := FindWord(UInt16(Bytes),Buffer,Size,Position,Options);
-    4:  Result := FindLong(UInt32(Bytes),Buffer,Size,Position,Options);
-    8:  Result := FindQuad(UInt64(Bytes),Buffer,Size,Position,Options);
-  else
-    // general processing, leading partial match search
-    BufferWorkPtr := @Buffer;
-    // note Count cannot be 0 here, it was chacked earlier
-    BytesWorkPtr := PtrAdvance(@Bytes,TMemOffset(Count) - 1);
-    If [soLeadPartialMatch,soPartialMatch] * Options <> [] then
-      For i := 1 to MemSizeMin(Pred(Count),Size) do
-        begin
-          If SameBytes(BufferWorkPtr,BytesWorkPtr,i) then
-            begin
-              Position := TMemOffset(i) - TMemOffset(Count);
-              Result := srFoundLeadPartial;
-              Exit;
-            end
-          else Dec(PUInt8(BytesWorkPtr));
-        end;
-    // whole data search
-    BytesRemaining := Size;
-    while BytesRemaining >= Count do
-      begin
-        // do first byte comparison here to avoid unnecessary rapid calls to SameBytes
-        If PUInt8(BufferWorkPtr)^ = UInt8(Bytes) then
-          If SameBytes(BufferWorkPtr,@Bytes,Count) then
-            begin
-              Position := Size - BytesRemaining;
-              Result := srFound;
-              Exit;
-            end;
-        Inc(PUInt8(BufferWorkPtr));
-        Dec(BytesRemaining);
-      end;
-    // trailing partial match search
-    If [soTrailPartialMatch,soPartialMatch] * Options <> [] then
-      For i := MemSizeMin(Pred(Count),Size) downto 1 do
-        begin
-          If SameBytes(BufferWorkPtr,@Bytes,i) then
-            begin
-              Position := TMemOffset(Size) - TMemOffset(i);
-              Result := srFoundTrailPartial;
-              Exit;
-            end
-          else Inc(PUInt8(BufferWorkPtr));
-        end;
-  end;
+  end
+else Result := True;
 end;
 
-//------------------------------------------------------------------------------
+{-------------------------------------------------------------------------------
+    Memory search - internals implementation
+-------------------------------------------------------------------------------}
 
-{$IFDEF FPCDWM}{$PUSH}W5024{$ENDIF}
-Function FindByte(Value: UInt8; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult;
+Function MemSearchFind8(var Context: TMemSearchContext): Boolean;
 var
-  WorkPtr:        PUInt8;
-  BytesRemaining: TMemSize;
+  Value:    UInt8;
+  WorkPtr:  PUInt8;
 begin
-Position := -1;
-Result := srNotFound;
-// ensure we can actually return the offset
-If Size > TMemSize(High(TMemOffset)) then
-  raise EBOInvalidValue.Create('FindByte: Memory buffer too large.');
-WorkPtr := PUInt8(@Buffer);
-BytesRemaining := Size;
-// searching for bytes, no need to do partial checks
-while BytesRemaining > 0 do
+Result := False;
+MemSearchContextResultsInit(Context);
+with PMemSearchContextInternals(Context.Internals)^ do
   begin
-    If WorkPtr^ = Value then
+    // get helper variables
+    Value := Parameters.Value8;
+    CurrentOffset := MemOffsetLimit(CurrentOffset,0,Pred(Parameters.Size));
+    WorkPtr := PtrAdvance(Parameters.Buffer,CurrentOffset);
+    // main processing
+    If soReverseSearch in Parameters.Options then
       begin
-        // we have found the value
-        Position := Size - BytesRemaining;
-        Result := srFound;
-        Break{while...};
-      end;
-    Inc(WorkPtr);
-    Dec(BytesRemaining);
-  end;
-end;
-{$IFDEF FPCDWM}{$POP}{$ENDIF}
-
-//------------------------------------------------------------------------------
-
-Function FindWord(Value: UInt16; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult;
-var
-  WorkPtr:        PUInt16;
-  BytesRemaining: TMemSize;
-begin
-Position := -1;
-Result := srNotFound;
-If Size > TMemSize(High(TMemOffset)) then
-  raise EBOInvalidValue.Create('FindWord: Memory buffer too large.');
-If Size > 0 then
-  begin
-    WorkPtr := PUInt16(@Buffer);
-    // leading partial match check
-    If [soLeadPartialMatch,soPartialMatch] * Options <> [] then
-    {$IFDEF ENDIAN_BIG}
-      If UInt8(Value) = PUInt8(WorkPtr)^ then
-    {$ELSE}
-      If UInt8(Value shr 8) = PUInt8(WorkPtr)^ then
-    {$ENDIF}
-        begin
-          Position := -1;
-          Result := srFoundLeadPartial;
-          Exit;
-        end;
-    // check the data
-    BytesRemaining := Size;
-    while BytesRemaining >= SizeOf(Value) do
-      begin
-        If WorkPtr^ = Value then
+        // searching form highest address to lowest
+        while CurrentOffset >= 0 do
           begin
-            Position := Size - BytesRemaining;
-            Result := srFound;
-            Exit;
+            If WorkPtr^ = Value then
+              begin
+                Context.LastResult := srFound;
+                Context.LastPosition := CurrentOffset;
+                Context.LastOccurence := WorkPtr;
+                CurrentOffset := Pred(CurrentOffset);
+                SearchDone := CurrentOffset < 0;
+                Result := True;
+                Exit;
+              end;
+            Dec(WorkPtr);
+            Dec(CurrentOffset);
           end;
-        Inc(PUInt8(WorkPtr)); // increment the working pointer only by one
-        Dec(BytesRemaining);
-      end;
-  {
-    Trailing partial match check.
-
-    Note that by this point, WorkPtr always points to a byte that is exactly
-    SizeOf(Value) - 1 remote from the end of data, so we can directly use it
-    to do partial check.
-  }
-    If [soTrailPartialMatch,soPartialMatch] * Options <> [] then
-    {$IFDEF ENDIAN_BIG}
-      If UInt8(Value shr 8) = PUInt8(WorkPtr)^ then
-    {$ELSE}
-      If UInt8(Value) = PUInt8(WorkPtr)^ then
-    {$ENDIF}
-        begin
-          Position := TMemOffset(Size) - 1;
-          Result := srFoundTrailPartial;
-        end;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function FindLong(Value: UInt32; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult;
-var
-  WorkPtr:        PUInt32;
-  BytesRemaining: TMemSize;
-  Temp:           UInt32;
-  i:              TMemSize;
-begin
-Position := -1;
-Result := srNotFound;
-If Size > TMemSize(High(TMemOffset)) then
-  raise EBOInvalidValue.Create('FindLong: Memory buffer too large.');
-If Size > 0 then
-  begin
-    WorkPtr := PUInt32(@Buffer);
-    If [soLeadPartialMatch,soPartialMatch] * Options <> [] then
-      For i := 1 to MemSizeMin(Pred(SizeOf(UInt32)),Size) do
-        begin
-          Temp := 0;
-          MoveMemory(@Temp,WorkPtr,i);
-        {$IFDEF ENDIAN_BIG}
-          If Temp = UInt32(Value shl (8 * (SizeOf(UInt32) - i))) then
-        {$ELSE}
-          If Temp = Value shr (8 * (SizeOf(UInt32) - i)) then
-        {$ENDIF}
-            begin
-              Position := TMemOffset(i) - SizeOf(UInt32);
-              Result := srFoundLeadPartial;
-              Exit;
-            end;
-        end;
-    BytesRemaining := Size;
-    while BytesRemaining >= SizeOf(UInt32) do
+        SearchDone := True;
+      end
+    else  // forward - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       begin
-        If WorkPtr^ = Value then
+        // searching from lowest address towards higher addresses
+        while CurrentOffset < Parameters.Size do
           begin
-            Position := Size - BytesRemaining;
-            Result := srFound;
-            Exit;
+            If WorkPtr^ = Value then
+              begin
+                // searched byte found, fill results and end
+                Context.LastResult := srFound;
+                Context.LastPosition := CurrentOffset;
+                Context.LastOccurence := WorkPtr;
+                CurrentOffset := Succ(CurrentOffset);
+                SearchDone := CurrentOffset >= Parameters.Size;
+                Result := True;
+                Exit;
+              end;
+            Inc(WorkPtr);
+            Inc(CurrentOffset);
           end;
-        Inc(PUInt8(WorkPtr));
-        Dec(BytesRemaining);
+        SearchDone := True;
       end;
-    If [soTrailPartialMatch,soPartialMatch] * Options <> [] then
-      For i := MemSizeMin(Pred(SizeOf(UInt32)),Size) downto 1 do
-        begin
-          Temp := 0;
-          MoveMemory(@Temp,WorkPtr,i);
-        {$IFDEF ENDIAN_BIG}
-          If Temp = Value and UInt32(UInt32(-1) shl (8 * (SizeOf(UInt32) - i))) then
-        {$ELSE}
-          If Temp = Value and {mask}(UInt32(-1) shr (8 * (SizeOf(UInt32) - i))) then
-        {$ENDIF}
-            begin
-              Position := TMemOffset(Size) - TMemOffset(i);
-              Result := srFoundTrailPartial;
-              Exit;
-            end;
-          Inc(PUInt8(WorkPtr));
-        end;
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function FindQuad(Value: UInt64; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult;
-var
-  WorkPtr:        PUInt64;
-  BytesRemaining: TMemSize;
-  Temp:           UInt64;
-  i:              TMemSize;
-begin
-Position := -1;
-Result := srNotFound;
-If Size > TMemSize(High(TMemOffset)) then
-  raise EBOInvalidValue.Create('FindQuad: Memory buffer too large.');
-If Size > 0 then
-  begin
-    WorkPtr := PUInt64(@Buffer);  
-    If [soLeadPartialMatch,soPartialMatch] * Options <> [] then
-      For i := 1 to MemSizeMin(Pred(SizeOf(UInt64)),Size) do
-        begin
-          Temp := 0;
-          MoveMemory(@Temp,WorkPtr,i);
-        {$IFDEF ENDIAN_BIG}
-          If Temp = UInt64(Value shl (8 * (SizeOf(UInt64) - i))) then
-        {$ELSE}
-          If Temp = Value shr (8 * (SizeOf(UInt64) - i)) then
-        {$ENDIF}
-            begin
-              Position := TMemOffset(i) - SizeOf(UInt64);
-              Result := srFoundLeadPartial;
-              Exit;
-            end;
-        end;
-    BytesRemaining := Size;
-    while BytesRemaining >= SizeOf(UInt64) do
-      begin
-        If WorkPtr^ = Value then
-          begin
-            Position := Size - BytesRemaining;
-            Result := srFound;
-            Exit;
-          end;
-        Inc(PUInt8(WorkPtr));
-        Dec(BytesRemaining);
-      end;
-    If [soTrailPartialMatch,soPartialMatch] * Options <> [] then
-      For i := MemSizeMin(Pred(SizeOf(UInt64)),Size) downto 1 do
-        begin
-          Temp := 0;
-          MoveMemory(@Temp,WorkPtr,i);
-        {$IFDEF ENDIAN_BIG}
-          If Temp = Value and UInt64(UInt64(-1) shl (8 * (SizeOf(UInt64) - i))) then
-        {$ELSE}
-          If Temp = Value and (UInt64(-1) shr (8 * (SizeOf(UInt64) - i))) then
-        {$ENDIF}
-            begin
-              Position := TMemOffset(Size) - TMemOffset(i);
-              Result := srFoundTrailPartial;
-              Exit;
-            end;
-          Inc(PUInt8(WorkPtr));
-        end;
   end;
 end;
 
 //==============================================================================
 
-Function FindBytes(const Bytes; Count: TMemSize; const Buffer; Size: TMemSize; Offset: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
+Function MemSearchFindPartialLead16(var Context: TMemSearchContext): Boolean;
 begin
-Position := -1;
-Result := srNotFound;
+Result := False;
+with PMemSearchContextInternals(Context.Internals)^ do
 {
-  This check has to be done here, even if it is later repeated in called Find*.
-  This is because later, the Size is already decremented by From, so the check
-  might falsely succeed there.
+  Current offset can only be -1, so this is simple - in little endian systems,
+  we compare the first byte of buffer with higher-order byte of given 16bit
+  value, in big endian systems we compare it with low-order byte and we are
+  done.
 }
-If Size > TMemSize(High(TMemOffset)) then
-  raise EBOInvalidValue.Create('FindBytes: Memory buffer too large.');
-If Offset < Size then
-  begin
-    Result := FindBytes(Bytes,Count,PtrAdvance(@Buffer,TMemOffset(Offset))^,Size - Offset,Position,Options);
-    If (Result <> srNotFound) and (soAbsolutePosition in Options) then
-      Position := Position + TMemOffset(Offset);
-  end;
+{$IFDEF ENDIAN_BIG}
+  If PUInt8(Parameters.Buffer)^ = UInt8(Parameters.Value16) then
+{$ELSE}
+  If PUInt8(Parameters.Buffer)^ = UInt8(Parameters.Value16 shr 8) then
+{$ENDIF}
+    begin
+      Context.LastResult := srFoundPartialLead;
+      Context.LastPosition := -1;
+      Context.LastOccurence := nil;
+      If soReverseSearch in Parameters.Options then
+        begin
+          CurrentOffset := -2;
+          SearchDone := True;
+        end
+      else
+        begin
+          CurrentOffset := MemOffsetIfThen(soSkipOverlaps in Parameters.Options,1,0);
+          SearchDone := CurrentOffset >= Parameters.Size;
+        end;
+      Result := True;
+    end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function FindByte(Value: UInt8; const Buffer; Size: TMemSize; Offset: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
+Function MemSearchFindPartialTrail16(var Context: TMemSearchContext): Boolean;
 begin
-Position := -1;
-Result := srNotFound;
-If Size > TMemSize(High(TMemOffset)) then
-  raise EBOInvalidValue.Create('FindByte: Memory buffer too large.');
-If Offset < Size then
-  begin
-    Result := FindByte(Value,PtrAdvance(@Buffer,TMemOffset(Offset))^,Size - Offset,Position,Options);
-    If (Result <> srNotFound) and (soAbsolutePosition in Options) then
-      Position := Position + TMemOffset(Offset);
-  end;
+Result := False;
+with PMemSearchContextInternals(Context.Internals)^ do
+{
+  Similarly to lead-partial match, we need to compare only a single byte
+  (this time the last one) with either low or high order byte (depending
+  on endianness) of the searched value.
+}
+{$IFDEF ENDIAN_BIG}
+  If PUInt8(PtrAdvance(Parameters.Buffer,Pred(Parameters.Size)))^ = UInt8(Parameters.Value16 shr 8) then
+{$ELSE}
+  If PUInt8(PtrAdvance(Parameters.Buffer,Pred(Parameters.Size)))^ = UInt8(Parameters.Value16) then
+{$ENDIF}
+    begin
+      Context.LastResult := srFoundPartialTrail;
+      Context.LastPosition := Pred(Parameters.Size);
+      Context.LastOccurence := nil;
+      If soReverseSearch in Parameters.Options then
+        begin
+          CurrentOffset := Parameters.Size - MemOffsetIfThen(soSkipOverlaps in Parameters.Options,3,2);
+          SearchDone := CurrentOffset <= -2;
+        end
+      else
+        begin
+          CurrentOffset := Parameters.Size;
+          SearchDone := True;
+        end;
+      Result := True;
+    end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function FindWord(Value: UInt16; const Buffer; Size: TMemSize; Offset: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
+Function MemSearchFind16(var Context: TMemSearchContext): Boolean;
+var
+  Value:    UInt16;
+  WorkPtr:  PUInt8;
 begin
-Position := -1;
-Result := srNotFound;
-If Size > TMemSize(High(TMemOffset)) then
-  raise EBOInvalidValue.Create('FindWord: Memory buffer too large.');
-If Offset < Size then
+Result := False;
+MemSearchContextResultsInit(Context);
+with PMemSearchContextInternals(Context.Internals)^ do
   begin
-    Result := FindWord(Value,PtrAdvance(@Buffer,TMemOffset(Offset))^,Size - Offset,Position,Options);
-    If (Result <> srNotFound) and (soAbsolutePosition in Options) then
-      Position := Position + TMemOffset(Offset);
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function FindLong(Value: UInt32; const Buffer; Size: TMemSize; Offset: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
-begin
-Position := -1;
-Result := srNotFound;
-If Size > TMemSize(High(TMemOffset)) then
-  raise EBOInvalidValue.Create('FindLong: Memory buffer too large.');
-If Offset < Size then
-  begin
-    Result := FindLong(Value,PtrAdvance(@Buffer,TMemOffset(Offset))^,Size - Offset,Position,Options);
-    If (Result <> srNotFound) and (soAbsolutePosition in Options) then
-      Position := Position + TMemOffset(Offset);
-  end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function FindQuad(Value: UInt64; const Buffer; Size: TMemSize; Offset: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
-begin
-Position := -1;
-Result := srNotFound;
-If Size > TMemSize(High(TMemOffset)) then
-  raise EBOInvalidValue.Create('FindQuad: Memory buffer too large.');
-If Offset < Size then
-  begin
-    Result := FindQuad(Value,PtrAdvance(@Buffer,TMemOffset(Offset))^,Size - Offset,Position,Options);
-    If (Result <> srNotFound) and (soAbsolutePosition in Options) then
-      Position := Position + TMemOffset(Offset);
+    Value := Parameters.Value16;
+    CurrentOffset := MemOffsetLimit(CurrentOffset,-Pred(SizeOf(Value)),Pred(Parameters.Size));
+    If soReverseSearch in Parameters.Options then
+      begin
+        If (soMatchPartialTrail in Parameters.Options) and (CurrentOffset >= Pred(Parameters.Size)) then
+          If MemSearchFindPartialTrail16(Context) then
+            begin
+              // trailing partial match found, positions are already filled
+              Result := True;
+              Exit;
+            end;
+        // no trailing partial match, continue with search for full occurence
+        CurrentOffset := MemOffsetLimit(CurrentOffset,-Pred(SizeOf(Value)),Parameters.Size - SizeOf(Value));
+        If CurrentOffset >= 0 then
+          begin
+            WorkPtr := PtrAdvance(Parameters.Buffer,CurrentOffset);
+            while CurrentOffset >= 0 do
+              begin
+                If PUInt16(WorkPtr)^ = Value then
+                  begin
+                    Context.LastResult := srFound;
+                    Context.LastPosition := CurrentOffset;
+                    Context.LastOccurence := WorkPtr;
+                    CurrentOffset := CurrentOffset - MemOffsetIfThen(soSkipOverlaps in Parameters.Options,SizeOf(Value),1);
+                    SearchDone := CurrentOffset <= -SizeOf(Value);
+                    Result := True;
+                    Exit; // we need to exit to avoid search for trailing partial
+                  end;
+                Dec(WorkPtr); // decremented only by 1
+                Dec(CurrentOffset);
+              end;
+          end;
+        // full value not found, try leading partial match
+        If soMatchPartialLead in Parameters.Options then
+          begin
+            CurrentOffset := -1;
+            Result := MemSearchFindPartialLead16(Context);
+          end;
+        // when here, then there is nothing more to be found
+        SearchDone := True;
+      end
+    else  // forward - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      begin
+        If (soMatchPartialLead in Parameters.Options) and (CurrentOffset < 0) then
+          If MemSearchFindPartialLead16(Context) then
+            begin
+              // leading partial match found, positions are already filled
+              Result := True;
+              Exit;
+            end;
+        // no leading partial match found, we can continue to normal search
+        CurrentOffset := MemOffsetLimit(CurrentOffset,0,Pred(Parameters.Size));
+        If CurrentOffset < Pred(Parameters.Size) then
+          begin
+            WorkPtr := PtrAdvance(Parameters.Buffer,CurrentOffset);
+            while CurrentOffset < Pred(Parameters.Size) do
+              begin
+                If PUInt16(WorkPtr)^ = Value then
+                  begin
+                    Context.LastResult := srFound;
+                    Context.LastPosition := CurrentOffset;
+                    Context.LastOccurence := WorkPtr;
+                    CurrentOffset := CurrentOffset + MemOffsetIfThen(soSkipOverlaps in Parameters.Options,SizeOf(Value),1);
+                    SearchDone := CurrentOffset >= Parameters.Size;
+                    Result := True;
+                    Exit; // we need to exit to avoid search for trailing partial
+                  end;
+                Inc(WorkPtr); // incremented only by 1
+                Inc(CurrentOffset);
+              end;
+          end;
+        // value not found in full, try trailing partial match
+        If soMatchPartialTrail in Parameters.Options then
+          begin
+            CurrentOffset := Pred(Parameters.Size);
+            Result := MemSearchFindPartialTrail16(Context);
+          end;
+        // if here, then there is nothing more to be found
+        SearchDone := True;
+      end;
   end;
 end;
 
 //==============================================================================
 
-Function FindBytes(const Bytes; Count: TMemSize; Memory: Pointer; Size: TMemSize; LeadingPartialMatch: Boolean = False; TrailingPartialMatch: Boolean = False): TMemOffset;
+Function MemSearchFindPartialLead32(var Context: TMemSearchContext): Boolean;
+var
+  Value:  UInt32;
 begin
-If FindBytes(Bytes,Count,Memory^,Size,Result,PrepSearchOpts(LeadingPartialMatch,TrailingPartialMatch)) = srNotFound then
-  Result := -TMemOffset(Count); // this is ok, Count is checked for TMemOffset bounds in FindBytes
+Result := False;
+with PMemSearchContextInternals(Context.Internals)^ do
+  begin
+    Value := Parameters.Value32;
+    // value of current offset was limited before calling this function
+    If soReverseSearch in Parameters.Options then
+      begin
+        while CurrentOffset >= -Pred(SizeOf(Value)) do
+          If MemSearchSameBytes(PtrAdvance(@Value,-CurrentOffset),Parameters.Buffer,CurrentOffset + SizeOf(Value)) then
+            begin
+              Context.LastResult := srFoundPartialLead;
+              Context.LastPosition := CurrentOffset;
+              Context.LastOccurence := nil;
+              CurrentOffset := MemOffsetIfThen(soSkipOverlaps in Parameters.Options,-SizeOf(Value),Pred(CurrentOffset));
+              SearchDone := CurrentOffset <= -SizeOf(Value);
+              Result := True;
+              Break{while};
+            end
+          else Dec(CurrentOffset);
+      end
+    else
+      begin
+        while CurrentOffset <= MemOffsetMin(-1,Parameters.Size - SizeOf(Value)) do
+          If MemSearchSameBytes(PtrAdvance(@Value,-CurrentOffset),Parameters.Buffer,CurrentOffset + SizeOf(Value)) then
+            begin
+              Context.LastResult := srFoundPartialLead;
+              Context.LastPosition := CurrentOffset;
+              Context.LastOccurence := nil;
+              CurrentOffset := CurrentOffset + MemOffsetIfThen(soSkipOverlaps in Parameters.Options,SizeOf(Value),1);
+              SearchDone := CurrentOffset >= Parameters.Size;
+              Result := True;
+              Break{while};
+            end
+          else Inc(CurrentOffset);
+      end;
+  end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function FindByte(Value: UInt8; Memory: Pointer; Size: TMemSize): TMemOffset;
+Function MemSearchFindPartialTrail32(var Context: TMemSearchContext): Boolean;
+var
+  Value:  UInt32;
 begin
-If FindByte(Value,Memory^,Size,Result,[]) = srNotFound then
-  Result := -SizeOf(UInt8);
+Result := False;
+with PMemSearchContextInternals(Context.Internals)^ do
+  begin
+    Value := Parameters.Value32;
+    If soReverseSearch in Parameters.Options then
+      begin
+        while CurrentOffset >= MemOffsetMax(0,Parameters.Size - Pred(SizeOf(Value))) do
+          If MemSearchSameBytes(@Value,PtrAdvance(Parameters.Buffer,CurrentOffset),Parameters.Size - CurrentOffset) then
+            begin
+              Context.LastResult := srFoundPartialTrail;
+              Context.LastPosition := CurrentOffset;
+              Context.LastOccurence := nil;
+              CurrentOffset := CurrentOffset - MemOffsetIfThen(soSkipOverlaps in Parameters.Options,SizeOf(Value),1);
+              SearchDone := CurrentOffset <= -SizeOf(Value);
+              Result := True;
+            end
+          else Dec(CurrentOffset);
+      end
+    else
+      begin
+        while CurrentOffset <= Pred(Parameters.Size) do
+          If MemSearchSameBytes(@Value,PtrAdvance(Parameters.Buffer,CurrentOffset),Parameters.Size - CurrentOffset) then
+            begin
+              Context.LastResult := srFoundPartialTrail;
+              Context.LastPosition := CurrentOffset;
+              Context.LastOccurence := nil;
+              CurrentOffset := MemOffsetIfThen(soSkipOverlaps in Parameters.Options,Parameters.Size,Succ(CurrentOffset));
+              SearchDone := CurrentOffset >= Parameters.Size;
+              Result := True;
+              Break{For i};
+            end
+          else Inc(CurrentOffset);
+      end;
+  end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function FindWord(Value: UInt16; Memory: Pointer; Size: TMemSize; LeadingPartialMatch: Boolean = False; TrailingPartialMatch: Boolean = False): TMemOffset;
+Function MemSearchFind32(var Context: TMemSearchContext): Boolean;
+var
+  Value:    UInt32;
+  WorkPtr:  PUInt8;
 begin
-If FindWord(Value,Memory^,Size,Result,PrepSearchOpts(LeadingPartialMatch,TrailingPartialMatch)) = srNotFound then
-  Result := -SizeOf(UInt16);
+Result := False;
+MemSearchContextResultsInit(Context);
+with PMemSearchContextInternals(Context.Internals)^ do
+  begin
+    Value := Parameters.Value32;
+    CurrentOffset := MemOffsetLimit(CurrentOffset,-Pred(SizeOf(Value)),Pred(Parameters.Size));
+    If soReverseSearch in Parameters.Options then
+      begin
+        If (soMatchPartialTrail in Parameters.Options) and (CurrentOffset > (Parameters.Size - SizeOf(Value))) then
+          If MemSearchFindPartialTrail32(Context) then
+            begin
+              Result := True;
+              Exit;
+            end;
+        CurrentOffset := MemOffsetLimit(CurrentOffset,-Pred(SizeOf(Value)),Parameters.Size - SizeOf(Value));
+        If CurrentOffset >= 0 then
+          begin
+            WorkPtr := PtrAdvance(Parameters.Buffer,CurrentOffset);
+            while CurrentOffset >= 0 do
+              begin
+                If PUInt32(WorkPtr)^ = Value then
+                  begin
+                    Context.LastResult := srFound;
+                    Context.LastPosition := CurrentOffset;
+                    Context.LastOccurence := WorkPtr;
+                    CurrentOffset := CurrentOffset - MemOffsetIfThen(soSkipOverlaps in Parameters.Options,SizeOf(Value),1);
+                    SearchDone := CurrentOffset <= -SizeOf(Value);
+                    Result := True;
+                    Exit;
+                  end;
+                Dec(WorkPtr);
+                Dec(CurrentOffset);
+              end;
+          end;
+        If soMatchPartialLead in Parameters.Options then
+          begin
+            CurrentOffset := MemOffsetLimit(CurrentOffset,-Pred(SizeOf(Value)),-1);
+            Result := MemSearchFindPartialLead32(Context);
+          end;
+        SearchDone := True;
+      end
+    else  // forward - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      begin
+        If (soMatchPartialLead in Parameters.Options) and (CurrentOffset < 0) then
+          If MemSearchFindPartialLead32(Context) then
+            begin
+              Result := True;
+              Exit;
+            end;
+        CurrentOffset := MemOffsetLimit(CurrentOffset,0,Pred(Parameters.Size));
+        If CurrentOffset <= (Parameters.Size - SizeOf(Value)) then
+          begin
+            WorkPtr := PtrAdvance(Parameters.Buffer,CurrentOffset);
+            while CurrentOffset <= (Parameters.Size - SizeOf(Value)) do
+              begin
+                If PUInt32(WorkPtr)^ = Value then
+                  begin
+                    Context.LastResult := srFound;
+                    Context.LastPosition := CurrentOffset;
+                    Context.LastOccurence := WorkPtr;
+                    CurrentOffset := CurrentOffset + MemOffsetIfThen(soSkipOverlaps in Parameters.Options,SizeOf(Value),1);
+                    SearchDone := CurrentOffset >= Parameters.Size;
+                    Result := True;
+                    Exit;
+                  end;
+                Inc(WorkPtr);
+                Inc(CurrentOffset);
+              end;
+          end;
+        If soMatchPartialTrail in Parameters.Options then
+          begin
+            CurrentOffset := MemOffsetLimit(CurrentOffset,Parameters.Size - Pred(SizeOf(Value)),Pred(Parameters.Size));
+            Result := MemSearchFindPartialTrail32(Context);
+          end;
+        SearchDone := True;
+      end;
+  end;
+end;
+
+//==============================================================================
+
+Function MemSearchFindPartialLead64(var Context: TMemSearchContext): Boolean;
+var
+  Value:  U64Type;
+begin
+Result := False;
+with PMemSearchContextInternals(Context.Internals)^ do
+  begin
+    Value := Parameters.Value64;
+    If soReverseSearch in Parameters.Options then
+      begin
+        while CurrentOffset >= -Pred(SizeOf(Value)) do
+          If MemSearchSameBytes(PtrAdvance(@Value,-CurrentOffset),Parameters.Buffer,CurrentOffset + SizeOf(Value)) then
+            begin
+              Context.LastResult := srFoundPartialLead;
+              Context.LastPosition := CurrentOffset;
+              Context.LastOccurence := nil;
+              CurrentOffset := MemOffsetIfThen(soSkipOverlaps in Parameters.Options,-SizeOf(Value),Pred(CurrentOffset));
+              SearchDone := CurrentOffset <= -SizeOf(Value);
+              Result := True;
+              Break{while};
+            end
+          else Dec(CurrentOffset);
+      end
+    else
+      begin
+        while CurrentOffset <= MemOffsetMin(-1,Parameters.Size - SizeOf(Value)) do
+          If MemSearchSameBytes(PtrAdvance(@Value,-CurrentOffset),Parameters.Buffer,CurrentOffset + SizeOf(Value)) then
+            begin
+              Context.LastResult := srFoundPartialLead;
+              Context.LastPosition := CurrentOffset;
+              Context.LastOccurence := nil;
+              CurrentOffset := CurrentOffset + MemOffsetIfThen(soSkipOverlaps in Parameters.Options,SizeOf(Value),1);
+              SearchDone := CurrentOffset >= Parameters.Size;
+              Result := True;
+              Break{while};
+            end
+          else Inc(CurrentOffset);
+      end;
+  end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function FindLong(Value: UInt32; Memory: Pointer; Size: TMemSize; LeadingPartialMatch: Boolean = False; TrailingPartialMatch: Boolean = False): TMemOffset;
+Function MemSearchFindPartialTrail64(var Context: TMemSearchContext): Boolean;
+var
+  Value:  U64Type;
 begin
-If FindLong(Value,Memory^,Size,Result,PrepSearchOpts(LeadingPartialMatch,TrailingPartialMatch)) = srNotFound then
-  Result := -SizeOf(UInt32);
+Result := False;
+with PMemSearchContextInternals(Context.Internals)^ do
+  begin
+    Value := Parameters.Value64;
+    If soReverseSearch in Parameters.Options then
+      begin
+        while CurrentOffset >= MemOffsetMax(0,Parameters.Size - Pred(SizeOf(Value))) do
+          If MemSearchSameBytes(@Value,PtrAdvance(Parameters.Buffer,CurrentOffset),Parameters.Size - CurrentOffset) then
+            begin
+              Context.LastResult := srFoundPartialTrail;
+              Context.LastPosition := CurrentOffset;
+              Context.LastOccurence := nil;
+              CurrentOffset := CurrentOffset - MemOffsetIfThen(soSkipOverlaps in Parameters.Options,SizeOf(Value),1);
+              SearchDone := CurrentOffset <= -SizeOf(Value);
+              Result := True;
+            end
+          else Dec(CurrentOffset);
+      end
+    else
+      begin
+        while CurrentOffset <= Pred(Parameters.Size) do
+          If MemSearchSameBytes(@Value,PtrAdvance(Parameters.Buffer,CurrentOffset),Parameters.Size - CurrentOffset) then
+            begin
+              Context.LastResult := srFoundPartialTrail;
+              Context.LastPosition := CurrentOffset;
+              Context.LastOccurence := nil;
+              CurrentOffset := MemOffsetIfThen(soSkipOverlaps in Parameters.Options,Parameters.Size,Succ(CurrentOffset));
+              SearchDone := CurrentOffset >= Parameters.Size;
+              Result := True;
+              Break{For i};
+            end
+          else Inc(CurrentOffset);
+      end;
+  end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function FindQuad(Value: UInt64; Memory: Pointer; Size: TMemSize; LeadingPartialMatch: Boolean = False; TrailingPartialMatch: Boolean = False): TMemOffset;
+Function MemSearchFind64(var Context: TMemSearchContext): Boolean;
+var
+  Value:    U64Type;
+  WorkPtr:  PUInt8;
 begin
-If FindQuad(Value,Memory^,Size,Result,PrepSearchOpts(LeadingPartialMatch,TrailingPartialMatch)) = srNotFound then
-  Result := -SizeOf(UInt64);
+Result := False;
+MemSearchContextResultsInit(Context);
+with PMemSearchContextInternals(Context.Internals)^ do
+  begin
+    Value := Parameters.Value64;
+    CurrentOffset := MemOffsetLimit(CurrentOffset,-Pred(SizeOf(Value)),Pred(Parameters.Size));
+    If soReverseSearch in Parameters.Options then
+      begin
+        If (soMatchPartialTrail in Parameters.Options) and (CurrentOffset > (Parameters.Size - SizeOf(Value))) then
+          If MemSearchFindPartialTrail64(Context) then
+            begin
+              Result := True;
+              Exit;
+            end;
+        CurrentOffset := MemOffsetLimit(CurrentOffset,-Pred(SizeOf(Value)),Parameters.Size - SizeOf(Value));
+        If CurrentOffset >= 0 then
+          begin
+            WorkPtr := PtrAdvance(Parameters.Buffer,CurrentOffset);
+            while CurrentOffset >= 0 do
+              begin
+                If PUInt64(WorkPtr)^ = Value then
+                  begin
+                    Context.LastResult := srFound;
+                    Context.LastPosition := CurrentOffset;
+                    Context.LastOccurence := WorkPtr;
+                    CurrentOffset := CurrentOffset - MemOffsetIfThen(soSkipOverlaps in Parameters.Options,SizeOf(Value),1);
+                    SearchDone := CurrentOffset <= -SizeOf(Value);
+                    Result := True;
+                    Exit;
+                  end;
+                Dec(WorkPtr);
+                Dec(CurrentOffset);
+              end;
+          end;
+        If soMatchPartialLead in Parameters.Options then
+          begin
+            CurrentOffset := MemOffsetLimit(CurrentOffset,-Pred(SizeOf(Value)),-1);
+            Result := MemSearchFindPartialLead64(Context);
+          end;
+        SearchDone := True;
+      end
+    else  // forward - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      begin
+        If (soMatchPartialLead in Parameters.Options) and (CurrentOffset < 0) then
+          If MemSearchFindPartialLead64(Context) then
+            begin
+              Result := True;
+              Exit;
+            end;
+        CurrentOffset := MemOffsetLimit(CurrentOffset,0,Pred(Parameters.Size));
+        If CurrentOffset <= (Parameters.Size - SizeOf(Value)) then
+          begin
+            WorkPtr := PtrAdvance(Parameters.Buffer,CurrentOffset);
+            while CurrentOffset <= (Parameters.Size - SizeOf(Value)) do
+              begin
+                If PUInt64(WorkPtr)^ = Value then
+                  begin
+                    Context.LastResult := srFound;
+                    Context.LastPosition := CurrentOffset;
+                    Context.LastOccurence := WorkPtr;
+                    CurrentOffset := CurrentOffset + MemOffsetIfThen(soSkipOverlaps in Parameters.Options,SizeOf(Value),1);
+                    SearchDone := CurrentOffset >= Parameters.Size;
+                    Result := True;
+                    Exit;
+                  end;
+                Inc(WorkPtr);
+                Inc(CurrentOffset);
+              end;
+          end;
+        If soMatchPartialTrail in Parameters.Options then
+          begin
+            CurrentOffset := MemOffsetLimit(CurrentOffset,Parameters.Size - Pred(SizeOf(Value)),Pred(Parameters.Size));
+            Result := MemSearchFindPartialTrail64(Context);
+          end;
+        SearchDone := True;
+      end;
+  end;
+end;
+
+//==============================================================================
+
+Function MemSearchFindPartialLeadBytes(var Context: TMemSearchContext): Boolean;
+begin
+Result := False;
+with PMemSearchContextInternals(Context.Internals)^ do
+  begin
+    If soReverseSearch in Parameters.Options then
+      begin
+        while CurrentOffset >= -Pred(Parameters.Count) do
+          If MemSearchSameBytes(PtrAdvance(Parameters.Bytes,-CurrentOffset),Parameters.Buffer,CurrentOffset + Parameters.Count) then
+            begin
+              Context.LastResult := srFoundPartialLead;
+              Context.LastPosition := CurrentOffset;
+              Context.LastOccurence := nil;
+              CurrentOffset := MemOffsetIfThen(soSkipOverlaps in Parameters.Options,-Parameters.Count,Pred(CurrentOffset));
+              SearchDone := CurrentOffset <= -Parameters.Count;
+              Result := True;
+              Break{while};
+            end
+          else Dec(CurrentOffset);
+      end
+    else
+      begin
+        while CurrentOffset <= MemOffsetMin(-1,Parameters.Size - Parameters.Count) do
+          If MemSearchSameBytes(PtrAdvance(PArameters.Bytes,-CurrentOffset),Parameters.Buffer,CurrentOffset + Parameters.Count) then
+            begin
+              Context.LastResult := srFoundPartialLead;
+              Context.LastPosition := CurrentOffset;
+              Context.LastOccurence := nil;
+              CurrentOffset := CurrentOffset + MemOffsetIfThen(soSkipOverlaps in Parameters.Options,Parameters.Count,1);
+              SearchDone := CurrentOffset >= Parameters.Size;
+              Result := True;
+              Break{while};
+            end
+          else Inc(CurrentOffset);
+      end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function MemSearchFindPartialTrailBytes(var Context: TMemSearchContext): Boolean;
+begin
+Result := False;
+with PMemSearchContextInternals(Context.Internals)^ do
+  begin
+    If soReverseSearch in Parameters.Options then
+      begin
+        while CurrentOffset >= MemOffsetMax(0,Parameters.Size - Pred(Parameters.Count)) do
+          If MemSearchSameBytes(Parameters.Bytes,PtrAdvance(Parameters.Buffer,CurrentOffset),Parameters.Size - CurrentOffset) then
+            begin
+              Context.LastResult := srFoundPartialTrail;
+              Context.LastPosition := CurrentOffset;
+              Context.LastOccurence := nil;
+              CurrentOffset := CurrentOffset - MemOffsetIfThen(soSkipOverlaps in Parameters.Options,Parameters.Count,1);
+              SearchDone := CurrentOffset <= -Parameters.Count;
+              Result := True;
+            end
+          else Dec(CurrentOffset);
+      end
+    else
+      begin
+        while CurrentOffset <= Pred(Parameters.Size) do
+          If MemSearchSameBytes(Parameters.Bytes,PtrAdvance(Parameters.Buffer,CurrentOffset),Parameters.Size - CurrentOffset) then
+            begin
+              Context.LastResult := srFoundPartialTrail;
+              Context.LastPosition := CurrentOffset;
+              Context.LastOccurence := nil;
+              CurrentOffset := MemOffsetIfThen(soSkipOverlaps in Parameters.Options,Parameters.Size,Succ(CurrentOffset));
+              SearchDone := CurrentOffset >= Parameters.Size;
+              Result := True;
+              Break{For i};
+            end
+          else Inc(CurrentOffset);
+      end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function MemSearchFindBytes(var Context: TMemSearchContext): Boolean;
+var
+  Value:    UInt8;
+  ValuePtr: PUInt8;
+  WorkPtr:  PUInt8;
+begin
+Result := False;
+MemSearchContextResultsInit(Context);
+with PMemSearchContextInternals(Context.Internals)^ do
+  begin
+    Value := PUInt8(Parameters.Bytes)^;
+    ValuePtr := PtrAdvance(Parameters.Bytes,1); // if Count is 2 or less, then this function is not even called
+    CurrentOffset := MemOffsetLimit(CurrentOffset,-Pred(Parameters.Count),Pred(Parameters.Size));
+    If soReverseSearch in Parameters.Options then
+      begin
+        If (soMatchPartialTrail in Parameters.Options) and (CurrentOffset > (Parameters.Size - Parameters.Count)) then
+          If MemSearchFindPartialTrailBytes(Context) then
+            begin
+              Result := True;
+              Exit;
+            end;
+        CurrentOffset := MemOffsetLimit(CurrentOffset,-Pred(Parameters.Count),Parameters.Size - Parameters.Count);
+        If CurrentOffset >= 0 then
+          begin
+            WorkPtr := PtrAdvance(Parameters.Buffer,CurrentOffset);
+            while CurrentOffset >= 0 do
+              begin
+                If PUInt8(WorkPtr)^ = Value then
+                  If MemSearchSameBytes(PtrAdvance(WorkPtr,1),ValuePtr,Pred(Parameters.Count)) then
+                    begin
+                      Context.LastResult := srFound;
+                      Context.LastPosition := CurrentOffset;
+                      Context.LastOccurence := WorkPtr;
+                      CurrentOffset := CurrentOffset - MemOffsetIfThen(soSkipOverlaps in Parameters.Options,Parameters.Count,1);
+                      SearchDone := CurrentOffset <= -Parameters.Count;
+                      Result := True;
+                      Exit;
+                    end;
+                Dec(WorkPtr);
+                Dec(CurrentOffset);
+              end;
+          end;
+        If soMatchPartialLead in Parameters.Options then
+          begin
+            CurrentOffset := MemOffsetLimit(CurrentOffset,-Pred(Parameters.Count),-1);
+            Result := MemSearchFindPartialLeadBytes(Context);
+          end;
+        SearchDone := True;
+      end
+    else  // forward - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      begin
+        If (soMatchPartialLead in Parameters.Options) and (CurrentOffset < 0) then
+          If MemSearchFindPartialLeadBytes(Context) then
+            begin
+              Result := True;
+              Exit;
+            end;
+        CurrentOffset := MemOffsetLimit(CurrentOffset,0,Pred(Parameters.Size));
+        If CurrentOffset <= (Parameters.Size - Parameters.Count) then
+          begin
+            WorkPtr := PtrAdvance(Parameters.Buffer,CurrentOffset);
+            while CurrentOffset <= (Parameters.Size - Parameters.Count) do
+              begin
+                If PUInt8(WorkPtr)^ = Value then
+                  If MemSearchSameBytes(PtrAdvance(WorkPtr,1),ValuePtr,Pred(Parameters.Count)) then
+                    begin
+                      Context.LastResult := srFound;
+                      Context.LastPosition := CurrentOffset;
+                      Context.LastOccurence := WorkPtr;
+                      CurrentOffset := CurrentOffset + MemOffsetIfThen(soSkipOverlaps in Parameters.Options,Parameters.Count,1);
+                      SearchDone := CurrentOffset >= Parameters.Size;
+                      Result := True;
+                      Exit;
+                    end;
+                Inc(WorkPtr);
+                Inc(CurrentOffset);
+              end;
+          end;
+        If soMatchPartialTrail in Parameters.Options then
+          begin
+            CurrentOffset := MemOffsetLimit(CurrentOffset,Parameters.Size - Pred(Parameters.Count),Pred(Parameters.Size));
+            Result := MemSearchFindPartialTrailBytes(Context);
+          end;
+        SearchDone := True;
+      end;
+  end;
+end;
+
+{-------------------------------------------------------------------------------
+    Memory search - public functions implementation
+-------------------------------------------------------------------------------}
+
+Function MemoryFindFirst(Value: UInt8; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean;
+begin
+Result := False;
+// sanity checks
+If Size > TMemSize(High(TMemOffset)) then
+  raise EBOInvalidValue.Create('MemoryFindFirst: Memory buffer too large.');
+If Size > 0 then
+  begin
+    MemSearchContextInit(Context);
+    try
+      with PMemSearchContextInternals(Context.Internals)^ do
+        begin
+          // prepare context - store parameters
+          Parameters.Buffer := @Buffer;
+          Parameters.Size := TMemOffset(Size);
+          Parameters.Options := MemSearchOptionsProcess(Options);
+          Parameters.StartPosition := StartPosition;
+          Parameters.ValueType := scvtUInt8;
+          Parameters.Value8 := Value;
+          // init processing variables
+          If soUseStartPosition in Parameters.Options then
+            CurrentOffset := MemOffsetLimit(Parameters.StartPosition,0,Pred(Parameters.Size))
+          else
+            CurrentOffset := MemOffsetIfThen(soReverseSearch in Parameters.Options,Pred(Parameters.Size),0);
+          SearchDone := False;
+        end;
+      // try to find first occurence
+      Result := MemSearchFind8(Context);
+    finally
+      If not Result then
+        MemSearchContextFinal(Context);
+    end;
+  end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function MemoryFindFirst(Value: UInt16; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean;
+begin
+Result := False;
+If Size > TMemSize(High(TMemOffset)) then
+  raise EBOInvalidValue.Create('MemoryFindFirst: Memory buffer too large.');
+If Size > 0 then
+  begin
+    MemSearchContextInit(Context);
+    try
+      with PMemSearchContextInternals(Context.Internals)^ do
+        begin
+          Parameters.Buffer := @Buffer;
+          Parameters.Size := TMemOffset(Size);;
+          Parameters.Options := MemSearchOptionsProcess(Options);
+          Parameters.StartPosition := StartPosition;
+          Parameters.ValueType := scvtUInt16;
+          Parameters.Value16 := Value;
+          If soUseStartPosition in Parameters.Options then
+            CurrentOffset := MemOffsetLimit(Parameters.StartPosition,-1,Pred(Parameters.Size))
+          else If soReverseSearch in Parameters.Options then
+            CurrentOffset := Parameters.Size - MemOffsetIfThen(soMatchPartialTrail in Parameters.Options,1,2)
+          else
+            CurrentOffset := MemOffsetIfThen(soMatchPartialLead in Parameters.Options,-1,0);
+          SearchDone := False;
+        end;
+      Result := MemSearchFind16(Context);
+    finally
+      If not Result then
+        MemSearchContextFinal(Context);
+    end;
+  end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function MemoryFindFirst(Value: UInt32; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean;
+begin
+Result := False;
+If Size > TMemSize(High(TMemOffset)) then
+  raise EBOInvalidValue.Create('MemoryFindFirst: Memory buffer too large.');
+If Size > 0 then
+  begin
+    MemSearchContextInit(Context);
+    try
+      with PMemSearchContextInternals(Context.Internals)^ do
+        begin
+          Parameters.Buffer := @Buffer;
+          Parameters.Size := TMemOffset(Size);;
+          Parameters.Options := MemSearchOptionsProcess(Options);
+          Parameters.StartPosition := StartPosition;
+          Parameters.ValueType := scvtUInt32;
+          Parameters.Value32 := Value;
+          If soUseStartPosition in Parameters.Options then
+            CurrentOffset := MemOffsetLimit(Parameters.StartPosition,-3,Pred(Parameters.Size))
+          else If soReverseSearch in Parameters.Options then
+            CurrentOffset := Parameters.Size - MemOffsetIfThen(soMatchPartialTrail in Parameters.Options,1,4)
+          else
+            CurrentOffset := MemOffsetIfThen(soMatchPartialLead in Parameters.Options,-3,0);
+          SearchDone := False;
+        end;
+      Result := MemSearchFind32(Context);
+    finally
+      If not Result then
+        MemSearchContextFinal(Context);
+    end;
+  end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function MemoryFindFirst(Value: U64Type; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean;
+begin
+Result := False;
+If Size > TMemSize(High(TMemOffset)) then
+  raise EBOInvalidValue.Create('MemoryFindFirst: Memory buffer too large.');
+If Size > 0 then
+  begin
+    MemSearchContextInit(Context);
+    try
+      with PMemSearchContextInternals(Context.Internals)^ do
+        begin
+          Parameters.Buffer := @Buffer;
+          Parameters.Size := TMemOffset(Size);
+          Parameters.Options := MemSearchOptionsProcess(Options);
+          Parameters.StartPosition := StartPosition;
+          Parameters.ValueType := scvtUInt64;
+          Parameters.Value64 := Value;
+          If soUseStartPosition in Parameters.Options then
+            CurrentOffset := MemOffsetLimit(Parameters.StartPosition,-7,Pred(Parameters.Size))
+          else If soReverseSearch in Parameters.Options then
+            CurrentOffset := Parameters.Size - MemOffsetIfThen(soMatchPartialTrail in Parameters.Options,1,8)
+          else
+            CurrentOffset := MemOffsetIfThen(soMatchPartialLead in Parameters.Options,-7,0);
+          SearchDone := False;
+        end;
+      Result := MemSearchFind64(Context);
+    finally
+      If not Result then
+        MemSearchContextFinal(Context);
+    end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function MemoryFindFirst(Value: Int8; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean;
+begin
+Result := MemoryFindFirst(UInt8(Value),Buffer,Size,Context,Options,StartPosition);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function MemoryFindFirst(Value: Int16; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean;
+begin
+Result := MemoryFindFirst(UInt16(Value),Buffer,Size,Context,Options,StartPosition);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function MemoryFindFirst(Value: Int32; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean;
+begin
+Result := MemoryFindFirst(UInt32(Value),Buffer,Size,Context,Options,StartPosition);
+end;
+
+{$IF Declared(NativeUInt64E)}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function MemoryFindFirst(Value: Int64; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean;
+begin
+Result := MemoryFindFirst(U64Type(Value),Buffer,Size,Context,Options,StartPosition);
+end;
+{$IFEND}
+
+//------------------------------------------------------------------------------
+
+Function MemoryFindFirst(const Bytes; Count: TMemSize; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean;
+begin
+Result := False;
+If Size > TMemSize(High(TMemOffset)) then
+  raise EBOInvalidValue.Create('MemoryFindFirst: Memory buffer too large.');
+If Count > TMemSize(High(TMemOffset)) then
+  raise EBOInvalidValue.Create('MemoryFindFirst: Too many bytes to search for.');
+If (Size > 0) and (Count > 0) then
+  case Count of
+    // use optimized variants where possible
+    1:  Result := MemoryFindFirst(UInt8(Bytes),Buffer,Size,Context,Options,StartPosition);
+    2:  Result := MemoryFindFirst(UInt16(Bytes),Buffer,Size,Context,Options,StartPosition);
+    4:  Result := MemoryFindFirst(UInt32(Bytes),Buffer,Size,Context,Options,StartPosition);
+    8:  Result := MemoryFindFirst(U64Type(Bytes),Buffer,Size,Context,Options,StartPosition);
+  else
+    MemSearchContextInit(Context);
+    try
+      with PMemSearchContextInternals(Context.Internals)^ do
+        begin
+          Parameters.Buffer := @Buffer;
+          Parameters.Size := TMemOffset(Size);
+          Parameters.Options := MemSearchOptionsProcess(Options);
+          Parameters.StartPosition := StartPosition;
+          Parameters.ValueType := scvtBytes;
+          // make local copy if requested, if not then just store reference
+          If soBytesLocalCopy in Parameters.Options then
+            begin
+              GetMem(Parameters.Bytes,Count);
+              CopyMemory(Parameters.Bytes,@Bytes,Count);
+            end
+          else Parameters.Bytes := @Bytes;
+          Parameters.Count := TMemOffset(Count);
+          If soUseStartPosition in Parameters.Options then
+            CurrentOffset := MemOffsetLimit(Parameters.StartPosition,-Pred(Parameters.Count),Pred(Parameters.Size))
+          else If soReverseSearch in Parameters.Options then
+            CurrentOffset := Parameters.Size - MemOffsetIfThen(soMatchPartialTrail in Parameters.Options,1,Parameters.Count)
+          else
+            CurrentOffset := MemOffsetIfThen(soMatchPartialLead in Parameters.Options,-Pred(Parameters.Count),0);
+          SearchDone := False;
+        end;
+      Result := MemSearchFindBytes(Context);
+    finally
+      If not Result then
+        MemSearchContextFinal(Context);
+    end;
+  end;
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function MemoryFindFirst(const Bytes: array of UInt8; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean;
+var
+  BytesBuffer:  packed array of UInt8;
+  BytesPtr:     PUInt8;
+  i:            Integer;
+begin
+Result := False;
+If Size > TMemSize(High(TMemOffset)) then
+  raise EBOInvalidValue.Create('MemoryFindFirst: Memory buffer too large.');
+If (Size > 0) and (Length(Bytes) > 0) then
+  begin
+  {
+    Check whether the array is packed (implementation-dependent, but usually
+    it is), ie. the items are contiguous in memory.
+
+    If it is packed, then we can use direct reference - but local copy still
+    needs to be made, because the array can be destroyed the moment this
+    function returns. We let the called overload to make the copy by adding
+    soBytesLocalCopy to options.
+  }
+    BytesPtr := Addr(Bytes[Low(Bytes)]);
+    If Length(Bytes) > 1 then
+      If PtrAdvance(Addr(Bytes[Low(Bytes)]),1) <> Addr(Bytes[Succ(Low(Bytes))]) then
+        begin
+        {
+          Array is not packed - allocate buffer and copy items to it one-by-one.
+          Pass this buffer to a buffer-accepting overload and let it create its
+          own copy so we can free our temporary here (since it is a dynamic
+          array, it will be freed automatically when this function returns).
+        }
+          BytesBuffer := nil;
+          SetLength(BytesBuffer,Length(Bytes));
+          For i := Low(Bytes) to High(Bytes) do
+            BytesBuffer[i] := Bytes[i];
+          BytesPtr := Addr(BytesBuffer[Low(BytesBuffer)]);
+        end;
+    Result := MemoryFindFirst(BytesPtr^,TMemSize(Length(Bytes)),Buffer,Size,Context,Options + [soBytesLocalCopy],StartPosition);
+  end;
+end;
+
+//==============================================================================
+
+Function MemoryFindNext(var Context: TMemSearchContext): Boolean;
+begin
+Result := False;
+If not Assigned(Context.Internals) then
+  raise EBOUninitializedContext.Create('MemoryFindNext: Search context is not initialized.');
+If not PMemSearchContextInternals(Context.Internals)^.SearchDone then
+  case PMemSearchContextInternals(Context.Internals)^.Parameters.ValueType of
+    scvtUInt8:  Result := MemSearchFind8(Context);
+    scvtUInt16: Result := MemSearchFind16(Context);
+    scvtUInt32: Result := MemSearchFind32(Context);
+    scvtUInt64: Result := MemSearchFind64(Context);
+  else
+   {scvtBytes}  Result := MemSearchFindBytes(Context);
+  end;
+end;
+
+//==============================================================================
+
+procedure MemoryFindClose(var Context: TMemSearchContext);
+begin
+MemSearchContextFinal(Context);
 end;
 
 
