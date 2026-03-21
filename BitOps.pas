@@ -194,10 +194,9 @@ type
 type
   EBOException = class({$IFDEF UseAuxExceptions}EAEGeneralException{$ELSE}Exception{$ENDIF});
 
-  EBOInvalidValue         = class(EBOException);
-  EBOSizeMismatch         = class(EBOException);
-  EBOUninitializedContext = class(EBOException);
-  EBOUnsupportedPlatform  = class(EBOException);  
+  EBOInvalidValue        = class(EBOException);
+  EBOSizeMismatch        = class(EBOException);
+  EBOUnsupportedPlatform = class(EBOException);
 
   EBOConversionError  = class(EBOException);
   EBOInvalidCharacter = class(EBOConversionError);
@@ -1884,6 +1883,32 @@ Function AdvancePtr(Ptr: Pointer; Count: Integer; Stride: TMemSize): Pointer; ov
 
 procedure AdvancePtrVar(var Ptr: Pointer; Offset: TMemOffset); overload;{$IFDEF CanInline} inline;{$ENDIF}
 procedure AdvancePtrVar(var Ptr: Pointer; Count: Integer; Stride: TMemSize); overload;{$IFDEF CanInline} inline;{$ENDIF}
+
+{-------------------------------------------------------------------------------
+================================================================================
+                               Pointer difference
+================================================================================
+-------------------------------------------------------------------------------}
+{
+  PtrDifference
+  PtrDiff
+  PtrDistance
+  PtrDist
+
+  All these functions are returning signed difference between two addresses
+  (pointers), effectively calculating B - A (as if those were signed integers).
+
+  Given how the result is computed, it can overflow (note that overflow errors
+  are explicitly supressed), which means you cannot infer mutual relation of
+  the two pointers (use PtrCompare or PtrCompareRel for that purpose). These
+  function should only be used to calculate difference between two pointers
+  that are known to be close (at most High(TMemOffset) distant). 
+}
+Function PtrDifference(A,B: Pointer): TMemOffset;{$IFDEF CanInline} inline;{$ENDIF}
+Function PtrDiff(A,B: Pointer): TMemOffset;{$IFDEF CanInline} inline;{$ENDIF}
+
+Function PtrDistance(A,B: Pointer): TMemOffset;{$IFDEF CanInline} inline;{$ENDIF}
+Function PtrDist(A,B: Pointer): TMemOffset;{$IFDEF CanInline} inline;{$ENDIF}
 
 {-------------------------------------------------------------------------------
 ================================================================================
@@ -11640,6 +11665,40 @@ end;
 
 {-------------------------------------------------------------------------------
 ================================================================================
+                               Pointer difference
+================================================================================
+-------------------------------------------------------------------------------}
+{$IFDEF OverflowChecks}{$Q-}{$ENDIF}
+
+Function PtrDifference(A,B: Pointer): TMemOffset;
+begin
+Result := TMemOffset(PtrToInt(B) - PtrToInt(A));
+end;
+
+{$IFDEF OverflowChecks}{$Q+}{$ENDIF}
+//------------------------------------------------------------------------------
+
+Function PtrDiff(A,B: Pointer): TMemOffset;
+begin
+Result := PtrDifference(A,B);
+end;
+
+//------------------------------------------------------------------------------
+
+Function PtrDistance(A,B: Pointer): TMemOffset;
+begin
+Result := PtrDifference(A,B);
+end;
+
+//------------------------------------------------------------------------------
+
+Function PtrDist(A,B: Pointer): TMemOffset;
+begin
+Result := PtrDifference(A,B);
+end;
+
+{-------------------------------------------------------------------------------
+================================================================================
                                Address comparison
 ================================================================================
 -------------------------------------------------------------------------------}
@@ -14398,17 +14457,16 @@ end;
 Function MemoryFindNext(var Context: TMemSearchContext): Boolean;
 begin
 Result := False;
-If not Assigned(Context.Internals) then
-  raise EBOUninitializedContext.Create('MemoryFindNext: Search context is not initialized.');
-If not PMemSearchContextInternals(Context.Internals)^.SearchDone then
-  case PMemSearchContextInternals(Context.Internals)^.Parameters.ValueType of
-    scvtUInt8:  Result := MemSearchFind8(Context);
-    scvtUInt16: Result := MemSearchFind16(Context);
-    scvtUInt32: Result := MemSearchFind32(Context);
-    scvtUInt64: Result := MemSearchFind64(Context);
-  else
-   {scvtBytes}  Result := MemSearchFindBytes(Context);
-  end;
+If Assigned(Context.Internals) then
+  If not PMemSearchContextInternals(Context.Internals)^.SearchDone then
+    case PMemSearchContextInternals(Context.Internals)^.Parameters.ValueType of
+      scvtUInt8:  Result := MemSearchFind8(Context);
+      scvtUInt16: Result := MemSearchFind16(Context);
+      scvtUInt32: Result := MemSearchFind32(Context);
+      scvtUInt64: Result := MemSearchFind64(Context);
+    else
+     {scvtBytes}  Result := MemSearchFindBytes(Context);
+    end;
 end;
 
 //==============================================================================
