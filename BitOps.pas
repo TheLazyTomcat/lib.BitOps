@@ -12,9 +12,15 @@
     Set of functions providing some of the not-so-common bit-manipulating
     operations and other binary utilities.
 
-  Version 1.25.2 (2025-08-20)
+      WARNING - part of this library will soon be moved into a new, separate
+                library. This is because some of provided functionality does
+                not match original intended aim of this library (bit-level
+                operations). Namely memory and pointer operations will be
+                moved.
 
-  Last change 2026-03-07
+  Version 1.26 (2026-03-23)
+
+  Last change 2026-03-23
 
   ©2014-2026 František Milt
 
@@ -2359,14 +2365,243 @@ procedure MoveMemory(Dst,Src: Pointer; Size: TMemSize);
                                   Memory search
 ================================================================================
 -------------------------------------------------------------------------------}
-{$message 'rework'}
-type
-  TMemSearchResult = (srNotFound,srFound,srFoundPartialLead,srFoundPartialTrail);
+{
+  Following functions are designed to search provided buffer (memory location)
+  for a given data (byte sequence or integral value). The interface is in the
+  form of function triplet operating on context variable, the use pattern
+  should be following:
 
+        If MemoryFindFirst(..., Context, ...) then
+        try
+          repeat
+            // process the last found occurence
+          until not MemoryFindNext(Context);
+        finally
+          MemoryFindClose(Context);
+        end;
+
+  If you are interested only in the first occurence of searched data, then
+  following will suffice:
+
+        If MemoryFindFirst(..., Context, ...) then
+        try
+          // process the first occurence
+        finally
+          MemoryFindClose(Context);
+        end;
+
+  For more information, refer to description of relevant types and functions.
+}
+
+type
+{
+  TMemSearchOptions
+
+  Each valus in this set corresponds to an option that can alter behavior of
+  searching. Function MemoryFindFirst accepts parameter of this type - values
+  included in this parameter will anable corresponding search option, options
+  corresponding to excluded values will be disabled.
+
+    soReverseSearch
+
+      Normally, searching for requested data is performed from lowest memory
+      location (address) to highest (forward searching). By enabling this
+      option, the search is done in reverse, ie. from highest address to lowest.
+      Order of operations is also reversed. So, while in forward search the
+      algorithm first searches for lead partial matches, then for full matches
+      and finally for trailing partial matches, enablind this option will
+      reverse these operations (trail -> full -> lead).
+
+        NOTE - matching of byte sequences or values is still done in low to
+               high order (leading bytes are matched first), but this should
+               have no effect on the result.
+
+    soSkipOverlaps
+
+      Enabling this option ensures that only trully distinct occurences will be
+      returned, no overlapping values will be matched.
+      This is achieved by incrementing or decrementing (in reverse search)
+      currently searched position not by one, but by Count or SizeOf(Value)
+      whenever an occurence is found. Be aware of this mechanism, as it might
+      match at positions you might not expect.
+
+      To give an example - let's say we are searching for the following byte
+      sequence:
+
+            [0xAA, 0x00, 0xAA]
+
+      ...within this buffer:
+
+            [0x11, 0xAA, 0x00, 0xAA, 0x00, 0xAA, 0x00, 0xAA, 0x11]
+
+      Without this option active, three occurences would be found at positions
+      1, 3 and 5. Note that the accurence starting at position 3 overlaps with
+      the other two.
+      With this option active, the middle accurence is skipped and only
+      positions 1 and 5 are returned as matching.
+
+    soBytesLocalCopy
+
+      This option is observed only by overload of MemoryFindFirst that accepts
+      byte sequence as an untyped buffer (parameter Bytes) with explicit size
+      (parameter Count). It instructs the function to create copy of the entire
+      Bytes buffer inside of context instead of storing only reference to the
+      buffer. This is intended for situations where one cannot guarantee
+      existence and immutability of the original buffer for the entire duration
+      of searching.
+
+      Be carefull when using this option, as using it on large data will lead
+      to significant memory usage.
+
+      Also note that overload accepting byte sequence as an open array uses
+      this option internally to copy the array (this is because the open array
+      might be destroyed the moment the function returns).
+
+    soUseStartPosition
+
+      When this option is active, it forces the searching algorithm to start at
+      position given in parameter StartPosition (this parameter is otherwise
+      ignored).
+      But be warned, as this position is used irrespection of other options,
+      which may lead unexpected behavior, especially when combined with
+      soMatchPartial* options.
+      soMatchPartialLead requires that the search starts or ends, depending on
+      direction of search, at negative positions. Similarly soMatchPartialTrail
+      requeires access to positions beyond normally used  (Size - Count).
+
+    soMatchPartial
+
+      Enabling this option is equivalent to including both soMatchPartialLead
+      and soMatchPartialTrail.
+
+    soMatchPartialLead
+
+      If this option is activated, then the searching will check leading bytes
+      of the provided buffer for a partial match with the given byte sequence
+      or integral value (as if the data were stored at address below start of
+      the buffer).
+      If a match is found, then a negative position corresponding to how far
+      below the given buffer the data would be stored to produce the found
+      partial match is returned in the context and search result is set to
+      srFoundPartialLead (field LastOccurence is set to nil as address would
+      lay oustside of privided buffer, possibly in an inaccessible memory).
+
+      Positions from -Pred(Count) (where Count is number of bytes searched for,
+      eg. SizeOf(Value)) up to -1 can be returned for leading partial match.
+
+        NOTE - For forward search, this check is done before the memory is
+               scanned for full occurences. If partial leading match is found,
+               the searching ends, meaning full or trailing partial matches
+               are not even attempted in such a case.
+               For reverse searching it is performed only after search for full
+               occurences, ie. as a last operation.
+
+      For example, let's have byte sequence [0x15, 0x89, 0xFF, 0x90] and a
+      memory buffer starting with bytes [0xFF, 0x90, 0xAA, 0x5B, 0x00, ...].
+      Last two bytes of the sequence match with first two bytes of the buffer -
+      this is a partial match, and since the sequence would have to start two
+      bytes before the start of Buffer to produce this, -2 will be returned as
+      a position.
+
+    soMatchPartialTrail
+
+      This is similar to soMatchPartialLead, except it tries to match trailing
+      bytes of the buffer.
+      If match is found, then a positive position which will be above normally
+      returned values (larger than (Size - Count), where Count is number of
+      bytes searched for, eg. SizeOf(Value)) is provided. LastOccurence is set
+      to nil.
+
+      Positions from (Size - Pred(Count)) up to Pred(Size) can be returned for
+      trailing partial match.
+
+        NOTE - In normal, forward searching, the check for trailing partial
+               match is done at the end, meaning if full or leading partial
+               match is found, then check for trailing partial match is not
+               attempted.
+               During reverse searching, this check is performed at the start,
+               before search for full occurences. So if trailing partial match
+               is found in this situation, full matching is not done.
+
+      As an example, let's have buffer that ends with bytes [..., 0xAA, 0x12,
+      0x45, 0x44] and searched byte sequence is [0x45, 0x44, 0x43].
+      Here, last two bytes of the buffer corresponds to first two bytes of the
+      sequence searched for, meaning the sequence would have to start two bytes
+      before end of the buffer to produce this match, therefore indicated
+      position will be (Size - 2).
+
+
+  Leading partial match and trailing partial match can be used in situations
+  where you are scanning some non-memory data (eg. file) - there, one would
+  read and scan smaller buffers. This might create problems if a multi-byte
+  value lies across the buffers boundary - you can use these settings to
+  search for such occurences (or use MemoryFindFirstX, which is specifically
+  designed for these situations - note that it is not yet implemented, it will
+  be added in the near future).
+}
   TMemSearchOptions = set of (soReverseSearch,soSkipOverlaps,soBytesLocalCopy,
     soUseStartPosition,soMatchPartial,soMatchPartialLead,soMatchPartialTrail);
 
-type
+{
+  TMemSearchResult
+
+  This type is used within the search context to indicate whether and how was
+  the requested data found by the last call.
+
+      srNotFound              - The requested data were not found in the
+                                provided buffer.
+
+      srFound                 - The data were found in their entirety within
+                                the provided buffer.
+
+      srFoundPartialLead      - A partial match with the requested data was
+                                found at the start of the buffer (see option
+                                soMatchPartialLead for more details).
+
+      srFoundPartialTrail     - Partial match was found at the end of the
+                                provided buffer (see option soMatchPartialTrail
+                                for more details).
+}
+  TMemSearchResult = (srNotFound,srFound,srFoundPartialLead,srFoundPartialTrail);
+
+{
+  TMemSearchContext
+
+  This type is used to return information about last found occurence of data
+  that are searched for.
+  It is also used internally for storage of data required for continuous
+  searching (ie. searching for multiple occurences). This storage is not
+  public, its structure and nature must not be assumed and as such must not
+  be accessed by user code.
+
+  Variable of this type must be explicitly initialized by MemoryFindFirst
+  and finalized by passing it to MemoryFindClose. See description of these
+  functions for more details.
+
+    Field LastResult indicates whether the requested data were found and how.
+    For more details refer to description of type TMemSearchResult.
+
+      NOTE - even if MemoryFindFirst or MemoryFindNext return false, meaning
+             values stored in the context are undefined, field LastResult will
+             always be properly set (ie. to srNotFound in mentioned cases).
+
+    LastPosition, if valid, stores a signed zero-based offset of found
+    occurence of requested data within the Buffer in relation to its start.
+    For example, if the data are found at the very first byte, then this
+    field will be set to zero. Or, if leading partial match is found (see
+    TMemSearchResult description), then it will be set to a negative value.
+    Generally, value of this field can be in range from -Pred(Count) up to
+    Pred(Size) (Count is number of bytes searched for, eg. SizeOf(Value)).
+    This offset is always relative to start of the Buffer, StartPosition
+    or other processing variables will not affect it.
+
+    LastOccurence stores direct reference to (address of) the found occurence
+    within Buffer. It is only valid when the date were found in full, in case
+    of partial match it will be explicitly set tot nil.
+
+    Field internals stores a reference to internally used structures, do not
+    dereference this field and definitely do not change it.
+}
   TMemSearchContext = record
     LastResult:     TMemSearchResult;
     LastPosition:   TMemOffset;
@@ -2376,7 +2611,87 @@ type
   PMemSearchContext = ^TMemSearchContext;
 
 //------------------------------------------------------------------------------
+{
+  MemoryFindFirst
 
+  Call these functions to initiate searching of requested byte sequence
+  (Bytes) or integer (Value) in the provided buffer.
+
+  The function will do sanity checks of provided arguments (note that these
+  checks are always performed, even if no other operation is done, eg. because
+  of empty byte sequence), initializes and fills Context variable and then
+  tries to find first occurence of requested data according to selected options
+  (see description of type TMemSearchOptions for details) and other settings.
+
+  Copy of all provided data and settings are stored in the context, so there is
+  no need to provide them again when searching for multiple instances of
+  requested data using MemorySearchNext, only the context variable is passed
+  and search algorithm takes what is needed from there. But this means that
+  all references (eg. Buffer, Bytes) must be valid and unchanged while the
+  searching is performed. Invalidating the references or changing the data will
+  almost certainly lead to exceptions or unexpected and erroneous results.
+
+  If requested data are found, then result will be set to True and output
+  parameter Context will be completely initialized - such context must be freed
+  using function MemoryFindClose after the searching is done, otherwise it
+  creates a (possibly significant) memory leak.
+  This context will then also hold information about how and where the
+  occurence was found (see description of type TMemSearchContext for more
+  info).
+
+  If nothing is found, then false is returned and the Context is not fully
+  initialized - values of its fields are undefined and it also does not need
+  to be freed using MemoryFindClose. Such context also must not be used in a
+  call to MemoryFindNext.
+
+    Parameter Value is an integer that is to be searched for - it is expected
+    to be stored in the buffer with system endianness. If you want to use other
+    byte order, simply use function SwapEndian on the passed value.
+
+    Untyped parameter Bytes is a buffer that contains byte sequence to search
+    for. Count is number of these bytes (ie. size of the Bytes buffer). If
+    Count is zero, then no search is even attempted and the function behaves
+    as if nothing was found (context is left uninitialized and result is set to
+    false).
+    Bytes open array works the same, it is just a different mean of providing
+    the sequence. But note that the array is always copied into the context in
+    its entirety (it can be simultaneously present multiple times in the
+    memory, in some rare circumstance), so try to not use it for large data
+    (or be prepared for a possibility of large memory requirements).
+
+    Buffer is untyped memory location that contains data to be searched. Size
+    gives number of bytes this memory location occupies. Note that you can
+    limit the search area by providing smaller Size than the buffer really
+    occupies - no data beyond the given size will be accessed. If Size is zero,
+    then no searching is performed as there are no data to match against (the
+    function behaves as if nothing was found).
+
+      WARNING - parameters Size and Count, where applicable, must be lower or
+                at most equal to High(TMemOffset), otherwise an EBOInvalidValue
+                exception will be raised. If you need to search larger buffer,
+                you must split it (to properly search on the split boundary,
+                use function MemoryFindFirstX - will be added in the future).
+
+    Output parameter Context must be set to an uninitialized variable,
+    otherwise whatever exists there will be discarded, creating memory leak.
+    When result of the function is set to True, then the returned context
+    must be freed using MemorySearchClose. When False is returned, then content
+    of this variable is undefined and it does NOT need to be freed.
+
+    Options is a set that can alter how and where the requested value ot byte
+    sequence will be searched for. For more details, see description of type
+    TMemSearchOptions, specifically each of its values. When a value is present
+    in the set, then corresponding option is enabled, when not present then
+    it is disabled.
+
+    Start position prescribes where to start search for the first occurence of
+    requested data (signed offset from start of the Buffer). Normally is it
+    ignored, only when soUseStartPosition option is enabled it is used (see
+    description of mentioned option for details).
+    If invalid position is given, then it is silently (without raising any
+    exception) clamped (limited) to be within the allowed range (which is
+    -Pred(Count) or -Pred(SizeOf(Value)) up to Pred(Size)).
+}
 Function MemoryFindFirst(Value: UInt8; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
 Function MemoryFindFirst(Value: UInt16; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
 Function MemoryFindFirst(Value: UInt32; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
@@ -2393,205 +2708,42 @@ Function MemoryFindFirst(const Bytes; Count: TMemSize; const Buffer; Size: TMemS
 Function MemoryFindFirst(const Bytes: array of UInt8; const Buffer; Size: TMemSize; out Context: TMemSearchContext; Options: TMemSearchOptions = []; StartPosition: TMemOffset = 0): Boolean; overload;
 
 //------------------------------------------------------------------------------
+{
+  MemoryFindNext
 
+  Use this function if you want to continue searching for requested data after
+  a first occurence was already found by MemoryFindFirst.
+
+  This function always searches from last found occurence, meaning you can call
+  it as many times as is number of instances of the requested data in the
+  searched buffer.
+
+  When an occurence of requested data is found, then its position is stored
+  in the Context and True is returned (it works the same as in MemoryFindFirst).
+
+  If no further occurence is found, then False is returned and content of the
+  Context is undefined.
+
+    WARNING - the context is not automatically freed when false is returned.
+
+  When passing uninitialized context, it just returns false and does nothing,
+  no exception is raised.
+}
 Function MemoryFindNext(var Context: TMemSearchContext): Boolean;
 
 //------------------------------------------------------------------------------
+{
+  MemoryFindClose
 
+  Frees any memory allocated in the Context variable and invalidates it. The
+  variable can then be safely used again in another search without a risk of
+  memory leak.
+
+  If context that is not initialized is passed here, then nothing happens and
+  the function just returns. 
+}
 procedure MemoryFindClose(var Context: TMemSearchContext);
 
-{
-  Following functions are searching provided buffer or memory location for a
-  given data (byte sequence or integral value).
-
-  When the data are found, their position within the buffer is returned in
-  output parameter Position. It is a zero-based position of start of the
-  sequence/value in relation to the start of provided buffer (that is, a
-  distance of the data from start of the buffer). Whether the data were found
-  or not (and whether in full or partially, see options) is indicated by the
-  result (see description of type TBOSearchResult).
-
-    WARNING - both arguments Size and Count (where applicable) must be lower
-              or equal to High(TMemOffset), otherwise an EBOInvalidValue
-              exception is raised.
-
-    NOTE - the integers are assumed to be stored with system endianness, and
-           are therefore searched that way. If you want to search for values
-           stored with different endianness, just use SwapEndian on the Value
-           parameter.
-
-  If no option is included, then the sequence/value is searched for full match,
-  that is, it must be present in its entirety, which means only positions from
-  zero up to (Size - Count) or (Size - SizeOf(Value)) are returned.
-
- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-  TBOSearchResult
-
-    This type is used for return values and indicate whether and how was the
-    requested data found.
-
-      srNotFound              - The requested data were not found in the
-                                provided buffer. Value of output parameter
-                                Position is undefined.
-
-      srFound                 - The data were found in their entirety within
-                                the provided buffer. Position contains a
-                                positive distance of start of the data from
-                                start of the provided buffer.
-
-      srFoundPartialLead      - A partial match with the requested data was
-                                found at the start of the buffer (see option
-                                soPartialLeadMatch for more details). Position
-                                contains a negative distance from the start of
-                                buffer to imagined start of the data.
-
-      srFoundPartialTrail     - Partial match was found at the end of the
-                                provided buffer (see option soPartialTrailMatch
-                                for more details). Position contains positive
-                                distance from buffer start to start of the
-                                patially matching byte sequence.
-
- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -                                
-
-  TBOSearchOptions
-
-    Each search function accepts parameter Options of this type. It is a set
-    where if any of the enumerated values is present, its corresponding option
-    is activated, when not present, the option is deactivated.
-
-      soPartialLeadMatch
-
-        If this option is activated, then the function will check leading bytes
-        of the provided buffer for a partial match with the given sequence or
-        value (as if the data were stored at address below start of the buffer).
-        If a match is found, then lowest negative position corresponding to how
-        far below the given buffer the data would be stored to produce the
-        found partial match is returned.
-
-        Positions from -Pred(SizeOf(Value)) or -Pred(Count) to -1 can be
-        returned for leading partial match.
-
-          NOTE - this check is done before the memory is scanned for full
-                 occurences. If partial leading match is found, the function
-                 exits, meaning full or trailing partial matches are not even
-                 attempted.
-
-        For example, let's have UInt32 value $11223344 (little endian) and a
-        memory buffer starting with byte sequence $22 $11 $AA $5B $00 ... .
-        This will return position -2.
-
-      soPartialTrailMatch
-
-        This is similar to soPartialLeadMatch, except it tries to match
-        trailing bytes of the buffer. If match is found, then it returns a
-        positive position which will be above normally returned values, that
-        is, larger than (Size - SizeOf(Value)) or (Size - Count), corresponding
-        to where the partially matched value would start in the buffer.
-
-        Positions from (Size - Pred(SizeOf(Value))) or (Size - Pred(Count)) to
-        (Size - 1) can be returned for trailing partial match.
-
-          NOTE - check for trailing partial match is done at the end, meaning
-                 if full or leading partial match is found, then check for
-                 trailing partial match is not attempted.
-
-      soPartialMatch
-
-        Including this option is equivalent to including both soPartialLeadMatch
-        and soPartialTrailMatch.
-
-      soAbsolutePosition
-
-        This has effect only in overloads accepting parameter Offset.
-        Normally the returned position is relative to the start of search,
-        which is affected by the value of Offset, this option forces the
-        function to calculate the position in relation to the start of searched
-        buffer, as if Offset was 0.
-
-    Leading partial match and trailing partial match are here for situations
-    where you are scanning some non-memory data (eg. file) - there, one would
-    read and scan smaller buffers. This might create problems if a multi-byte
-    value lies across the buffers boundary - you can use these settings to
-    search for such occurences.
-}
-(*
-type
-  TBOSearchResult = (srNotFound,srFound,srFoundPartialLead,srFoundPartialTrail);
-
-  TBOSearchOptions = set of (soPartialLeadMatch,soPartialTrailMatch,soPartialMatch,
-                             soAbsolutePosition);
-
-//------------------------------------------------------------------------------
-{
-  FindBytes
-
-  Count denotes number of bytes in Bytes (byte sequence searched for), whereas
-  argument Size gives size of the provided buffer (argument Buffer) that is to
-  be searched/scanned.
-}
-Function FindBytes(const Bytes; Count: TMemSize; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
-
-Function FindByte(Value: UInt8; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
-Function FindWord(Value: UInt16; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
-Function FindLong(Value: UInt32; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
-Function FindQuad(Value: UInt64; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
-
-//------------------------------------------------------------------------------
-{
-  Following overloads are wrappers that are here to ease repeated search within
-  the same buffer without a need to use moving pointer. They accept argument
-  Offset, which is used to move start of the searched buffer - the searching
-  starts at address (Addr(Buffer) + Offset).
-
-    NOTE - if used for repeated search, do not directly use position of previous
-           occurence for parameter Offset - first, the position can be negative
-           and Offset accepts only positive numbers since it is an unsigned
-           integer, second, the searching would catch the same occurence - use
-           value that is by at least one larger (SizeOf(Value) or Count if
-           overlap is forbidden), and third, unless soAbsolutePosition is used,
-           the returned position is relative to start of search, not to the
-           start of the buffer (so it might not be a valid value for Offset).
-
-  The returned position is normally relative to the start of searching (ie.
-  address shifted by offset). If you want the position to be in relation to the
-  start of the passed buffer, activate option soAbsolutePosition.
-
-    WARNING - this can be deceiving in case of partial leading match as the
-              returned postion might not actually point to the searched data
-              if they were only partially matched at the position shifted by
-              offset.
-
-  The functions will not touch memory that is bellow (Addr(Buffer) + Offset)
-  even if it is fully within the buffer and accessible.
-}
-Function FindBytes(const Bytes; Count: TMemSize; const Buffer; Size: TMemSize; Offset: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
-
-Function FindByte(Value: UInt8; const Buffer; Size: TMemSize; Offset: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
-Function FindWord(Value: UInt16; const Buffer; Size: TMemSize; Offset: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
-Function FindLong(Value: UInt32; const Buffer; Size: TMemSize; Offset: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
-Function FindQuad(Value: UInt64; const Buffer; Size: TMemSize; Offset: TMemSize; out Position: TMemOffset; Options: TBOSearchOptions = []): TBOSearchResult; overload;
-
-//------------------------------------------------------------------------------
-{
-  Following overloads are provided only for backward compatibility with
-  previous implementation. They are internally calling current implementation
-  (previous overloads).
-
-  Paramenters LeadingPartialMatch and TrailingPartialMatch are turned into
-  corresponding options.
-
-  Returned value is the same as in output parameter Position in previous
-  overloads when the value is found. If not found, then -SizeOf(Value) or
-  -Count is returned.
-}
-Function FindBytes(const Bytes; Count: TMemSize; Memory: Pointer; Size: TMemSize; LeadingPartialMatch: Boolean = False; TrailingPartialMatch: Boolean = False): TMemOffset; overload;
-
-Function FindByte(Value: UInt8; Memory: Pointer; Size: TMemSize): TMemOffset; overload;
-Function FindWord(Value: UInt16; Memory: Pointer; Size: TMemSize; LeadingPartialMatch: Boolean = False; TrailingPartialMatch: Boolean = False): TMemOffset; overload;
-Function FindLong(Value: UInt32; Memory: Pointer; Size: TMemSize; LeadingPartialMatch: Boolean = False; TrailingPartialMatch: Boolean = False): TMemOffset; overload;
-Function FindQuad(Value: UInt64; Memory: Pointer; Size: TMemSize; LeadingPartialMatch: Boolean = False; TrailingPartialMatch: Boolean = False): TMemOffset; overload;
-*)
 
 {===============================================================================
 --------------------------------------------------------------------------------
@@ -12573,6 +12725,7 @@ procedure CopyBits(Source,Destination: Pointer; SrcBitOffset,DstBitOffset,BitCou
   Function DestinationInSource: Boolean;
   var
     SourceBytes:  TMemSize;
+    LastByteBits: TMemSize;
   begin
     Result := False;
     If PtrCompareRel(Source,Destination,relLowerOrSame) then
@@ -12607,22 +12760,25 @@ procedure CopyBits(Source,Destination: Pointer; SrcBitOffset,DstBitOffset,BitCou
                   Result := SrcBitOffset < DstBitOffset;
               end
             else If Destination = PtrAdvance(Source,TMemOff(SourceBytes - 1)) then
-            {
-              Destination pointer points to the last byte of source memory.
+              begin
+              {
+                Destination pointer points to the last byte of source memory.
 
-              Since destination points to last byte of source, but source and
-              destination pointers do not match here, it means the source must
-              span more than one byte.
+                Since destination points to last byte of source, but source and
+                destination pointers do not match here, it means the source must
+                span more than one byte.
 
-              We calculate number of source bits in the last source byte and
-              use this number for comparison (must be lower or equal to dest.
-              bit offset to be ok).
+                We calculate number of source bits in the last source byte and
+                use this number for comparison (must be lower or equal to dest.
+                bit offset to be ok).
 
-              Note that Pred(SourceBytes) * 8 cannot overflow simply because
-              SourceBytes was previously calculated from BitCount, which is as
-              variable of the same width.
-            }
-              Result := (BitCount - (Pred(SourceBytes) shl 3{ * 8})) + SrcBitOffset > DstBitOffset
+                Note that Pred(SourceBytes) * 8 cannot overflow simply because
+                SourceBytes was previously calculated from BitCount, which is a
+                variable of the same width.
+              }
+                LastByteBits := ((BitCount and 7) + SrcBitOffset) and 7;
+                Result := (LastByteBits = 0) or (LastByteBits > DstBitOffset);
+              end
             else
             {
               Destination pointer is somewhere in the middle, assume collision
@@ -14457,6 +14613,7 @@ end;
 Function MemoryFindNext(var Context: TMemSearchContext): Boolean;
 begin
 Result := False;
+MemSearchContextResultsInit(Context);
 If Assigned(Context.Internals) then
   If not PMemSearchContextInternals(Context.Internals)^.SearchDone then
     case PMemSearchContextInternals(Context.Internals)^.Parameters.ValueType of
