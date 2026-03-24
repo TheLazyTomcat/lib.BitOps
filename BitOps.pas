@@ -13,14 +13,15 @@
     operations and other binary utilities.
 
       WARNING - part of this library will soon be moved into a new, separate
-                library. This is because some of provided functionality does
-                not match original intended aim of this library (bit-level
-                operations). Namely memory and pointer operations will be
-                moved.
+                library (preliminary named MemOps). This is because some of
+                provided functionality does not match original intended aim
+                of this library (bit-level operations).
+                Namely all memory and pointer operations will be moved (eg.
+                CopyBits, PtrAdvance or MemoryFind*).
 
-  Version 1.26 (2026-03-23)
+  Version 1.26.1 (2026-03-24)
 
-  Last change 2026-03-23
+  Last change 2026-03-24
 
   ©2014-2026 František Milt
 
@@ -2743,6 +2744,72 @@ Function MemoryFindNext(var Context: TMemSearchContext): Boolean;
   the function just returns. 
 }
 procedure MemoryFindClose(var Context: TMemSearchContext);
+
+//==============================================================================
+{
+  FindByte
+  FindWord
+  FindLong
+  FindQuad
+  FindBytes
+
+  Following is a set of macro functions that are wrapping default interface
+  of memory searching (MemoryFindFirst - MemoryFindNext - MemoryFindClose).
+  They are intended as a simplified way of searching for only a single
+  occurence of searched data within provided buffer.
+
+    Parameters Value, Bytes, Count, Buffer, Size and StartPosition are used
+    exactly the same as in MemoryFindFirst, so see there for description.
+
+    Output parameter Position is used to return position of the found occurence
+    (it corresponds to Context field LastPosition when using default interfece).
+
+    Options are used as presented, but with following changes:
+
+      In first group (functions without StartPosition parameter), option
+      soUseStartPosition is explicitly removed. In second group (functions
+      accepting StartPosition), option soUseStartPosition is explicitly added.
+
+      Functions accepting byte sequence as a pair of untyped buffer and size
+      (ie. parameters Bytes and Count) will remove option soBytesLocalCopy.
+      This is because that option is intended for continuous searching, which
+      is not done here, so it would be a waste of memory.
+
+    Result corresponds to Context field LastResult in default interface. Note
+    that if srNotFound is returned, then value of Position is undefined - and
+    this time for real (it is not assigned any value)!
+}
+Function FindByte(Value: UInt8; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+Function FindWord(Value: UInt16; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+Function FindLong(Value: UInt32; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+Function FindQuad(Value: U64Type; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+
+Function FindByte(Value: Int8; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+Function FindWord(Value: Int16; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+Function FindLong(Value: Int32; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+{$IF Declared(NativeUInt64E)}
+Function FindQuad(Value: Int64; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+{$IFEND}
+
+Function FindBytes(const Bytes; Count: TMemSize; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+Function FindBytes(const Bytes: array of UInt8; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+
+//------------------------------------------------------------------------------
+
+Function FindByte(Value: UInt8; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+Function FindWord(Value: UInt16; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+Function FindLong(Value: UInt32; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+Function FindQuad(Value: U64Type; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+
+Function FindByte(Value: Int8; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+Function FindWord(Value: Int16; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+Function FindLong(Value: Int32; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+{$IF Declared(NativeUInt64E)}
+Function FindQuad(Value: Int64; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+{$IFEND}
+
+Function FindBytes(const Bytes; Count: TMemSize; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
+Function FindBytes(const Bytes: array of UInt8; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult; overload;
 
 
 {===============================================================================
@@ -14631,6 +14698,330 @@ end;
 procedure MemoryFindClose(var Context: TMemSearchContext);
 begin
 MemSearchContextFinal(Context);
+end;
+
+//==============================================================================
+
+Function FindByte(Value: UInt8; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options - [soUseStartPosition]) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+
+Function FindWord(Value: UInt16; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options - [soUseStartPosition]) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+
+Function FindLong(Value: UInt32; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options - [soUseStartPosition]) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+ 
+//------------------------------------------------------------------------------
+
+Function FindQuad(Value: U64Type; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options - [soUseStartPosition]) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+
+Function FindByte(Value: Int8; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options - [soUseStartPosition]) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+
+Function FindWord(Value: Int16; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options - [soUseStartPosition]) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+
+Function FindLong(Value: Int32; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options - [soUseStartPosition]) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+{$IF Declared(NativeUInt64E)}
+//------------------------------------------------------------------------------
+
+Function FindQuad(Value: Int64; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options - [soUseStartPosition]) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+{$IFEND}
+
+//------------------------------------------------------------------------------
+
+Function FindBytes(const Bytes; Count: TMemSize; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Bytes,Count,Buffer,Size,Context,Options - [soUseStartPosition,soBytesLocalCopy]) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+
+Function FindBytes(const Bytes: array of UInt8; const Buffer; Size: TMemSize; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Bytes,Buffer,Size,Context,Options - [soUseStartPosition]) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//==============================================================================
+
+Function FindByte(Value: UInt8; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options + [soUseStartPosition],StartPosition) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+
+Function FindWord(Value: UInt16; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options + [soUseStartPosition],StartPosition) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+
+Function FindLong(Value: UInt32; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options + [soUseStartPosition],StartPosition) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+
+Function FindQuad(Value: U64Type; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options + [soUseStartPosition],StartPosition) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+
+Function FindByte(Value: Int8; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options + [soUseStartPosition],StartPosition) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+
+Function FindWord(Value: Int16; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options + [soUseStartPosition],StartPosition) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+
+Function FindLong(Value: Int32; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options + [soUseStartPosition],StartPosition) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+{$IF Declared(NativeUInt64E)}
+//------------------------------------------------------------------------------
+
+Function FindQuad(Value: Int64; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Value,Buffer,Size,Context,Options + [soUseStartPosition],StartPosition) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+{$IFEND}
+
+Function FindBytes(const Bytes; Count: TMemSize; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Bytes,Count,Buffer,Size,Context,(Options - [soBytesLocalCopy]) + [soUseStartPosition],StartPosition) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
+end;
+
+//------------------------------------------------------------------------------
+
+Function FindBytes(const Bytes: array of UInt8; const Buffer; Size: TMemSize; StartPosition: TMemOffset; out Position: TMemOffset; Options: TMemSearchOptions = []): TMemSearchResult;
+var
+  Context:  TMemSearchcontext;
+begin
+If MemoryFindFirst(Bytes,Buffer,Size,Context,Options + [soUseStartPosition],StartPosition) then
+  try
+    Position := Context.LastPosition;
+    Result := Context.LastResult;
+  finally
+    MemoryFindClose(Context);
+  end
+else Result := srNotFound;
 end;
 
 
